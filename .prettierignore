@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+dist/
+coverage/
+ios/
+android/
+package-lock.json
+
+# Markdown follows the workspace docs style; not formatted by Prettier.
+*.md
