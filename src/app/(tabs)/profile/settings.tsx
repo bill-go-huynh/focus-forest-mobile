@@ -8,6 +8,7 @@ import {
   useApi,
   type NotificationCategory,
   type PreferenceChanges,
+  type Preferences,
 } from '../../../api';
 import { FormMessage } from '../../../auth';
 import { Button } from '../../../components/Button';
@@ -31,6 +32,20 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
+type SwitchKey = 'sound' | 'haptics' | 'reducedMotion' | NotificationCategory;
+type Flipped = Partial<Record<SwitchKey, boolean>>;
+
+/** The saved preferences with the switches that are still saving shown as flipped. */
+function withFlipped(data: Preferences, flipped: Flipped): Preferences {
+  const shown = { ...data };
+  const notifications: Record<string, { enabled: boolean }> = { ...data.notifications };
+  for (const [key, value] of Object.entries(flipped) as [SwitchKey, boolean][]) {
+    if (key === 'sound' || key === 'haptics' || key === 'reducedMotion') shown[key] = value;
+    else notifications[key] = { ...notifications[key], enabled: value };
+  }
+  return { ...shown, notifications: notifications as Preferences['notifications'] };
+}
+
 const SAVE_NETWORK_MESSAGE = "We couldn't save that change. Check your connection and try again.";
 const SAVE_GENERAL_MESSAGE = "We couldn't save that change. Please try again.";
 
@@ -49,15 +64,38 @@ export default function SettingsScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const version = Constants.expoConfig?.version;
 
-  const change = (changes: PreferenceChanges) => {
+  // Switches that are saving. React Native's Switch sets the native view back to `value`
+  // right after a flip, and the optimistic query update lands a tick later, so without this
+  // the switch jumped back and forward. Each entry is set in the flip's own event and cleared
+  // when its save settles; by then the cache holds the saved or restored value.
+  const [flipped, setFlipped] = useState<Flipped>({});
+
+  const change = (changes: PreferenceChanges, onSettled?: () => void) => {
     setSaveError(null);
     save.mutate(changes, {
       onError: (error) =>
         setSaveError(error instanceof NetworkError ? SAVE_NETWORK_MESSAGE : SAVE_GENERAL_MESSAGE),
+      onSettled,
     });
   };
+  const flip = (key: SwitchKey, value: boolean) => {
+    setFlipped((current) => ({ ...current, [key]: value }));
+    // Clear only this flip: a later flip of the same switch keeps its own entry.
+    const settled = () =>
+      setFlipped((current) => {
+        if (current[key] !== value) return current;
+        const { [key]: _done, ...rest } = current;
+        return rest;
+      });
+    change(
+      key === 'sound' || key === 'haptics' || key === 'reducedMotion'
+        ? { [key]: value }
+        : { notifications: { [key]: { enabled: value } } },
+      settled,
+    );
+  };
 
-  const data = preferences.data;
+  const data = preferences.data ? withFlipped(preferences.data, flipped) : undefined;
 
   return (
     <Screen title="Settings" safeTop={false}>
@@ -92,13 +130,13 @@ export default function SettingsScreen() {
               label="Sound"
               description="Sounds for focus sessions, such as the end of a session."
               value={data.sound}
-              onValueChange={(sound) => change({ sound })}
+              onValueChange={(sound) => flip('sound', sound)}
             />
             <SwitchRow
               label="Haptics"
               description="Gentle vibrations for focus sessions."
               value={data.haptics}
-              onValueChange={(haptics) => change({ haptics })}
+              onValueChange={(haptics) => flip('haptics', haptics)}
             />
           </Section>
           <Section title="Motion">
@@ -110,15 +148,13 @@ export default function SettingsScreen() {
                   : 'Uses gentle fades instead of movement.'
               }
               value={data.reducedMotion}
-              onValueChange={(reducedMotion) => change({ reducedMotion })}
+              onValueChange={(reducedMotion) => flip('reducedMotion', reducedMotion)}
             />
           </Section>
           <NotificationSettings
             categories={visibleNotificationCategories()}
             preferences={data}
-            onChange={(category: NotificationCategory, enabled: boolean) =>
-              change({ notifications: { [category]: { enabled } } })
-            }
+            onChange={(category: NotificationCategory, enabled: boolean) => flip(category, enabled)}
           />
         </>
       )}

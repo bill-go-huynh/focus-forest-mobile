@@ -12,6 +12,11 @@ export interface SwitchRowProps {
   label: string;
   /** Shown under the label, and read as the hint. */
   description?: string;
+  /**
+   * Update `value` in the same event as `onValueChange` (plain React state), not on a later
+   * tick: React Native's Switch sets the native view back to `value` right after each flip,
+   * so a late update makes the switch jump back and forward.
+   */
   value: boolean;
   onValueChange: (value: boolean) => void;
   disabled?: boolean;

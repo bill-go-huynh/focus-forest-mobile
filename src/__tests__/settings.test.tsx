@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { router as expoRouter } from 'expo-router';
 import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
 
@@ -280,6 +280,46 @@ describe('sound and haptics (stored only; behavior arrives in Phase 2)', () => {
     expect(
       await screen.findByText("We couldn't save that change. Please try again."),
     ).toBeOnTheScreen();
+    expect(screen.getByRole('switch', { name: 'Sound' })).toBeChecked();
+  });
+});
+
+describe('flipping a switch on the device (no double flip)', () => {
+  /** The native switch view inside a row (hidden from accessibility; the row is the switch). */
+  const nativeSwitch = (name: string) =>
+    within(screen.getByRole('switch', { name }))
+      .getAllByRole('switch', { includeHiddenElements: true })
+      .find((node) => typeof node.props.onChange === 'function')!;
+  /** The native switch moves, then reports the change (React Native's Switch onChange). */
+  const flipNative = (name: string, value: boolean) =>
+    fireEvent(nativeSwitch(name), 'change', { nativeEvent: { value } });
+
+  it.each(['Sound', 'Haptics', 'Reduce motion'])(
+    '%s: the switch shows the new value in the same frame as the flip',
+    async (name) => {
+      await openSettings();
+      const next = !nativeSwitch(name).props.value;
+      flipNative(name, next);
+      // React Native's Switch sets the native view back to `value` right after the change.
+      // If `value` still held the old state here, the switch would jump back, then forward.
+      expect(nativeSwitch(name).props.value).toBe(next);
+      await waitFor(() => expect(patches()).toHaveLength(1));
+      await settle();
+      expect(nativeSwitch(name).props.value).toBe(next);
+    },
+  );
+
+  it('goes back once, and stays back, when the save fails', async () => {
+    serve((request) =>
+      request.method === 'PATCH' ? { status: 500, body: nestError(500, 'boom') } : a5(request),
+    );
+    await openSettings();
+    flipNative('Sound', false);
+    expect(nativeSwitch('Sound').props.value).toBe(false);
+    expect(
+      await screen.findByText("We couldn't save that change. Please try again."),
+    ).toBeOnTheScreen();
+    expect(nativeSwitch('Sound').props.value).toBe(true);
     expect(screen.getByRole('switch', { name: 'Sound' })).toBeChecked();
   });
 });
