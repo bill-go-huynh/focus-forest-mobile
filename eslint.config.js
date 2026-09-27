@@ -72,6 +72,30 @@ module.exports = defineConfig([
     rules: { 'no-restricted-syntax': [...noHardcodedStyles, ...noDisabledFontScaling] },
   },
   {
+    // The timer engine is pure (M2.2): no storage, randomness, clock source, or platform API.
+    files: [
+      'src/timer/timer-engine.ts',
+      'src/timer/submission.ts',
+      'src/timer/timer-state-schema.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            '@react-native-async-storage/async-storage',
+            'expo-crypto',
+            'react-native',
+            'react',
+          ].map((name) => ({
+            name,
+            message: 'Keep the timer engine pure: callers pass state and `now`.',
+          })),
+        },
+      ],
+    },
+  },
+  {
     // docs/08 §3: tokens live in secure device storage. AsyncStorage is not encrypted.
     files: ['src/api/**/*.{ts,tsx}'],
     // The token-store test imports AsyncStorage to prove it is never called.

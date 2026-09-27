@@ -12,6 +12,12 @@ import { notifyManager, type QueryClient } from '@tanstack/react-query';
  * - TanStack Query notifies React through timers; those updates run inside act().
  * - renderRouter turns on fake timers; each test starts with real ones again.
  */
+// AsyncStorage is native; its own jest mock keeps data in memory (the root layout restores the
+// active timer through it).
+jest.mock('@react-native-async-storage/async-storage', () =>
+  jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 configure({ asyncUtilTimeout: 5_000 });
 notifyManager.setNotifyFunction((notify) => {
   act(notify);

@@ -16,6 +16,7 @@ import {
 import { AuthFlowProvider, useAuthFlow } from '../auth';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
 import { useTheme } from '../theme';
+import { ActiveTimerProvider, createAppTimerStore } from '../timer';
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
@@ -24,18 +25,22 @@ export default function RootLayout() {
   const [api] = useState(() =>
     createApi({ baseUrl: readApiBaseUrl, fetch: globalThis.fetch, store: secureTokenStore }),
   );
+  const [timers] = useState(createAppTimerStore);
 
   return (
     <ApiProvider api={api} queryClient={queryClient}>
-      {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-      <AppearanceProviders>
-        <SafeAreaProvider>
-          <AuthFlowProvider>
-            <RootNavigator />
-          </AuthFlowProvider>
-          <ThemedStatusBar />
-        </SafeAreaProvider>
-      </AppearanceProviders>
+      {/* The signed-in user's timer is restored (and settled) as soon as they are known. */}
+      <ActiveTimerProvider store={timers}>
+        {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+        <AppearanceProviders>
+          <SafeAreaProvider>
+            <AuthFlowProvider>
+              <RootNavigator />
+            </AuthFlowProvider>
+            <ThemedStatusBar />
+          </SafeAreaProvider>
+        </AppearanceProviders>
+      </ActiveTimerProvider>
     </ApiProvider>
   );
 }
