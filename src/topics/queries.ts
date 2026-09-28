@@ -17,7 +17,7 @@ import { filterOfVariant, topicsQueryKey, topicsRootKey } from './query-keys';
 import { useTopicSnapshot, useTopicSnapshotStore } from './TopicCacheProvider';
 import type { TopicSnapshotStore } from './topic-snapshot-store';
 
-export { topicsQueryKey, topicsRootKey } from './query-keys';
+export { invalidateTopicLists, topicsQueryKey, topicsRootKey } from './query-keys';
 
 /**
  * One topic list as the server orders it (GET /me/topics). Each answer is saved for an offline

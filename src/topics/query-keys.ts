@@ -1,3 +1,5 @@
+import type { QueryClient } from '@tanstack/react-query';
+
 import type { TopicListFilter } from '../api/topics';
 import { topicListVariant, type TopicListVariant } from './topic-snapshot-store';
 
@@ -17,4 +19,13 @@ export function filterOfVariant(variant: string): TopicListFilter {
     ...(status === 'active' || status === 'archived' ? { status } : {}),
     ...(sort === 'recent' ? { sort } : {}),
   };
+}
+
+/**
+ * Marks every topic list stale, so the ones on screen are asked again (TanStack refetches active
+ * queries) and the others on their next use. For changes the server derives, such as a topic's
+ * last use after a session: the answers are saved like any other, and nothing is guessed locally.
+ */
+export function invalidateTopicLists(queryClient: QueryClient): Promise<void> {
+  return queryClient.invalidateQueries({ queryKey: topicsRootKey });
 }

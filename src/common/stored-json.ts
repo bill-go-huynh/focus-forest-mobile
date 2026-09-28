@@ -13,6 +13,7 @@ export interface StorageIssue {
     | 'invalid_state'
     | 'read_failed'
     | 'write_failed'
+    | 'remove_failed'
     | 'quarantine_failed';
 }
 

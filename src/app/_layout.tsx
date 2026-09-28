@@ -15,6 +15,7 @@ import {
 } from '../api';
 import { AuthFlowProvider, useAuthFlow } from '../auth';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
+import { createAppSessionOutbox, SessionOutboxProvider } from '../sessions';
 import { useTheme } from '../theme';
 import { ActiveTimerProvider, createAppTimerStore } from '../timer';
 import {
@@ -36,6 +37,9 @@ export default function RootLayout() {
   const [topicCreates] = useState(() =>
     createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
   );
+  const [sessions] = useState(() =>
+    createAppSessionOutbox({ client: api.client, queryClient, topicQueue: topicCreates }),
+  );
 
   return (
     <ApiProvider api={api} queryClient={queryClient}>
@@ -45,15 +49,18 @@ export default function RootLayout() {
         <TopicCacheProvider store={topics}>
           {/* Topics created offline are kept and sent when the server can be reached. */}
           <TopicCreateQueueProvider queue={topicCreates}>
-            {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-            <AppearanceProviders>
-              <SafeAreaProvider>
-                <AuthFlowProvider>
-                  <RootNavigator />
-                </AuthFlowProvider>
-                <ThemedStatusBar />
-              </SafeAreaProvider>
-            </AppearanceProviders>
+            {/* A finished timer's session is queued on the device, then sent when it can be. */}
+            <SessionOutboxProvider outbox={sessions}>
+              {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+              <AppearanceProviders>
+                <SafeAreaProvider>
+                  <AuthFlowProvider>
+                    <RootNavigator />
+                  </AuthFlowProvider>
+                  <ThemedStatusBar />
+                </SafeAreaProvider>
+              </AppearanceProviders>
+            </SessionOutboxProvider>
           </TopicCreateQueueProvider>
         </TopicCacheProvider>
       </ActiveTimerProvider>

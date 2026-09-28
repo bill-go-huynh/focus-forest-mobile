@@ -44,5 +44,13 @@ export {
   type TopicListFilter,
   type TopicStatus,
 } from './topics';
+export {
+  sessionErrorCode,
+  sessionSchema,
+  sessionSubmissionBodySchema,
+  submitSession,
+  type FocusSession,
+  type SessionErrorCode,
+} from './sessions';
 export type { SessionSnapshot, SessionStatus, SessionUser } from './session';
 export { secureTokenStore } from './token-store';

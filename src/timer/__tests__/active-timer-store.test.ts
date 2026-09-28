@@ -514,3 +514,108 @@ describe('overlapping calls', () => {
     expect(seen).toContain('paused');
   });
 });
+
+describe('clearing a finished timer once it is handed off', () => {
+  async function finishedApp() {
+    const app = await startedApp();
+    app.setTime('10:12');
+    await app.store.end();
+    return { ...app, id: app.store.getSnapshot().timer!.id };
+  }
+
+  it('removes it from storage first, then from memory, and lets a new timer start', async () => {
+    const { store, storage, id } = await finishedApp();
+
+    const result = await store.clearFinished(id);
+
+    expect(result).toEqual({ ok: true });
+    expect(storage.data.has(activeTimerKey(ADA))).toBe(false);
+    expect(store.getSnapshot()).toEqual({ status: 'ready', userId: ADA, timer: null });
+    await expect(
+      store.start({ topicId: TOPIC, plannedMinutes: 25, rules: RULES }),
+    ).resolves.toMatchObject({ ok: true });
+  });
+
+  it('stays cleared after a kill', async () => {
+    const { store, storage, id } = await finishedApp();
+    await store.clearFinished(id);
+
+    const relaunched = launch(storage, '11:00');
+    await relaunched.store.activate(ADA);
+
+    expect(relaunched.store.getSnapshot().timer).toBeNull();
+  });
+
+  it.each([
+    ['running', async (app: Awaited<ReturnType<typeof startedApp>>) => app],
+    [
+      'paused',
+      async (app: Awaited<ReturnType<typeof startedApp>>) => {
+        app.setTime('10:05');
+        await app.store.pause();
+        return app;
+      },
+    ],
+  ])('never clears a %s timer', async (_mode, prepare) => {
+    const app = await prepare(await startedApp());
+    const before = app.store.getSnapshot().timer!;
+
+    const result = await app.store.clearFinished(before.id);
+
+    expect(result).toEqual({ ok: false, reason: 'not_finished' });
+    expect(app.store.getSnapshot().timer).toBe(before);
+    expect(storedTimer(app.storage)).toEqual(before);
+  });
+
+  it('never clears a timer with another id', async () => {
+    const { store, storage } = await finishedApp();
+    const before = store.getSnapshot().timer;
+
+    const result = await store.clearFinished('0192f1a2-3b4c-7d5e-8f60-ffffffffffff');
+
+    expect(result).toEqual({ ok: false, reason: 'timer_mismatch' });
+    expect(store.getSnapshot().timer).toBe(before);
+    expect(storedTimer(storage)).toEqual(before);
+  });
+
+  it('answers no_timer when there is nothing to clear, and not_ready before a user is restored', async () => {
+    const { store, id } = await finishedApp();
+    await store.clearFinished(id);
+    await expect(store.clearFinished(id)).resolves.toEqual({ ok: false, reason: 'no_timer' });
+
+    const idle = launch(deviceStorage());
+    await expect(idle.store.clearFinished(id)).resolves.toEqual({ ok: false, reason: 'not_ready' });
+  });
+
+  it('keeps the timer in memory and storage when the removal fails, and says so', async () => {
+    const { store, storage, issues, id } = await finishedApp();
+    const before = store.getSnapshot().timer;
+    storage.failing.removeItem = true;
+
+    const result = await store.clearFinished(id);
+
+    expect(result).toEqual({ ok: false, reason: 'storage_failed' });
+    expect(store.getSnapshot().timer).toBe(before);
+    expect(storedTimer(storage)).toEqual(before);
+    expect(issues).toContainEqual({ code: 'remove_failed' });
+  });
+
+  it("does not clear the next user's memory when the user switched during the removal", async () => {
+    const { store, storage, id } = await finishedApp();
+    let release: (() => void) | null = null;
+    (storage.removeItem as jest.Mock).mockImplementationOnce(async (key: string) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      storage.data.delete(key);
+    });
+
+    const clearing = store.clearFinished(id);
+    while (!release) await Promise.resolve();
+    store.deactivate();
+    const other = store.activate(GRACE);
+    (release as () => void)();
+    await clearing;
+    await other;
+
+    expect(store.getSnapshot()).toEqual({ status: 'ready', userId: GRACE, timer: null });
+  });
+});

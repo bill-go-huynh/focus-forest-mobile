@@ -33,6 +33,12 @@ export interface ActiveTimerSnapshot {
 export type TimerOperationError =
   StartError | ActionError | 'not_ready' | 'timer_exists' | 'no_timer' | 'storage_failed';
 
+/** Why a finished timer was not cleared. The timer is kept in every case. */
+export type ClearFinishedError =
+  'not_ready' | 'no_timer' | 'timer_mismatch' | 'not_finished' | 'storage_failed';
+
+export type ClearFinishedResult = { ok: true } | { ok: false; reason: ClearFinishedError };
+
 /** `timer` is always what is stored: a failed write leaves the previous state. */
 export type TimerOperationResult =
   | { ok: true; timer: TimerState }
@@ -132,6 +138,30 @@ export class ActiveTimerStore {
       if (!current) return { ok: false, reason: 'no_timer', timer: null };
       const settled = settle(current, this.options.now());
       return settled === current ? { ok: true, timer: current } : commit(settled);
+    });
+  }
+
+  /**
+   * Removes the finished timer with this id, once its session is stored elsewhere (the session
+   * outbox). Never a running or paused timer, never another one. Storage is cleared first and
+   * memory only after, so a failed removal leaves the timer where it was.
+   */
+  clearFinished(expectedId: string): Promise<ClearFinishedResult> {
+    return this.enqueue(async (): Promise<ClearFinishedResult> => {
+      const { status, userId, timer } = this.snapshot;
+      if (status !== 'ready' || userId === null) return { ok: false, reason: 'not_ready' };
+      if (!timer) return { ok: false, reason: 'no_timer' };
+      if (timer.id !== expectedId) return { ok: false, reason: 'timer_mismatch' };
+      if (!timer.finished) return { ok: false, reason: 'not_finished' };
+      const generation = this.generation;
+      try {
+        await this.options.storage.removeItem(activeTimerKey(userId));
+      } catch {
+        this.options.report({ code: 'remove_failed' });
+        return { ok: false, reason: 'storage_failed' };
+      }
+      if (generation === this.generation) this.set({ status, userId, timer: null });
+      return { ok: true };
     });
   }
 
