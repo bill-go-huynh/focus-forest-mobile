@@ -8,9 +8,9 @@ import {
   type ReactNode,
 } from 'react';
 
-import { createTopic, useSession, type ApiClient, type Topic } from '../api';
+import { createTopic, useSession, type ApiClient, type Topic, type TopicStatus } from '../api';
 import type { KeyValueStorage, StorageIssue } from '../common/stored-json';
-import { applyServerTopic, topicsRootKey, useRecentTopics } from './queries';
+import { applyServerTopic, topicsRootKey, useRecentTopics, useTopics } from './queries';
 import { useTopicSnapshot } from './TopicCacheProvider';
 import {
   pendingTopicsOf,
@@ -18,7 +18,7 @@ import {
   type PendingTopic,
   type TopicCreateQueueSnapshot,
 } from './topic-create-queue';
-import type { TopicSnapshotStore } from './topic-snapshot-store';
+import type { TopicSnapshotStore, UnlistedTopics } from './topic-snapshot-store';
 
 /**
  * The create queue wired to the API and the M2.4 caches: a create is sent with PUT
@@ -116,18 +116,45 @@ export function usePickerTopics() {
   const { unlisted } = useTopicSnapshot();
   const { items: queued } = useTopicCreateQueueSnapshot();
   const items = useMemo((): PickerTopic[] => {
-    const listed = recent.data ?? [];
-    const known = new Set(listed.map((topic) => topic.id));
-    const extra = Object.values(unlisted)
-      .map((entry) => entry.topic)
-      .filter((topic) => topic.status === 'active' && !known.has(topic.id))
-      .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
-    for (const topic of extra) known.add(topic.id);
+    const confirmed = withUnlisted(recent.data ?? [], unlisted, 'active');
+    const known = new Set(confirmed.map((topic) => topic.id));
     const pending = pendingTopicsOf(queued).filter((topic) => !known.has(topic.id));
-    return [
-      ...[...listed, ...extra].map((topic) => ({ kind: 'confirmed' as const, topic })),
-      ...pending,
-    ];
+    return [...confirmed.map((topic) => ({ kind: 'confirmed' as const, topic })), ...pending];
   }, [recent.data, unlisted, queued]);
   return { items, recent };
+}
+
+/**
+ * A server list, then the topics with this status the server confirmed that the list does not
+ * have yet (created since it was saved), in creation order, which is where the server puts
+ * them. Each topic once.
+ */
+function withUnlisted(listed: Topic[], unlisted: UnlistedTopics, status: TopicStatus): Topic[] {
+  const known = new Set(listed.map((topic) => topic.id));
+  const extra = Object.values(unlisted)
+    .map((entry) => entry.topic)
+    .filter((topic) => topic.status === status && !known.has(topic.id))
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  return [...listed, ...extra];
+}
+
+/**
+ * The Topics screen's read model for one status, in the server's order (creation order):
+ * the confirmed topics, then (for active) the queued creates, each with its queue item, so the
+ * screen can show its sync state and whether it may still be revised.
+ */
+export function useManagedTopics(status: TopicStatus) {
+  const list = useTopics({ status });
+  const { unlisted } = useTopicSnapshot();
+  const { items: queued } = useTopicCreateQueueSnapshot();
+  const confirmed = useMemo(
+    () => (list.data === undefined ? undefined : withUnlisted(list.data, unlisted, status)),
+    [list.data, unlisted, status],
+  );
+  const pending = useMemo(() => {
+    if (status !== 'active') return [];
+    const known = new Set(confirmed?.map((topic) => topic.id));
+    return queued.filter((item) => !known.has(item.id));
+  }, [confirmed, queued, status]);
+  return { confirmed, pending, list };
 }

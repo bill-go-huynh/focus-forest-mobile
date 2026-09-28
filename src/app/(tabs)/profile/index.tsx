@@ -62,6 +62,11 @@ export default function ProfileScreen() {
       )}
       {profile ? <Button variant="primary" label="Edit profile" onPress={openEdit} /> : null}
       <ListRow
+        title="Topics"
+        onPress={() => router.push('/profile/topics')}
+        accessibilityHint="Opens your topics, to create, edit, archive, or restore them."
+      />
+      <ListRow
         title="Settings"
         onPress={() => router.push('/profile/settings')}
         accessibilityHint="Opens theme, sound, motion, and notification settings."

@@ -17,6 +17,12 @@ export interface ButtonProps {
   /** primary: one per screen at most. secondary: alternative actions. tertiary: low emphasis. */
   variant: 'primary' | 'secondary' | 'tertiary';
   label: string;
+  /**
+   * A fuller accessible name when the same label repeats on a screen, such as "Restore
+   * Spanish" for a "Restore" button in a list. It must contain the visible label (docs/11:
+   * what is read matches what is shown). Defaults to the label.
+   */
+  accessibilityLabel?: string;
   onPress: () => void;
   disabled?: boolean;
   disabledReason?: string;
@@ -26,9 +32,12 @@ export interface ButtonProps {
   ref?: Ref<View>;
 }
 
-export function Button({ variant, label, ...rest }: ButtonProps) {
+export function Button({ variant, label, accessibilityLabel = label, ...rest }: ButtonProps) {
   const theme = useTheme();
   requireText(label, 'label', 'Button');
+  if (!accessibilityLabel.toLowerCase().includes(label.toLowerCase())) {
+    throw new Error(`Button accessibilityLabel "${accessibilityLabel}" must contain its label.`);
+  }
   const { colors } = theme;
 
   const styles = {
@@ -51,7 +60,7 @@ export function Button({ variant, label, ...rest }: ButtonProps) {
 
   return (
     <BaseButton
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel}
       layout={textButtonLayout(theme, styles.minHeight)}
       fill={styles.fill}
       {...rest}

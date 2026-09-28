@@ -31,6 +31,34 @@ describe('Button (primary, secondary, tertiary)', () => {
     expect(screen.getByRole('button', { name: 'Start Focus' })).toBeOnTheScreen();
   });
 
+  it('can be named more fully than its label, when the same label repeats on a screen', () => {
+    renderWithProviders(
+      <Button
+        variant="secondary"
+        label="Restore"
+        accessibilityLabel="Restore Spanish"
+        onPress={jest.fn()}
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Restore Spanish' });
+    expect(button.props.accessibilityLabel).toBe('Restore Spanish');
+    expect(screen.getByText('Restore')).toBeOnTheScreen();
+  });
+
+  it('refuses a full name that does not contain the visible label (docs/11: labels match)', () => {
+    jest.spyOn(console, 'error').mockImplementation();
+    expect(() =>
+      renderWithProviders(
+        <Button
+          variant="secondary"
+          label="Restore"
+          accessibilityLabel="Bring back"
+          onPress={jest.fn()}
+        />,
+      ),
+    ).toThrow(/label/);
+  });
+
   it('calls onPress once when pressed', () => {
     const onPress = jest.fn();
     renderWithProviders(<Button variant="secondary" label="Continue" onPress={onPress} />);
