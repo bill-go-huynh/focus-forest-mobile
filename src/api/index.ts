@@ -28,5 +28,21 @@ export {
   type Preferences,
 } from './preferences';
 export { createQueryClient } from './query-client';
+export {
+  archiveTopic,
+  createTopic,
+  listTopics,
+  restoreTopic,
+  TOPIC_COLORS,
+  topicErrorCode,
+  topicSchema,
+  updateTopic,
+  type NewTopicFields,
+  type Topic,
+  type TopicChanges,
+  type TopicErrorCode,
+  type TopicListFilter,
+  type TopicStatus,
+} from './topics';
 export type { SessionSnapshot, SessionStatus, SessionUser } from './session';
 export { secureTokenStore } from './token-store';

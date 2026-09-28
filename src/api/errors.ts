@@ -2,7 +2,9 @@
  * Errors from the API layer. `kind` lets callers tell them apart without instanceof:
  * - network: the server could not be reached (offline, timeout). The session is kept.
  * - unauthenticated: the session has ended; the app returns to signed out.
- * - http: the server answered with an error status; `messages` holds its user-facing text.
+ * - http: the server answered with an error status; `messages` holds its user-facing text, and
+ *   `code` the stable machine-readable code some errors carry (A2: `topic_name_taken`, …).
+ *   Branch on `status` and `code`, never on the text.
  * - invalid-response: the server answered with something that does not match the contract.
  * - configuration: the app is not set up to reach an API (EXPO_PUBLIC_API_URL).
  *
@@ -40,9 +42,17 @@ function messagesFrom(body: unknown): string[] {
   return [];
 }
 
+/** The stable `code` of an API error body, when it has one. */
+function codeFrom(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null || !('code' in body)) return null;
+  const { code } = body as { code: unknown };
+  return typeof code === 'string' ? code : null;
+}
+
 export class HttpError extends ApiError {
   readonly kind = 'http';
   readonly messages: string[];
+  readonly code: string | null;
   constructor(
     readonly status: number,
     body: unknown,
@@ -51,6 +61,7 @@ export class HttpError extends ApiError {
     super(messages[0] ?? `The server answered with status ${status}.`);
     this.name = 'HttpError';
     this.messages = messages;
+    this.code = codeFrom(body);
   }
 }
 

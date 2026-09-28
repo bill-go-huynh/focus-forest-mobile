@@ -17,6 +17,12 @@ import { AuthFlowProvider, useAuthFlow } from '../auth';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
 import { useTheme } from '../theme';
 import { ActiveTimerProvider, createAppTimerStore } from '../timer';
+import {
+  createAppTopicCreateQueue,
+  createAppTopicStore,
+  TopicCacheProvider,
+  TopicCreateQueueProvider,
+} from '../topics';
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
@@ -26,20 +32,30 @@ export default function RootLayout() {
     createApi({ baseUrl: readApiBaseUrl, fetch: globalThis.fetch, store: secureTokenStore }),
   );
   const [timers] = useState(createAppTimerStore);
+  const [topics] = useState(createAppTopicStore);
+  const [topicCreates] = useState(() =>
+    createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
+  );
 
   return (
     <ApiProvider api={api} queryClient={queryClient}>
       {/* The signed-in user's timer is restored (and settled) as soon as they are known. */}
       <ActiveTimerProvider store={timers}>
-        {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-        <AppearanceProviders>
-          <SafeAreaProvider>
-            <AuthFlowProvider>
-              <RootNavigator />
-            </AuthFlowProvider>
-            <ThemedStatusBar />
-          </SafeAreaProvider>
-        </AppearanceProviders>
+        {/* The signed-in user's last known topics are shown even when a launch is offline. */}
+        <TopicCacheProvider store={topics}>
+          {/* Topics created offline are kept and sent when the server can be reached. */}
+          <TopicCreateQueueProvider queue={topicCreates}>
+            {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+            <AppearanceProviders>
+              <SafeAreaProvider>
+                <AuthFlowProvider>
+                  <RootNavigator />
+                </AuthFlowProvider>
+                <ThemedStatusBar />
+              </SafeAreaProvider>
+            </AppearanceProviders>
+          </TopicCreateQueueProvider>
+        </TopicCacheProvider>
       </ActiveTimerProvider>
     </ApiProvider>
   );

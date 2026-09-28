@@ -1,3 +1,4 @@
+import { readStoredJson, type KeyValueStorage, type StorageIssue } from '../common/stored-json';
 import {
   end,
   pause,
@@ -12,23 +13,9 @@ import {
 } from './timer-engine';
 import { parseTimerState } from './timer-state-schema';
 
-/** The part of AsyncStorage the store uses, so tests can pass a device storage of their own. */
-export interface KeyValueStorage {
-  getItem(key: string): Promise<string | null>;
-  setItem(key: string, value: string): Promise<void>;
-  removeItem(key: string): Promise<void>;
-}
-
+export type { KeyValueStorage } from '../common/stored-json';
 /** A technical problem worth reporting. Never carries the stored value (it can hold notes later). */
-export interface TimerStorageIssue {
-  code:
-    | 'corrupt_json'
-    | 'unsupported_version'
-    | 'invalid_state'
-    | 'read_failed'
-    | 'write_failed'
-    | 'quarantine_failed';
-}
+export type TimerStorageIssue = StorageIssue;
 
 /**
  * `inactive`: nobody is signed in. `restoring`: reading the user's timer. `ready`: the timer
@@ -60,7 +47,6 @@ export interface ActiveTimerStoreOptions {
 
 /** One key per user: a user never sees another's timer, and sign-out keeps it. */
 export const activeTimerKey = (userId: string) => `focus-forest/active-timer/v1/${userId}`;
-const quarantineKey = (userId: string) => `${activeTimerKey(userId)}/quarantine`;
 
 const INACTIVE: ActiveTimerSnapshot = { status: 'inactive', userId: null, timer: null };
 
@@ -187,52 +173,15 @@ export class ActiveTimerStore {
 
   private async restore(userId: string): Promise<ActiveTimerSnapshot> {
     const { storage, report, now } = this.options;
-    let raw: string | null;
-    try {
-      raw = await storage.getItem(activeTimerKey(userId));
-    } catch {
-      report({ code: 'read_failed' });
-      return { status: 'unavailable', userId, timer: null };
-    }
-    if (raw === null) return { status: 'ready', userId, timer: null };
+    const read = await readStoredJson(storage, activeTimerKey(userId), parseStored, report);
+    if (read.kind === 'unavailable') return { status: 'unavailable', userId, timer: null };
+    if (read.kind !== 'ok') return { status: 'ready', userId, timer: null };
 
-    let value: unknown;
-    try {
-      value = JSON.parse(raw);
-    } catch {
-      await this.quarantine(userId, raw, 'corrupt_json');
-      return { status: 'ready', userId, timer: null };
-    }
-    const parsed = parseTimerState(value);
-    if (!parsed.ok) {
-      await this.quarantine(userId, raw, parsed.reason);
-      return { status: 'ready', userId, timer: null };
-    }
-
-    const settled = settle(parsed.state, now());
+    const settled = settle(read.value, now());
     // If the settled end cannot be stored, the stored state still derives the same end.
     const timer =
-      settled !== parsed.state && (await this.write(userId, settled)) ? settled : parsed.state;
+      settled !== read.value && (await this.write(userId, settled)) ? settled : read.value;
     return { status: 'ready', userId, timer };
-  }
-
-  /**
-   * Keeps one copy of an unreadable entry for later investigation, then removes it so the
-   * next launch starts cleanly instead of failing the same way.
-   */
-  private async quarantine(
-    userId: string,
-    raw: string,
-    code: TimerStorageIssue['code'],
-  ): Promise<void> {
-    const { storage, report } = this.options;
-    report({ code });
-    try {
-      await storage.setItem(quarantineKey(userId), raw);
-    } catch {
-      report({ code: 'quarantine_failed' });
-    }
-    await storage.removeItem(activeTimerKey(userId)).catch(() => undefined);
   }
 
   private async write(userId: string, state: TimerState): Promise<boolean> {
@@ -258,4 +207,9 @@ export class ActiveTimerStore {
     this.snapshot = snapshot;
     for (const listener of this.listeners) listener();
   }
+}
+
+function parseStored(value: unknown) {
+  const parsed = parseTimerState(value);
+  return parsed.ok ? { ok: true as const, value: parsed.state } : parsed;
 }
