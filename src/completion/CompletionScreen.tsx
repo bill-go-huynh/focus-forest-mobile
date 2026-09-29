@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { announce } from '../accessibility';
-import { useSession, type FocusSession } from '../api';
+import { useSession, type FocusSession, type HistoryTopic } from '../api';
 import { Button } from '../components/Button';
 import { InlineStatus } from '../components/InlineStatus';
 import { Input } from '../components/Input';
 import { Screen } from '../components/Screen';
 import { TopicMark } from '../components/TopicMark';
+import { useHistoryItem } from '../history/queries';
 import { receiptFor } from '../sessions/completion-receipts';
 import { useCompletionReceiptsSnapshot } from '../sessions/CompletionReceiptsProvider';
 import { useSessionNotes, useSessionNotesSnapshot } from '../sessions/SessionNotesProvider';
@@ -29,22 +30,31 @@ const UNKNOWN_TOPIC_NAME = 'Focus topic';
  * what the timer measured, and no outcome is claimed before the server answers.
  */
 type Known =
-  | { kind: 'server'; topicId: string; focusedMilliseconds: number; session: FocusSession }
+  | {
+      kind: 'server';
+      topicId: string;
+      focusedMilliseconds: number;
+      session: FocusSession;
+      /** The topic as History last listed it (A2.7), for a topic the device may not know. */
+      topic: HistoryTopic | null;
+    }
   | { kind: 'device'; topicId: string; focusedMilliseconds: number }
   | { kind: 'saving' }
   | { kind: 'missing' };
 
 /**
  * The server's latest answer for the session: the kept receipt (written before either answer
- * below is shown, so never older), else what this process was answered. Null when unknown.
+ * below is shown, so never older), else what this process was answered, else the session as
+ * History listed it (a loaded page or the saved history; no receipt needed). Null when unknown.
  */
 function useServerSession(sessionId: string): FocusSession | null {
   const { user } = useSession();
   const receipts = useCompletionReceiptsSnapshot();
   const outbox = useSessionOutboxSnapshot();
   const notes = useSessionNotesSnapshot();
+  const listed = useHistoryItem(sessionId);
   const receipt = receipts.userId === user?.id ? receiptFor(receipts, sessionId) : null;
-  return receipt ?? notes.confirmed[sessionId] ?? outbox.synced[sessionId] ?? null;
+  return receipt ?? notes.confirmed[sessionId] ?? outbox.synced[sessionId] ?? listed ?? null;
 }
 
 function useKnownSession(sessionId: string): Known {
@@ -53,12 +63,14 @@ function useKnownSession(sessionId: string): Known {
   const receipts = useCompletionReceiptsSnapshot();
   const timers = useActiveTimer();
   const server = useServerSession(sessionId);
+  const listed = useHistoryItem(sessionId);
   if (server) {
     return {
       kind: 'server',
       topicId: server.topicId,
       focusedMilliseconds: server.focusedMilliseconds,
       session: server,
+      topic: listed?.topic ?? null,
     };
   }
   const queued = outbox.items.find((item) => item.id === sessionId);
@@ -91,7 +103,7 @@ function outcomeOf(known: Known & { kind: 'server' | 'device' }) {
   if (known.session.status === 'discarded') {
     return {
       title: 'Focus session saved',
-      detail: 'This session was shorter than the current minimum for counted focus time.',
+      detail: 'This session was shorter than the minimum for counted focus time.',
     };
   }
   return { title: 'Focus session saved', detail: null };
@@ -154,7 +166,7 @@ function CompletionContent({
   const notes = useSessionNotes();
   const notesSnapshot = useSessionNotesSnapshot();
   const server = useServerSession(sessionId);
-  const topic = useTopicIdentity(known.topicId);
+  const topic = useTopicIdentity(known.topicId) ?? (known.kind === 'server' ? known.topic : null);
   const { title, detail } = outcomeOf(known);
   const minutes = Math.floor(Math.max(0, known.focusedMilliseconds) / MINUTE);
 
@@ -197,7 +209,7 @@ function CompletionContent({
 
   const noteStatus =
     queuedNote?.state === 'needs_attention'
-      ? "Your note couldn't be added to your account. It stays on this device."
+      ? 'This note is still saved on this device and needs attention before it can sync.'
       : queuedNote
         ? 'Note saved on this device.'
         : savedHere

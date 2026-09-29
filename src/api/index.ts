@@ -44,6 +44,15 @@ export {
   type TopicListFilter,
   type TopicStatus,
 } from './topics';
+export {
+  getSessionHistory,
+  HISTORY_PAGE_SIZE,
+  historyPageSchema,
+  sessionHistoryItemSchema,
+  type HistoryTopic,
+  type SessionHistoryItem,
+  type SessionHistoryPage,
+} from './history';
 export { getSessionRules, sessionRulesSchema, type SessionRulesResponse } from './session-rules';
 export {
   sessionErrorCode,

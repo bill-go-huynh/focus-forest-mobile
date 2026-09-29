@@ -313,7 +313,7 @@ describe('the server’s answer', () => {
     [
       'discarded',
       'Focus session saved',
-      'This session was shorter than the current minimum for counted focus time.',
+      'This session was shorter than the minimum for counted focus time.',
     ],
   ])('shows a %s session as the server evaluated it', async (status, title, detail) => {
     await storeTimer(endedEarly());

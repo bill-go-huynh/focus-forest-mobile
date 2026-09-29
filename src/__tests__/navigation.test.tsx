@@ -38,22 +38,25 @@ async function openApp(initialUrl = '/') {
   return router;
 }
 
-// Profile reads GET /me/profile (M12).
+// Profile reads GET /me/profile (M12); Insights reads the (empty) history, GET /me/sessions.
 const originalFetch = globalThis.fetch;
 beforeEach(() => {
   mockColorScheme.mockReturnValue('light');
   signInForTest();
   process.env.EXPO_PUBLIC_API_URL = 'https://api.example.com';
-  globalThis.fetch = fakeFetch(() => ({
+  globalThis.fetch = fakeFetch(({ url }) => ({
     status: 200,
-    body: {
-      id: 'user-1',
-      displayName: 'Mai Anh',
-      avatarUrl: null,
-      bio: null,
-      joinDate: '2026-09-26T10:00:00.000Z',
-      timezone: 'Europe/Zurich',
-    },
+    body:
+      new URL(url).pathname === '/me/sessions'
+        ? { items: [], nextCursor: null }
+        : {
+            id: 'user-1',
+            displayName: 'Mai Anh',
+            avatarUrl: null,
+            bio: null,
+            joinDate: '2026-09-26T10:00:00.000Z',
+            timezone: 'Europe/Zurich',
+          },
   })).fetch;
 });
 afterEach(() => {

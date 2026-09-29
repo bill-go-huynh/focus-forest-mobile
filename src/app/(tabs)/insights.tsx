@@ -1,18 +1,6 @@
-import { useRouter } from 'expo-router';
+import { HistoryScreen } from '../../history/HistoryScreen';
 
-import { EmptyState } from '../../components/EmptyState';
-import { Screen } from '../../components/Screen';
-
-/** Insights, before any session (docs/01 §9: an opportunity, not an apology). */
+/** Insights (docs/05 §1): in Phase 2, the basic focus history. Analytics arrive in Phase 6. */
 export default function InsightsScreen() {
-  const router = useRouter();
-  return (
-    <Screen title="Insights">
-      <EmptyState
-        illustration="lantern"
-        message="Your focus story begins with your first session."
-        action={{ label: 'Go to your tree', onPress: () => router.navigate('/') }}
-      />
-    </Screen>
-  );
+  return <HistoryScreen />;
 }

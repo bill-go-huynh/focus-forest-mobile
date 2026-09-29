@@ -20,6 +20,7 @@ import {
   onTimerNotificationTap,
   TimerNotificationSync,
 } from '../notifications';
+import { createAppHistorySnapshotStore, HistoryCacheProvider } from '../history';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
 import {
   createAppCompletionReceipts,
@@ -52,6 +53,7 @@ export default function RootLayout() {
     createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
   );
   const [receipts] = useState(createAppCompletionReceipts);
+  const [history] = useState(createAppHistorySnapshotStore);
   const [sessions] = useState(() =>
     createAppSessionOutbox({ client: api.client, queryClient, topicQueue: topicCreates, receipts }),
   );
@@ -75,29 +77,32 @@ export default function RootLayout() {
           {/* Topics created offline are kept and sent when the server can be reached. */}
           <TopicCreateQueueProvider queue={topicCreates}>
             {/* The server's answers for recent sessions, kept so a tap opens them after a restart. */}
-            <CompletionReceiptsProvider receipts={receipts}>
-              {/* A finished timer's session is queued on the device, then sent when it can be. */}
-              <SessionOutboxProvider outbox={sessions}>
-                {/* Notes wait on the device until their session is on the server. */}
-                <SessionNotesProvider notes={notes}>
-                  {/* Which Session Completion to open: a session ended here, or a tap. */}
-                  <CompletionIntentsProvider
-                    intents={completions}
-                    listenForTaps={onTimerNotificationTap}
-                  >
-                    {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-                    <AppearanceProviders>
-                      <SafeAreaProvider>
-                        <AuthFlowProvider>
-                          <RootNavigator />
-                        </AuthFlowProvider>
-                        <ThemedStatusBar />
-                      </SafeAreaProvider>
-                    </AppearanceProviders>
-                  </CompletionIntentsProvider>
-                </SessionNotesProvider>
-              </SessionOutboxProvider>
-            </CompletionReceiptsProvider>
+            {/* The history last loaded, so History and its sessions still show offline. */}
+            <HistoryCacheProvider store={history}>
+              <CompletionReceiptsProvider receipts={receipts}>
+                {/* A finished timer's session is queued on the device, then sent when it can be. */}
+                <SessionOutboxProvider outbox={sessions}>
+                  {/* Notes wait on the device until their session is on the server. */}
+                  <SessionNotesProvider notes={notes}>
+                    {/* Which Session Completion to open: a session ended here, or a tap. */}
+                    <CompletionIntentsProvider
+                      intents={completions}
+                      listenForTaps={onTimerNotificationTap}
+                    >
+                      {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+                      <AppearanceProviders>
+                        <SafeAreaProvider>
+                          <AuthFlowProvider>
+                            <RootNavigator />
+                          </AuthFlowProvider>
+                          <ThemedStatusBar />
+                        </SafeAreaProvider>
+                      </AppearanceProviders>
+                    </CompletionIntentsProvider>
+                  </SessionNotesProvider>
+                </SessionOutboxProvider>
+              </CompletionReceiptsProvider>
+            </HistoryCacheProvider>
           </TopicCreateQueueProvider>
         </TopicCacheProvider>
       </ActiveTimerProvider>

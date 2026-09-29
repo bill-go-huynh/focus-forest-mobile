@@ -14,26 +14,30 @@ const PLANNED_MINUTES_MAX = 1440;
  * effective end (completion, the pause limit, or the submitted end), which may differ from the
  * submitted one. `counted` is false exactly when the status is `discarded`.
  */
-export const sessionSchema = z
-  .object({
-    id: uuid,
-    topicId: uuid,
-    startedAt: instant,
-    endedAt: instant,
-    plannedMinutes: z.number().int().min(1).max(PLANNED_MINUTES_MAX),
-    focusedMilliseconds: z.number().int().nonnegative(),
-    pausedMilliseconds: z.number().int().nonnegative(),
-    status: z.enum(['completed', 'ended_early', 'discarded']),
-    counted: z.boolean(),
-    localDate: z.iso.date(),
-    year: z.number().int(),
-    month: z.number().int().min(1).max(12),
-    note: z.string().nullable(),
-    createdAt: instant,
-  })
-  .refine((session) => session.counted === (session.status !== 'discarded'), {
-    message: 'counted is false exactly when the session is discarded.',
-  });
+export const sessionFields = z.object({
+  id: uuid,
+  topicId: uuid,
+  startedAt: instant,
+  endedAt: instant,
+  plannedMinutes: z.number().int().min(1).max(PLANNED_MINUTES_MAX),
+  focusedMilliseconds: z.number().int().nonnegative(),
+  pausedMilliseconds: z.number().int().nonnegative(),
+  status: z.enum(['completed', 'ended_early', 'discarded']),
+  counted: z.boolean(),
+  localDate: z.iso.date(),
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12),
+  note: z.string().nullable(),
+  createdAt: instant,
+});
+
+/** Holds for every session answer: `counted` follows the status. */
+export const countedMatchesStatus = (session: { counted: boolean; status: string }) =>
+  session.counted === (session.status !== 'discarded');
+
+export const sessionSchema = sessionFields.refine(countedMatchesStatus, {
+  message: 'counted is false exactly when the session is discarded.',
+});
 export type FocusSession = z.infer<typeof sessionSchema>;
 
 /** An instant exactly as `Date.prototype.toISOString` writes it: UTC, with milliseconds. */
