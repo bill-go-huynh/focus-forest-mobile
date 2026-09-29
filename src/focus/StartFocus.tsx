@@ -12,8 +12,7 @@ import { ListRow } from '../components/ListRow';
 import { Sheet } from '../components/Sheet';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { TopicMark } from '../components/TopicMark';
-import { useSessionOutbox } from '../sessions/SessionOutboxProvider';
-import { handoffFinishedTimer } from '../sessions/session-handoff';
+import { useFinishedTimerHandoff } from '../sessions/SessionOutboxProvider';
 import { useTheme } from '../theme';
 import { useActiveTimer, useActiveTimerStore } from '../timer/ActiveTimerProvider';
 import { usePickerTopics, type PickerTopic } from '../topics/topic-create-sync';
@@ -37,8 +36,9 @@ const topicName = (entry: PickerTopic) =>
   entry.kind === 'confirmed' ? entry.topic.name : entry.name;
 
 /**
- * Start Focus on Home (docs/05 §1: the primary action next to the tree). It reopens a running
- * or paused timer instead of starting another, first moves a finished one to the outbox, then
+ * Start Focus on Home (docs/05 §1: the primary action next to the tree). With a running or
+ * paused timer it reads Resume focus and reopens it, never starting another; it first moves a
+ * finished one to the outbox (sharing the provider's handoff), then
  * lets a topic be chosen. A topic with a usable remembered duration starts at once (docs/02:
  * two taps); otherwise, or through "Change duration", the duration is chosen first. The timer
  * is stored before the Focus screen opens, with the session rules copied into it.
@@ -47,7 +47,7 @@ export function StartFocus() {
   const router = useRouter();
   const timers = useActiveTimerStore();
   const timer = useActiveTimer();
-  const outbox = useSessionOutbox();
+  const handoff = useFinishedTimerHandoff();
   const rules = useSessionRules();
   const [step, setStep] = useState<Step>('closed');
   const [choice, setChoice] = useState<{ entry: PickerTopic; minutes: number } | null>(null);
@@ -68,7 +68,7 @@ export function StartFocus() {
     }
     if (current) {
       // The finished session goes to the outbox first; never a second timer over it.
-      const handed = await handoffFinishedTimer({ timers, outbox });
+      const handed = await handoff();
       if (!handed.ok && timers.getSnapshot().timer) {
         setHomeNotice({
           message: 'Your last session is still being saved on this device.',
@@ -114,11 +114,14 @@ export function StartFocus() {
     else chooseDuration(entry, rules.rules);
   };
 
+  // A running or paused session is resumed, never replaced: the action says so.
+  const active = timer.timer !== null && !timer.timer.finished;
+
   return (
     <>
       <Button
         variant="primary"
-        label="Start Focus"
+        label={active ? 'Resume focus' : 'Start Focus'}
         onPress={() => void onStartFocus()}
         disabled={timer.status !== 'ready'}
         disabledReason="Your focus session is loading."

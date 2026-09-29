@@ -73,6 +73,9 @@ export class ActiveTimerStore {
 
   getSnapshot = (): ActiveTimerSnapshot => this.snapshot;
 
+  /** The clock the timer is stored with, for showing it: a view derives from the same `now`. */
+  now = (): number => this.options.now();
+
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

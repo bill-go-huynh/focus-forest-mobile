@@ -22,7 +22,8 @@ import { createTopicCreateQueue, TopicCreateQueueProvider } from '../../topics/t
 import { topicSnapshotKey, TopicSnapshotStore } from '../../topics/topic-snapshot-store';
 import { createSessionOutbox } from '../app-session-outbox';
 import { sessionOutboxKey, type SessionOutbox } from '../session-outbox';
-import { SessionOutboxProvider } from '../SessionOutboxProvider';
+import { SessionOutboxProvider, useFinishedTimerHandoff } from '../SessionOutboxProvider';
+import type { HandoffResult } from '../session-handoff';
 
 const ADA = { id: '11111111-1111-4111-8111-111111111111', email: 'ada@example.com' };
 const TOPIC = makeTopic();
@@ -405,5 +406,71 @@ describe('topic metadata after a session syncs', () => {
 
     await waitFor(() => expect(app.outbox.getSnapshot().items[0]?.state).toBe('needs_attention'));
     expect(app.requests.filter((r) => r.method === 'GET')).toHaveLength(getsBefore);
+  });
+});
+
+describe('useFinishedTimerHandoff', () => {
+  function HandoffProbe({ seen }: { seen: { current: (() => Promise<HandoffResult>) | null } }) {
+    seen.current = useFinishedTimerHandoff();
+    return null;
+  }
+
+  it('shares one handoff between callers at the same time, and syncs after it', async () => {
+    const storage = memoryStorage();
+    const server = apiServer();
+    const seen: { current: (() => Promise<HandoffResult>) | null } = { current: null };
+    const app = await launch(server.handler, storage, NOW, <HandoffProbe seen={seen} />);
+    await waitFor(() => expect(app.timers.getSnapshot().status).toBe('ready'));
+    await waitFor(() => expect(app.outbox.getSnapshot().status).toBe('ready'));
+    await act(async () => {
+      await app.timers.start({ topicId: TOPIC.id, plannedMinutes: 25, rules: RULES });
+    });
+    const refresh = jest.spyOn(app.timers, 'refresh');
+
+    let results: HandoffResult[] = [];
+    await act(async () => {
+      await app.timers.end();
+      const first = seen.current!();
+      const second = seen.current!();
+      expect(second).toBe(first);
+      results = await Promise.all([first, second]);
+    });
+
+    expect(results).toEqual([
+      { ok: true, sessionId: SESSION_ID },
+      { ok: true, sessionId: SESSION_ID },
+    ]);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(server.sessions.has(SESSION_ID)).toBe(true));
+    expect(sessionPuts(app.requests)).toHaveLength(1);
+  });
+
+  it('answers the failure, keeps the timer, and can be tried again', async () => {
+    const storage = memoryStorage();
+    const server = apiServer();
+    const seen: { current: (() => Promise<HandoffResult>) | null } = { current: null };
+    const app = await launch(server.handler, storage, NOW, <HandoffProbe seen={seen} />);
+    await waitFor(() => expect(app.outbox.getSnapshot().status).toBe('ready'));
+    await waitFor(() => expect(app.timers.getSnapshot().status).toBe('ready'));
+    await act(async () => {
+      await app.timers.start({ topicId: TOPIC.id, plannedMinutes: 25, rules: RULES });
+    });
+    storage.failing.setItemFor = (key) => key === sessionOutboxKey(ADA.id);
+
+    let failed: HandoffResult | null = null;
+    await act(async () => {
+      await app.timers.end();
+      failed = await seen.current!();
+    });
+    expect(failed).toEqual({ ok: false, reason: 'storage_failed' });
+    expect(app.timers.getSnapshot().timer?.finished).not.toBeNull();
+
+    storage.failing.setItemFor = undefined;
+    let retried: HandoffResult | null = null;
+    await act(async () => {
+      retried = await seen.current!();
+    });
+    expect(retried).toEqual({ ok: true, sessionId: SESSION_ID });
+    expect(app.timers.getSnapshot().timer).toBeNull();
   });
 });

@@ -98,8 +98,9 @@ function RootNavigator() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn}>
             <Stack.Screen name="(tabs)" />
-            {/* Focus replaces the tabs while it runs (docs/05 §1). */}
-            <Stack.Screen name="focus" />
+            {/* Focus replaces the tabs while it runs (docs/05 §1). Its back asks to end the
+                session first; the native swipe cannot, so it is off. */}
+            <Stack.Screen name="focus" options={{ gestureEnabled: false }} />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />

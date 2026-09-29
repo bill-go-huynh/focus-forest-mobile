@@ -22,8 +22,8 @@ export function topicColorKey(color: string): TopicColorKey | null {
 }
 
 export interface TopicMarkProps {
-  /** The API color identifier, such as `topic.3`. */
-  color: string;
+  /** The API color identifier, such as `topic.3`; null for a topic nothing is known about. */
+  color: string | null;
   /** The API icon identifier, such as `book`. */
   icon: string;
   /** Icon token size (default `md`, the list icon size). */
@@ -32,7 +32,7 @@ export interface TopicMarkProps {
 
 export function TopicMark({ color, icon, size = 'md' }: TopicMarkProps) {
   const theme = useTheme();
-  const key = topicColorKey(color);
+  const key = color === null ? null : topicColorKey(color);
   const line = {
     stroke: key === null ? theme.colors.text.secondary : theme.colors.topic[key],
     strokeWidth: theme.lineIcon.strokeWidth,

@@ -18,7 +18,7 @@ import {
   type PendingTopic,
   type TopicCreateQueueSnapshot,
 } from './topic-create-queue';
-import type { TopicSnapshotStore, UnlistedTopics } from './topic-snapshot-store';
+import type { SavedTopicLists, TopicSnapshotStore, UnlistedTopics } from './topic-snapshot-store';
 
 /**
  * The create queue wired to the API and the M2.4 caches: a create is sent with PUT
@@ -157,4 +157,48 @@ export function useManagedTopics(status: TopicStatus) {
     return queued.filter((item) => !known.has(item.id));
   }, [confirmed, queued, status]);
   return { confirmed, pending, list };
+}
+
+/** What a screen shows for a topic: its name, icon, and color. */
+export interface TopicIdentity {
+  name: string;
+  icon: string;
+  color: string;
+}
+
+/**
+ * A topic's identity from what the device holds, for a screen that has only its id (the Focus
+ * timer): the newest server answer among the saved lists and the confirmed-but-unlisted topics
+ * (archived ones included), else the create still queued for it. Null when nothing is known;
+ * the caller shows a neutral stand-in. Reads only: nothing is fetched or stored.
+ */
+export function useTopicIdentity(topicId: string): TopicIdentity | null {
+  const { lists, unlisted } = useTopicSnapshot();
+  const { items: queued } = useTopicCreateQueueSnapshot();
+  return useMemo(() => {
+    const confirmed = newestConfirmed(topicId, lists, unlisted);
+    if (confirmed) return { name: confirmed.name, icon: confirmed.icon, color: confirmed.color };
+    const pending = queued.find((item) => item.id === topicId);
+    return pending
+      ? { name: pending.payload.name, icon: pending.payload.icon, color: pending.payload.color }
+      : null;
+  }, [topicId, lists, unlisted, queued]);
+}
+
+function newestConfirmed(
+  topicId: string,
+  lists: SavedTopicLists,
+  unlisted: UnlistedTopics,
+): Topic | null {
+  const found = Object.values(lists).map((list) => ({
+    at: list.savedAt,
+    topic: list.topics.find((topic) => topic.id === topicId),
+  }));
+  const entry = unlisted[topicId];
+  if (entry) found.push({ at: entry.confirmedAt, topic: entry.topic });
+  let newest: { at: number; topic: Topic } | null = null;
+  for (const { at, topic } of found) {
+    if (topic && (!newest || at > newest.at)) newest = { at, topic };
+  }
+  return newest?.topic ?? null;
 }

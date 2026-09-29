@@ -67,6 +67,12 @@ describe('TopicMark (a topic’s icon in its color: never the topic’s only ide
       renderWithProviders(<TopicMark color="#00ff00" icon="book" />);
       for (const shape of shapes()) expect(shape.props.stroke).toBe(theme.colors.text.secondary);
     });
+
+    it('draws a topic nothing is known about (no color) in the same neutral color', () => {
+      renderWithProviders(<TopicMark color={null} icon="topic.default" />);
+      expect(shapes().length).toBeGreaterThan(0);
+      for (const shape of shapes()) expect(shape.props.stroke).toBe(theme.colors.text.secondary);
+    });
   });
 
   it('draws the same placeholder for every identifier until the curated set exists', () => {

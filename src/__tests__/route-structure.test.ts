@@ -78,6 +78,12 @@ describe('route structure', () => {
     expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(/name="focus"/);
   });
 
+  it('turns off the swipe back on Focus: the native gesture cannot ask to end the session first', () => {
+    expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(
+      /name="focus"\s+options=\{\{\s*gestureEnabled: false\s*\}\}/,
+    );
+  });
+
   it('keeps every screen inside the tabs or the auth group, so there is no stray route', () => {
     // Focus is the one screen outside them: it replaces the tabs while it runs.
     const outside = routeFiles(APP).filter(

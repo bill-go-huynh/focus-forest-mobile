@@ -77,7 +77,10 @@ function focusApi(recent: Topic[]) {
   };
   const handler = ({ url, method, body }: FakeRequest): Reply | Promise<Reply> => {
     const { pathname } = new URL(url);
-    if (pathname === '/me/preferences') return { status: 200, body: makePreferences() };
+    // Reduced motion: the Focus screen's progress ring shows each value at once instead of
+    // animating on every tick after these tests land there.
+    if (pathname === '/me/preferences')
+      return { status: 200, body: makePreferences({ reducedMotion: true }) };
     if (state.offline) return new NetworkError();
     if (pathname === '/session-rules')
       return state.rulesReply ?? { status: 200, body: state.rules };
@@ -153,7 +156,7 @@ async function openPicker() {
 const gone = (title: string) => until(() => screen.queryByText(title) === null);
 
 async function expectFocusScreen() {
-  expect(await screen.findByRole('header', { name: 'Focus' })).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Time left' })).toBeOnTheScreen();
   await gone('Choose a topic');
   await gone('Duration');
 }
@@ -263,7 +266,8 @@ describe('the session rules', () => {
     server.state.rules = { version: 3, minValidMinutes: 15, maxPauseMinutes: 45 };
     app?.unmount();
     const before = rulesRequests().length;
-    await openHome();
+    app = renderApp(appRoutes, { initialUrl: '/' });
+    expect(await screen.findByRole('button', { name: 'Resume focus' })).toBeOnTheScreen();
     await waitFor(() => expect(rulesRequests().length).toBeGreaterThan(before));
     await waitFor(async () =>
       expect(JSON.parse((await AsyncStorage.getItem(sessionRulesKey)) ?? '{}').rules?.version).toBe(
@@ -481,8 +485,9 @@ describe('a timer that already exists', () => {
     ['paused', timerState({ pausedAt: Date.now() - MINUTE })],
   ])('reopens a %s timer instead of starting another', async (_mode, existing) => {
     await AsyncStorage.setItem(activeTimerKey(USER), JSON.stringify(existing));
+    app = renderApp(appRoutes, { initialUrl: '/' });
 
-    fireEvent.press(await openHome());
+    fireEvent.press(await screen.findByRole('button', { name: 'Resume focus' }));
 
     await expectFocusScreen();
     expect(screen.queryByText('Choose a topic')).toBeNull();
