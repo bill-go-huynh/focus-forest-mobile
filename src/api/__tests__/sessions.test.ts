@@ -7,6 +7,7 @@ import {
   sessionSchema,
   sessionSubmissionBodySchema,
   submitSession,
+  updateSessionNote,
 } from '../sessions';
 
 const ID = '0192f1a2-3b4c-7d5e-8f60-718293a4b5c6';
@@ -162,5 +163,42 @@ describe('sessionErrorCode', () => {
     expect(sessionErrorCode(new HttpError(500, coded(500, 'session_overlap').body))).toBeNull();
     expect(sessionErrorCode(new HttpError(422, nestError(422, 'x')))).toBeNull();
     expect(sessionErrorCode(new NetworkError())).toBeNull();
+  });
+});
+
+describe('updateSessionNote (PATCH /me/sessions/:id/note)', () => {
+  it('sends only the note to the note path and answers the validated session', async () => {
+    const answer = makeSessionResult({ id: ID, note: 'Chapter 4' });
+    const { api, requests } = await setup(() => ({ status: 200, body: answer }));
+
+    await expect(updateSessionNote(api.client, ID, 'Chapter 4')).resolves.toEqual(answer);
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({
+      url: `https://api.example.com/me/sessions/${ID}/note`,
+      method: 'PATCH',
+      body: { note: 'Chapter 4' },
+    });
+  });
+
+  it('clears with an explicit null', async () => {
+    const { api, requests } = await setup(() => ({ status: 200, body: RESULT }));
+    await updateSessionNote(api.client, ID, null);
+    expect(requests[0]!.body).toEqual({ note: null });
+  });
+
+  it('refuses a response that breaks the contract', async () => {
+    const { api } = await setup(() => ({ status: 200, body: { ...RESULT, note: 4 } }));
+    await expect(updateSessionNote(api.client, ID, 'x')).rejects.toBeInstanceOf(
+      InvalidResponseError,
+    );
+  });
+
+  it('passes a 404 on as an HttpError', async () => {
+    const { api } = await setup(() => ({
+      status: 404,
+      body: nestError(404, 'Session not found.'),
+    }));
+    await expect(updateSessionNote(api.client, ID, 'x')).rejects.toMatchObject({ status: 404 });
   });
 });

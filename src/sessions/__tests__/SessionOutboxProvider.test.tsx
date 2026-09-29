@@ -21,6 +21,8 @@ import { TopicCacheProvider } from '../../topics/TopicCacheProvider';
 import { createTopicCreateQueue, TopicCreateQueueProvider } from '../../topics/topic-create-sync';
 import { topicSnapshotKey, TopicSnapshotStore } from '../../topics/topic-snapshot-store';
 import { createSessionOutbox } from '../app-session-outbox';
+import { CompletionReceipts } from '../completion-receipts';
+import { CompletionReceiptsProvider } from '../CompletionReceiptsProvider';
 import { sessionOutboxKey, type SessionOutbox } from '../session-outbox';
 import { SessionOutboxProvider, useFinishedTimerHandoff } from '../SessionOutboxProvider';
 import type { HandoffResult } from '../session-handoff';
@@ -143,11 +145,13 @@ async function launch(
     createId: () => SESSION_ID,
     report: () => undefined,
   });
+  const receipts = new CompletionReceipts({ storage, report: () => undefined });
   const outbox = createSessionOutbox({
     storage,
     client: api.client,
     queryClient,
     topicQueue,
+    receipts,
     report: () => undefined,
     now: () => now,
   });
@@ -158,7 +162,9 @@ async function launch(
         <ActiveTimerProvider store={timers}>
           <TopicCacheProvider store={snapshots}>
             <TopicCreateQueueProvider queue={topicQueue}>
-              <SessionOutboxProvider outbox={outbox}>{children}</SessionOutboxProvider>
+              <CompletionReceiptsProvider receipts={receipts}>
+                <SessionOutboxProvider outbox={outbox}>{children}</SessionOutboxProvider>
+              </CompletionReceiptsProvider>
             </TopicCreateQueueProvider>
           </TopicCacheProvider>
         </ActiveTimerProvider>

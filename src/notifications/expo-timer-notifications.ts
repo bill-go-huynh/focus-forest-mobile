@@ -110,3 +110,38 @@ export function createExpoTimerNotificationAdapter(): TimerNotificationAdapter {
     cancel: (identifier) => Notifications.cancelScheduledNotificationAsync(identifier),
   };
 }
+
+/** Who and which session a tapped timer notification is about: a hint for navigation only. */
+export interface TimerNotificationTap {
+  userId: string;
+  sessionId: string;
+}
+
+function tapOf(response: Notifications.NotificationResponse): TimerNotificationTap | null {
+  if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return null;
+  const data = response.notification.request.content.data as Record<string, unknown> | null;
+  if (!data || data.kind !== KIND) return null;
+  const { userId, sessionId } = data;
+  return typeof userId === 'string' && typeof sessionId === 'string' ? { userId, sessionId } : null;
+}
+
+/**
+ * Calls `listener` when the user taps a timer notification: while the app runs, and once for
+ * the tap that launched it (read, then cleared). The event in the data is not passed on: what
+ * the session shows comes from the session itself. Returns the unsubscribe.
+ */
+export function onTimerNotificationTap(listener: (tap: TimerNotificationTap) => void): () => void {
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const tap = tapOf(response);
+    if (tap) listener(tap);
+  });
+  void Notifications.getLastNotificationResponseAsync()
+    .then((response) => {
+      const tap = response ? tapOf(response) : null;
+      if (!tap) return;
+      listener(tap);
+      return Notifications.clearLastNotificationResponseAsync();
+    })
+    .catch(() => undefined);
+  return () => subscription.remove();
+}

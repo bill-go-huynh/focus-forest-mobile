@@ -189,7 +189,7 @@ describe('the countdown', () => {
     await openFocus();
 
     clock = T0 + 25 * MINUTE + 3 * MINUTE;
-    await shows('Session complete');
+    await shows('Focus session finished');
 
     const items = await outboxItems();
     expect(items).toHaveLength(1);
@@ -224,7 +224,7 @@ describe('leaving the app and coming back', () => {
     clock = T0 + 90 * MINUTE;
     await appState.emit('active');
 
-    await shows('Session complete');
+    await shows('Focus session finished');
     expect((await outboxItems())[0]?.payload.endedAt).toBe(
       new Date(T0 + 25 * MINUTE).toISOString(),
     );
@@ -239,7 +239,7 @@ describe('leaving the app and coming back', () => {
     clock = T0 + 2 * 60 * MINUTE;
     await appState.emit('active');
 
-    await shows('Focus session ended');
+    await shows('Focus session finished');
     const [item] = await outboxItems();
     const limit = new Date(T0 + 35 * MINUTE).toISOString();
     expect(item?.payload.endedAt).toBe(limit);
@@ -354,7 +354,7 @@ describe('ending early', () => {
     const confirm = await screen.findAllByRole('button', { name: 'End session' });
     fireEvent.press(confirm[confirm.length - 1]!);
 
-    await shows('Focus session ended');
+    await shows('Focus session finished');
     expect(screen.getByText('3 min focused')).toBeOnTheScreen();
     expect((await outboxItems())[0]?.payload.endedAt).toBe(new Date(T0 + 3 * MINUTE).toISOString());
     expect(await storedTimer()).toBeNull();
@@ -369,7 +369,7 @@ describe('ending early', () => {
     clock = T0 + 40 * MINUTE;
     fireEvent.press(confirm[confirm.length - 1]!);
 
-    await shows('Session complete');
+    await shows('Focus session finished');
     expect((await outboxItems())[0]?.payload.endedAt).toBe(
       new Date(T0 + 25 * MINUTE).toISOString(),
     );
@@ -384,7 +384,7 @@ describe('ending early', () => {
     const confirm = await screen.findAllByRole('button', { name: 'End session' });
     fireEvent.press(confirm[confirm.length - 1]!);
 
-    await shows('Focus session ended');
+    await shows('Focus session finished');
     expect((await outboxItems())[0]?.payload).toMatchObject({
       endedAt: new Date(T0 + 8 * MINUTE).toISOString(),
       pauseIntervals: [
@@ -425,7 +425,7 @@ describe('going back', () => {
     const confirm = await screen.findAllByRole('button', { name: 'End session' });
     fireEvent.press(confirm[confirm.length - 1]!);
 
-    await shows('Focus session ended');
+    await shows('Focus session finished');
     expect((await outboxItems())[0]?.payload.endedAt).toBe(new Date(T0 + 6 * MINUTE).toISOString());
     fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     expect(await screen.findByRole('button', { name: 'Start Focus' })).toBeOnTheScreen();
@@ -444,7 +444,7 @@ describe('a session that already ended', () => {
 
     renderApp(appRoutes, { initialUrl: '/focus' });
 
-    await shows('Session complete');
+    await shows('Focus session finished');
     expect(screen.queryByRole('button', { name: 'Time left' })).toBeNull();
     expect(await outboxItems()).toHaveLength(1);
     expect(await storedTimer()).toBeNull();
@@ -465,7 +465,7 @@ describe('a session that already ended', () => {
     writeNormally();
     fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
 
-    await shows('Session complete');
+    await shows('Focus session finished');
     expect(await outboxItems()).toHaveLength(1);
     expect(await storedTimer()).toBeNull();
   });

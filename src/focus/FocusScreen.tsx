@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { announce, MIN_TOUCH_TARGET } from '../accessibility';
+import { useCompletionIntents } from '../completion/CompletionIntentsProvider';
 import { Button } from '../components/Button';
 import { Confirmation } from '../components/Confirmation';
 import { InlineStatus } from '../components/InlineStatus';
@@ -25,8 +26,6 @@ import { formatMinutes } from './duration';
 import { useWallClock } from './wall-clock';
 
 type Notice = { message: string; detail?: string };
-
-const MINUTE = 60_000;
 
 /** Shown when nothing on the device knows the topic any more: the timer works the same. */
 const UNKNOWN_TOPIC_NAME = 'Focus topic';
@@ -69,7 +68,7 @@ export function FocusScreen() {
   if (status !== 'ready') return <Screen>{null}</Screen>;
   if (timer && !timer.finished) return <RunningFocus timer={timer} />;
   if (timer) return <FinishingFocus />;
-  if (last) return <FocusFinished session={last} />;
+  if (last) return <HandedOff session={last} />;
   return <NoFocus message="No focus session is running." />;
 }
 
@@ -270,21 +269,21 @@ function FinishingFocus() {
 }
 
 /**
- * The minimal finished state. M2.12 builds Session Completion on this contract: `session.id`
- * is the session's id in the outbox (`items`, or `synced` once the server answered it).
+ * The session was handed off: Session Completion opens in place of Focus (the navigator
+ * replaces this route), whether it ended here or was already over when Focus opened.
  */
-function FocusFinished({ session }: { session: TimerState }) {
+function HandedOff({ session }: { session: TimerState }) {
   const theme = useTheme();
-  const timers = useActiveTimerStore();
-  const leave = useLeave();
-  const view = derive(session, session.finished?.at ?? timers.now());
-  const minutes = Math.floor(view.focusedMilliseconds / MINUTE);
+  const intents = useCompletionIntents();
+  const { userId } = useActiveTimer();
+  useEffect(() => {
+    if (userId) intents.request({ userId, sessionId: session.id, source: 'foreground' });
+  }, [intents, userId, session.id]);
   return (
-    <Screen title={view.finishReason === 'completed' ? 'Session complete' : 'Focus session ended'}>
-      <Text style={[theme.type.bodyStrong, { color: theme.colors.text.primary }]}>
-        {`${minutes} min focused`}
+    <Screen>
+      <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
+        Saving your session.
       </Text>
-      <Button variant="primary" label="Done" onPress={leave} />
     </Screen>
   );
 }

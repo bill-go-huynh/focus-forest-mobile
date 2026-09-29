@@ -9,6 +9,7 @@ import { quarantineKeyOf, type StorageIssue } from '../../common/stored-json';
 import { makeSessionResult, makeSubmissionBody } from '../../test-utils/sessions';
 import { memoryStorage } from '../../test-utils/storage';
 import type { SessionSubmission, SessionSubmissionBody } from '../../timer/submission';
+import { completionReceiptsKey, CompletionReceipts, receiptFor } from '../completion-receipts';
 import { sessionOutboxKey, SessionOutbox } from '../session-outbox';
 
 const ADA = '11111111-1111-4111-8111-111111111111';
@@ -76,12 +77,14 @@ function launch({
   synced = () => true,
   syncTopics = jest.fn(async () => undefined),
   onSynced = jest.fn(),
+  keepReceipt,
 }: {
   storage?: Storage;
   send?: Send;
   synced?: (topicId: string) => boolean;
   syncTopics?: jest.Mock<Promise<void>, []>;
   onSynced?: jest.Mock;
+  keepReceipt?: (userId: string, session: FocusSession) => Promise<boolean>;
 } = {}) {
   const issues: StorageIssue[] = [];
   const isTopicSynced = jest.fn(synced);
@@ -93,6 +96,7 @@ function launch({
     isTopicSynced,
     syncTopics,
     onSynced,
+    keepReceipt,
   });
   return { outbox, storage, issues, isTopicSynced, syncTopics, onSynced };
 }
@@ -845,5 +849,96 @@ describe('telling the app a session synced (topic lists derive their last use fr
     expect(onSynced).not.toHaveBeenCalled();
     expect(outbox.getSnapshot()).toMatchObject({ userId: GRACE, items: [] });
     expect(outbox.getSnapshot().synced).toEqual({});
+  });
+});
+
+describe('the completion receipt: kept before the session leaves the outbox', () => {
+  /** Receipts over the same device storage, the way the app wires them. */
+  async function withReceipts(storage: Storage, send: Send) {
+    const receipts = new CompletionReceipts({ storage, report: () => undefined });
+    await receipts.activate(ADA);
+    const app = launch({ storage, send, keepReceipt: (userId, s) => receipts.keep(userId, s) });
+    await app.outbox.activate(ADA);
+    return { ...app, receipts };
+  }
+  const storedReceipts = (storage: Storage) =>
+    (
+      JSON.parse(storage.data.get(completionReceiptsKey(ADA)) ?? '{"receipts":[]}') as {
+        receipts: FocusSession[];
+      }
+    ).receipts;
+
+  it("stores the server's answer while the session is still queued, and only then removes it", async () => {
+    const storage = memoryStorage();
+    const queuedWhenKept: unknown[][] = [];
+    const { outbox } = await readyOutbox({
+      storage,
+      keepReceipt: async () => {
+        queuedWhenKept.push(storedItems(storage));
+        return true;
+      },
+    });
+    await outbox.enqueue(ADA, submission(S1));
+
+    await outbox.flush();
+
+    expect(queuedWhenKept).toEqual([[expect.objectContaining({ id: S1 })]]);
+    expect(storedItems(storage)).toEqual([]);
+  });
+
+  it('keeps the session, unchanged, when its receipt cannot be stored; a replay stores it later', async () => {
+    const srv = server();
+    const storage = memoryStorage();
+    storage.failing.setItemFor = (key) => key === completionReceiptsKey(ADA);
+    const { outbox, receipts } = await withReceipts(storage, srv.send);
+    await outbox.enqueue(ADA, submission(S1));
+    await outbox.enqueue(ADA, second);
+
+    await outbox.flush();
+
+    // Both answered; neither left, and the next one was still tried.
+    expect(srv.payloads.map((p) => p.id)).toEqual([S1, S2]);
+    expect(storedItems(storage).map((item) => item.id)).toEqual([S1, S2]);
+    expect(storedItems(storage)[0]?.payload).toStrictEqual(submission(S1).body);
+    expect(storedItems(storage)[0]?.state).toBe('pending');
+    expect(outbox.getSnapshot().synced).toEqual({});
+
+    storage.failing.setItemFor = undefined;
+    await outbox.flush();
+
+    expect(srv.stored.size).toBe(2);
+    expect(storedItems(storage)).toEqual([]);
+    expect(storedReceipts(storage).map((r) => r.id)).toEqual([S1, S2]);
+    expect(receiptFor(receipts.getSnapshot(), S1)?.id).toBe(S1);
+  });
+
+  it('keeps both when the receipt is stored but the removal is not; the replay adds no second receipt', async () => {
+    const srv = server();
+    const storage = memoryStorage();
+    storage.failing.setItemFor = (key) => key === sessionOutboxKey(ADA);
+    const { outbox } = await withReceipts(storage, srv.send);
+    storage.failing.setItemFor = undefined;
+    await outbox.enqueue(ADA, submission(S1));
+    storage.failing.setItemFor = (key) => key === sessionOutboxKey(ADA);
+
+    await outbox.flush();
+    expect(storedItems(storage).map((item) => item.id)).toEqual([S1]);
+    expect(storedReceipts(storage).map((r) => r.id)).toEqual([S1]);
+
+    storage.failing.setItemFor = undefined;
+    await outbox.flush();
+
+    expect(srv.payloads).toHaveLength(2);
+    expect(storedItems(storage)).toEqual([]);
+    expect(storedReceipts(storage).map((r) => r.id)).toEqual([S1]);
+  });
+
+  it('keeps the receipt for the user whose session it is', async () => {
+    const keepReceipt = jest.fn(async () => true);
+    const { outbox } = await readyOutbox({ keepReceipt });
+    await outbox.enqueue(ADA, submission(S1));
+    await outbox.flush();
+
+    expect(keepReceipt).toHaveBeenCalledWith(ADA, result(S1, submission(S1).body));
   });
 });

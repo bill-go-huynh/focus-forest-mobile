@@ -50,6 +50,7 @@ export {
   sessionSchema,
   sessionSubmissionBodySchema,
   submitSession,
+  updateSessionNote,
   type FocusSession,
   type SessionErrorCode,
 } from './sessions';

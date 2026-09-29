@@ -41,6 +41,19 @@ export function toSubmission(state: TimerState): SessionSubmission {
   };
 }
 
+/**
+ * The time focused in a submission: from start to end, less the pauses. What the timer engine
+ * derived for the finished timer it was built from (tested against `derive`), for showing a
+ * session the server has not answered yet. The server's evaluation stays the truth.
+ */
+export function focusedMillisecondsOf(body: SessionSubmissionBody): number {
+  const paused = body.pauseIntervals.reduce(
+    (sum, pause) => sum + (Date.parse(pause.endedAt) - Date.parse(pause.startedAt)),
+    0,
+  );
+  return Date.parse(body.endedAt) - Date.parse(body.startedAt) - paused;
+}
+
 /** UTC with milliseconds, which the API reads as an instant with an explicit offset. */
 function iso(instant: Instant): string {
   return new Date(instant).toISOString();

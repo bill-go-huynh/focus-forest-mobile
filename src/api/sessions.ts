@@ -95,6 +95,23 @@ export function submitSession(
 }
 
 /**
+ * Sets a stored session's note (A2.6: PATCH /me/sessions/:id/note), the only part of a session
+ * that can change; null clears it. Idempotent by value. Answers the whole session. The note is
+ * private: never logged. This call does not retry by itself.
+ */
+export function updateSessionNote(
+  client: ApiClient,
+  id: string,
+  note: string | null,
+): Promise<FocusSession> {
+  return client.request(`/me/sessions/${encodeURIComponent(id)}/note`, {
+    method: 'PATCH',
+    body: { note },
+    schema: sessionSchema,
+  });
+}
+
+/**
  * The stable session error codes. 409: `session_overlap` (another saved session covers this
  * time), `session_id_conflict` (the id was used for another submission). 422: the evaluator's
  * rejections, `ends_in_future` (the device clock is ahead; the same payload succeeds later), and

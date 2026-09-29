@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import {
   createExpoTimerNotificationAdapter,
   FOCUS_TIMER_CHANNELS,
+  onTimerNotificationTap,
 } from '../expo-timer-notifications';
 import { TIMER_NOTIFICATION_COPY, type TimerNotification } from '../timer-notifications';
 
@@ -17,6 +18,10 @@ jest.mock('expo-notifications', () => ({
   cancelScheduledNotificationAsync: jest.fn(async () => undefined),
   setNotificationChannelAsync: jest.fn(async () => null),
   setNotificationHandler: jest.fn(),
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponseAsync: jest.fn(async () => null),
+  clearLastNotificationResponseAsync: jest.fn(async () => undefined),
 }));
 
 const mocked = jest.mocked(Notifications);
@@ -183,5 +188,69 @@ describe('in the foreground', () => {
     await adapter.cancel(notification.identifier);
 
     expect(mocked.setNotificationHandler).not.toHaveBeenCalled();
+  });
+});
+
+describe('a tap on a timer notification', () => {
+  const TAP = 'expo.modules.notifications.actions.DEFAULT';
+  const response = (data: unknown, actionIdentifier = TAP) =>
+    ({ actionIdentifier, notification: { request: request(data) } }) as never;
+  const timerData = {
+    kind: 'focus-timer',
+    userId: notification.userId,
+    sessionId: notification.sessionId,
+    event: 'pause_limit',
+    at: notification.at,
+    sound: true,
+  };
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('passes on only who and which session: the event is a hint, never the outcome', async () => {
+    const taps = jest.fn();
+    onTimerNotificationTap(taps);
+    const [[listener]] = mocked.addNotificationResponseReceivedListener.mock.calls as unknown as [
+      [(r: unknown) => void],
+    ];
+
+    listener(response(timerData));
+
+    expect(taps).toHaveBeenCalledWith({
+      userId: notification.userId,
+      sessionId: notification.sessionId,
+    });
+  });
+
+  it('ignores other notifications and other actions', async () => {
+    const taps = jest.fn();
+    onTimerNotificationTap(taps);
+    const [[listener]] = mocked.addNotificationResponseReceivedListener.mock.calls as unknown as [
+      [(r: unknown) => void],
+    ];
+
+    listener(response({ kind: 'something-else', userId: 'u', sessionId: 's' }));
+    listener(response(timerData, 'dismiss'));
+    listener(response({ kind: 'focus-timer', userId: 4 }));
+
+    expect(taps).not.toHaveBeenCalled();
+  });
+
+  it('picks up the tap that launched the app, once', async () => {
+    mocked.getLastNotificationResponseAsync.mockResolvedValueOnce(response(timerData));
+    const taps = jest.fn();
+
+    onTimerNotificationTap(taps);
+    await flush();
+
+    expect(taps).toHaveBeenCalledTimes(1);
+    expect(mocked.clearLastNotificationResponseAsync).toHaveBeenCalled();
+  });
+
+  it('stops listening when asked', () => {
+    const remove = jest.fn();
+    mocked.addNotificationResponseReceivedListener.mockReturnValueOnce({ remove } as never);
+
+    onTimerNotificationTap(jest.fn())();
+
+    expect(remove).toHaveBeenCalled();
   });
 });

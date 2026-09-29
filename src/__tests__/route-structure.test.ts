@@ -84,10 +84,18 @@ describe('route structure', () => {
     );
   });
 
+  it('puts Session Completion outside the tabs too, as a full-screen takeover (docs/01, docs/05)', () => {
+    expect(routeFiles(APP).filter((file) => /completion/i.test(relative(APP, file)))).toEqual([
+      join(APP, 'completion', '[sessionId].tsx'),
+    ]);
+    expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(/name="completion\/\[sessionId\]"/);
+  });
+
   it('keeps every screen inside the tabs or the auth group, so there is no stray route', () => {
-    // Focus is the one screen outside them: it replaces the tabs while it runs.
+    // Focus and Session Completion are the screens outside them: full-screen takeovers.
+    const takeovers = [join(APP, 'focus.tsx'), join(APP, 'completion', '[sessionId].tsx')];
     const outside = routeFiles(APP).filter(
-      (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && file !== join(APP, 'focus.tsx'),
+      (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && !takeovers.includes(file),
     );
     expect(outside).toEqual([]);
   });

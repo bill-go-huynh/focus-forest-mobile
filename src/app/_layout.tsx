@@ -14,9 +14,21 @@ import {
   useSession,
 } from '../api';
 import { AuthFlowProvider, useAuthFlow } from '../auth';
-import { createAppTimerNotifications, TimerNotificationSync } from '../notifications';
+import { CompletionIntents, CompletionIntentsProvider, CompletionNavigator } from '../completion';
+import {
+  createAppTimerNotifications,
+  onTimerNotificationTap,
+  TimerNotificationSync,
+} from '../notifications';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
-import { createAppSessionOutbox, SessionOutboxProvider } from '../sessions';
+import {
+  createAppCompletionReceipts,
+  createAppSessionNotes,
+  createAppSessionOutbox,
+  CompletionReceiptsProvider,
+  SessionNotesProvider,
+  SessionOutboxProvider,
+} from '../sessions';
 import { useTheme } from '../theme';
 import { ActiveTimerProvider, createAppTimerStore } from '../timer';
 import {
@@ -39,32 +51,53 @@ export default function RootLayout() {
   const [topicCreates] = useState(() =>
     createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
   );
+  const [receipts] = useState(createAppCompletionReceipts);
   const [sessions] = useState(() =>
-    createAppSessionOutbox({ client: api.client, queryClient, topicQueue: topicCreates }),
+    createAppSessionOutbox({ client: api.client, queryClient, topicQueue: topicCreates, receipts }),
   );
+  const [notes] = useState(() => createAppSessionNotes({ client: api.client, sessions, receipts }));
+  const [completions] = useState(() => new CompletionIntents());
+  // Back in the foreground, after the timer is settled: the OS notifications are brought in
+  // line, and what waits for the server is tried again (sessions first, then their notes).
+  const [onForeground] = useState(() => () => {
+    timerNotifications.reconcileLater();
+    void sessions.flush().then(() => notes.flush());
+  });
 
   return (
     <ApiProvider api={api} queryClient={queryClient}>
       {/* The signed-in user's timer is restored (and settled) as soon as they are known. */}
-      <ActiveTimerProvider store={timers} onForeground={timerNotifications.reconcileLater}>
+      <ActiveTimerProvider store={timers} onForeground={onForeground}>
         {/* The OS announces the session's end in the background, planned from the timer. */}
         <TimerNotificationSync coordinator={timerNotifications} />
         {/* The signed-in user's last known topics are shown even when a launch is offline. */}
         <TopicCacheProvider store={topics}>
           {/* Topics created offline are kept and sent when the server can be reached. */}
           <TopicCreateQueueProvider queue={topicCreates}>
-            {/* A finished timer's session is queued on the device, then sent when it can be. */}
-            <SessionOutboxProvider outbox={sessions}>
-              {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-              <AppearanceProviders>
-                <SafeAreaProvider>
-                  <AuthFlowProvider>
-                    <RootNavigator />
-                  </AuthFlowProvider>
-                  <ThemedStatusBar />
-                </SafeAreaProvider>
-              </AppearanceProviders>
-            </SessionOutboxProvider>
+            {/* The server's answers for recent sessions, kept so a tap opens them after a restart. */}
+            <CompletionReceiptsProvider receipts={receipts}>
+              {/* A finished timer's session is queued on the device, then sent when it can be. */}
+              <SessionOutboxProvider outbox={sessions}>
+                {/* Notes wait on the device until their session is on the server. */}
+                <SessionNotesProvider notes={notes}>
+                  {/* Which Session Completion to open: a session ended here, or a tap. */}
+                  <CompletionIntentsProvider
+                    intents={completions}
+                    listenForTaps={onTimerNotificationTap}
+                  >
+                    {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+                    <AppearanceProviders>
+                      <SafeAreaProvider>
+                        <AuthFlowProvider>
+                          <RootNavigator />
+                        </AuthFlowProvider>
+                        <ThemedStatusBar />
+                      </SafeAreaProvider>
+                    </AppearanceProviders>
+                  </CompletionIntentsProvider>
+                </SessionNotesProvider>
+              </SessionOutboxProvider>
+            </CompletionReceiptsProvider>
           </TopicCreateQueueProvider>
         </TopicCacheProvider>
       </ActiveTimerProvider>
@@ -105,12 +138,15 @@ function RootNavigator() {
             {/* Focus replaces the tabs while it runs (docs/05 §1). Its back asks to end the
                 session first; the native swipe cannot, so it is off. */}
             <Stack.Screen name="focus" options={{ gestureEnabled: false }} />
+            {/* Session Completion, a full-screen takeover too; Done returns Home. */}
+            <Stack.Screen name="completion/[sessionId]" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />
           </Stack.Protected>
         </Stack>
       </View>
+      {signedIn ? <CompletionNavigator /> : null}
       {waitingForPreferences ? <LaunchScreen overlay /> : null}
     </View>
   );

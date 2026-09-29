@@ -1,5 +1,6 @@
-import { toSubmission } from '../submission';
+import { focusedMillisecondsOf, toSubmission } from '../submission';
 import {
+  derive,
   end,
   pause,
   resume,
@@ -193,6 +194,34 @@ describe('agreement with the server evaluator (A2.4)', () => {
     expect(body.endedAt).toBe(iso(endedAt));
     expect(body.pauseIntervals).toEqual(
       pauses.map(([from, to]) => ({ startedAt: iso(from), endedAt: iso(to) })),
+    );
+  });
+});
+
+describe('focusedMillisecondsOf (a queued submission, for Session Completion)', () => {
+  it.each<[string, Step[]]>([
+    ['completed', [['settle', '10:30']]],
+    ['ended early', [['end', '10:12']]],
+    [
+      'with pauses',
+      [
+        ['pause', '10:05'],
+        ['resume', '10:07'],
+        ['pause', '10:10'],
+        ['end', '10:20'],
+      ],
+    ],
+    [
+      'at the pause limit',
+      [
+        ['pause', '10:05'],
+        ['settle', '11:00'],
+      ],
+    ],
+  ])('agrees with the timer engine when %s', (_case, steps) => {
+    const state = run(steps);
+    expect(focusedMillisecondsOf(toSubmission(state).body)).toBe(
+      derive(state, state.finished!.at).focusedMilliseconds,
     );
   });
 });

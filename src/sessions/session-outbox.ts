@@ -49,7 +49,7 @@ export interface SessionOutboxSnapshot {
   items: QueuedSession[];
   /**
    * Sessions synced by this process, as the server answered them (for the completion screen).
-   * Memory only: once stored on the server, history is the durable place to read them.
+   * Memory only: the completion receipt is what outlives the process.
    */
   synced: Record<string, FocusSession>;
 }
@@ -74,6 +74,12 @@ export interface SessionOutboxOptions {
    * removal never waits on it, and a failure in it changes nothing here.
    */
   onSynced?: (userId: string, session: FocusSession) => void;
+  /**
+   * Stores the validated answer durably (the completion receipt), before the session may leave
+   * the outbox; resolves false when it could not be. Until it is stored, the session stays
+   * queued and is replayed (200) on a later flush, so its answer is never known only in memory.
+   */
+  keepReceipt?: (userId: string, session: FocusSession) => Promise<boolean>;
 }
 
 const LOWERCASE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -276,9 +282,12 @@ export class SessionOutbox {
 
       if (outcome.kind === 'synced') {
         const { session } = outcome;
-        const removed = await this.commit(generation, (items) =>
-          items.filter((item) => item.id !== next.id),
-        );
+        const kept = (await this.options.keepReceipt?.(userId, session).catch(() => false)) ?? true;
+        if (generation !== this.generation) return;
+        // Not kept: it stays queued, and the next flush replays it (200) and tries again.
+        const removed =
+          kept &&
+          (await this.commit(generation, (items) => items.filter((item) => item.id !== next.id)));
         // Not stored: it stays queued, and the next flush replays it (200).
         if (removed && generation === this.generation) {
           this.set({ ...this.snapshot, synced: { ...this.snapshot.synced, [next.id]: session } });
