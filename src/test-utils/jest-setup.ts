@@ -18,6 +18,14 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// expo-notifications is native: tests get the OS in memory (src/test-utils/notifications-mock).
+jest.mock('expo-notifications', () => jest.requireActual('./notifications-mock').notificationsMock);
+beforeEach(() => {
+  (
+    jest.requireActual('./notifications-mock') as typeof import('./notifications-mock')
+  ).resetNotificationsMock();
+});
+
 configure({ asyncUtilTimeout: 5_000 });
 notifyManager.setNotifyFunction((notify) => {
   act(notify);

@@ -13,6 +13,7 @@ import { sessionRulesKey } from '../focus/session-rules';
 import { sessionOutboxKey } from '../sessions/session-outbox';
 import { activeTimerKey } from '../timer/active-timer-store';
 import type { TimerState } from '../timer/timer-engine';
+import { scheduledNotifications } from '../test-utils/notifications-mock';
 import { topicCreateQueueKey } from '../topics/topic-create-queue';
 import { topicSnapshotKey, TopicSnapshotStore } from '../topics/topic-snapshot-store';
 
@@ -525,5 +526,42 @@ describe('at 200% text', () => {
     expect(screen.getByRole('button', { name: 'Change duration for Reading' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Change duration for Piano' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'New topic' })).toBeOnTheScreen();
+  });
+});
+
+describe('the completion notification', () => {
+  const os = () =>
+    jest.requireMock('expo-notifications') as {
+      getPermissionsAsync: jest.Mock;
+      requestPermissionsAsync: jest.Mock;
+    };
+
+  it('asks for permission when the first session starts, not before, and schedules it at C', async () => {
+    await openHome();
+    expect(os().requestPermissionsAsync).not.toHaveBeenCalled();
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Start Focus' }));
+    fireEvent.press(await topicRow('Reading'));
+    await expectFocusScreen();
+    const timer = await storedTimer();
+
+    await waitFor(() => expect(scheduledNotifications()).toHaveLength(1));
+    expect(os().requestPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(scheduledNotifications()[0]).toMatchObject({
+      identifier: `focus-timer.${timer!.id}`,
+      trigger: { date: timer!.startedAt + 25 * MINUTE },
+    });
+  });
+
+  it('never holds the session back when notifications are refused', async () => {
+    os().getPermissionsAsync.mockResolvedValue({ status: 'denied', canAskAgain: false });
+
+    fireEvent.press(await openHome());
+    fireEvent.press(await topicRow('Reading'));
+
+    await expectFocusScreen();
+    expect(await storedTimer()).toMatchObject({ topicId: reading.id, plannedMinutes: 25 });
+    expect(os().requestPermissionsAsync).not.toHaveBeenCalled();
+    expect(scheduledNotifications()).toEqual([]);
   });
 });

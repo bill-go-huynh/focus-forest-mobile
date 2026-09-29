@@ -14,6 +14,7 @@ import {
   useSession,
 } from '../api';
 import { AuthFlowProvider, useAuthFlow } from '../auth';
+import { createAppTimerNotifications, TimerNotificationSync } from '../notifications';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
 import { createAppSessionOutbox, SessionOutboxProvider } from '../sessions';
 import { useTheme } from '../theme';
@@ -33,6 +34,7 @@ export default function RootLayout() {
     createApi({ baseUrl: readApiBaseUrl, fetch: globalThis.fetch, store: secureTokenStore }),
   );
   const [timers] = useState(createAppTimerStore);
+  const [timerNotifications] = useState(() => createAppTimerNotifications(timers));
   const [topics] = useState(createAppTopicStore);
   const [topicCreates] = useState(() =>
     createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
@@ -44,7 +46,9 @@ export default function RootLayout() {
   return (
     <ApiProvider api={api} queryClient={queryClient}>
       {/* The signed-in user's timer is restored (and settled) as soon as they are known. */}
-      <ActiveTimerProvider store={timers}>
+      <ActiveTimerProvider store={timers} onForeground={timerNotifications.reconcileLater}>
+        {/* The OS announces the session's end in the background, planned from the timer. */}
+        <TimerNotificationSync coordinator={timerNotifications} />
         {/* The signed-in user's last known topics are shown even when a launch is offline. */}
         <TopicCacheProvider store={topics}>
           {/* Topics created offline are kept and sent when the server can be reached. */}

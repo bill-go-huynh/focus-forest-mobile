@@ -101,12 +101,23 @@ describe('route structure', () => {
   });
 
   it('asks for no notification permission at launch (docs/02: ask in context)', () => {
-    const pkg = JSON.parse(readFileSync(join(APP, '..', '..', 'package.json'))) as {
-      dependencies: Record<string, string>;
-    };
-    expect(Object.keys(pkg.dependencies)).not.toContain('expo-notifications');
+    // Local timer notifications arrive in Phase 2 (M2.10): only their adapter may use
+    // expo-notifications, and permission is asked when a timer first needs it, never by a route.
+    const SRC = join(APP, '..');
+    const users = routeFiles(SRC).filter(
+      (file) =>
+        !file.includes(`${sep}__tests__${sep}`) &&
+        !file.includes(`${sep}test-utils${sep}`) &&
+        /expo-notifications/.test(readFileSync(file)),
+    );
+    expect(users.map((file) => relative(SRC, file))).toEqual([
+      join('notifications', 'expo-timer-notifications.ts'),
+    ]);
     for (const file of routeFiles(APP)) {
-      expect(readFileSync(file)).not.toMatch(/requestPermissions|expo-notifications/);
+      expect(readFileSync(file)).not.toMatch(/requestPermission|expo-notifications/);
     }
+    // Phase 2 asks for no exact alarms: the OS may deliver a little late in Doze; the timer's
+    // truth is its timestamps either way.
+    expect(readFileSync(join(SRC, '..', 'app.json'))).not.toMatch(/EXACT_ALARM/);
   });
 });

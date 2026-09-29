@@ -367,11 +367,14 @@ describe('notifications (docs/12: Phase 1 builds the structure; each phase adds 
   });
 
   it('never asks for notification permission and never sends one', async () => {
-    const pkg = jest.requireActual('../../package.json') as {
-      dependencies: Record<string, string>;
+    // Only a running focus timer uses notifications (M2.10); Settings never does.
+    const os = jest.requireMock('expo-notifications') as {
+      requestPermissionsAsync: jest.Mock;
+      scheduleNotificationAsync: jest.Mock;
     };
     await openSettings();
-    expect(Object.keys(pkg.dependencies)).not.toContain('expo-notifications');
+    expect(os.requestPermissionsAsync).not.toHaveBeenCalled();
+    expect(os.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 });
 

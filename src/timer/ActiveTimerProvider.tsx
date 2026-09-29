@@ -15,9 +15,12 @@ const ActiveTimerContext = createContext<ActiveTimerStore | null>(null);
  */
 export function ActiveTimerProvider({
   store,
+  onForeground,
   children,
 }: {
   store: ActiveTimerStore;
+  /** Runs after the foreground refresh, with the timer as settled (timer notifications). */
+  onForeground?: () => void;
   children: ReactNode;
 }) {
   const { status, user } = useSession();
@@ -30,10 +33,10 @@ export function ActiveTimerProvider({
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void store.refresh();
+      if (state === 'active') void store.refresh().then(() => onForeground?.());
     });
     return () => subscription.remove();
-  }, [store]);
+  }, [store, onForeground]);
 
   return <ActiveTimerContext.Provider value={store}>{children}</ActiveTimerContext.Provider>;
 }
