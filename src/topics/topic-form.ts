@@ -1,6 +1,6 @@
 import { TOPIC_COLORS, type NewTopicFields, type Topic, type TopicChanges } from '../api/topics';
 import type { InlineStatusTone } from '../components/InlineStatus';
-import type { QueuedTopicCreate } from './topic-create-queue';
+import type { QueuedCreateState, QueuedTopicCreate } from './topic-create-queue';
 
 /** A2.2 technical limits, in Unicode characters after trimming and NFC. */
 export const TOPIC_NAME_MAX = 100;
@@ -67,17 +67,21 @@ export interface PendingTopicStatus {
   editable: boolean;
 }
 
-/** A queued create as the Topics screen shows it. Internal codes never reach the words. */
+const SYNC_LABELS: Record<QueuedCreateState, string> = {
+  pending: 'Waiting to sync',
+  needs_name_change: 'Choose another name to sync this topic.',
+  needs_attention: 'This topic needs a look before it can sync.',
+};
+
+/** A queued create's sync state in words, wherever the topic shows. Never an internal code. */
+export function pendingSyncLabel(state: QueuedCreateState): string {
+  return SYNC_LABELS[state];
+}
+
+/** A queued create as the Topics screen shows it. */
 export function pendingTopicStatus(item: QueuedTopicCreate): PendingTopicStatus {
-  if (item.state === 'needs_name_change') {
-    return { label: 'Choose another name to sync this topic.', tone: 'attention', editable: true };
-  }
-  if (item.state === 'needs_attention') {
-    return {
-      label: 'This topic needs a look before it can sync.',
-      tone: 'attention',
-      editable: false,
-    };
-  }
-  return { label: 'Waiting to sync', tone: 'neutral', editable: !item.attempted };
+  const label = pendingSyncLabel(item.state);
+  if (item.state === 'needs_name_change') return { label, tone: 'attention', editable: true };
+  if (item.state === 'needs_attention') return { label, tone: 'attention', editable: false };
+  return { label, tone: 'neutral', editable: !item.attempted };
 }

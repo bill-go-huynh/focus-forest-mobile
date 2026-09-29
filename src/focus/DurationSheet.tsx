@@ -7,18 +7,26 @@ import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
 import { useTheme } from '../theme';
 import {
+  CUSTOM_MAX_MINUTES,
+  CUSTOM_MIN_MINUTES,
   DURATION_PRESETS,
   FIRST_SESSION_MINUTES,
   formatMinutes,
   isPresetDuration,
   isSelectableDuration,
+  lowestSelectableMinutes,
   parseCustomMinutes,
 } from './duration';
 
 export interface DurationSheetProps {
   visible: boolean;
-  /** The selection it opens with, usually from `initialDurationForTopic`. */
+  /** The selection it opens with, usually from `startMinutesForTopic`. */
   initialMinutes: number;
+  /**
+   * The session rules' `minValidMinutes`: shorter durations stay visible but unavailable, and
+   * custom minutes must reach it. Defaults to the selector's own lower bound.
+   */
+  minimumMinutes?: number;
   /** The confirm button's label, chosen by the flow that opens it. */
   confirmLabel: string;
   /** Called once with a selectable duration (5–180 minutes in 5-minute steps). */
@@ -36,6 +44,7 @@ export interface DurationSheetProps {
 export function DurationSheet({
   visible,
   initialMinutes,
+  minimumMinutes = CUSTOM_MIN_MINUTES,
   confirmLabel,
   onConfirm,
   onCancel,
@@ -53,6 +62,7 @@ export function DurationSheet({
       <DurationChoice
         key={opening}
         initialMinutes={initialMinutes}
+        minimumMinutes={minimumMinutes}
         confirmLabel={confirmLabel}
         onConfirm={onConfirm}
       />
@@ -62,11 +72,22 @@ export function DurationSheet({
 
 function DurationChoice({
   initialMinutes,
+  minimumMinutes,
   confirmLabel,
   onConfirm,
-}: Pick<DurationSheetProps, 'initialMinutes' | 'confirmLabel' | 'onConfirm'>) {
+}: Pick<DurationSheetProps, 'initialMinutes' | 'confirmLabel' | 'onConfirm'> & {
+  minimumMinutes: number;
+}) {
   const theme = useTheme();
-  const start = isSelectableDuration(initialMinutes) ? initialMinutes : FIRST_SESSION_MINUTES;
+  const available = (minutes: number) => isSelectableDuration(minutes, minimumMinutes);
+  // Never opens on a duration it would refuse; the flow opening it chooses a usable one.
+  const start = available(initialMinutes)
+    ? initialMinutes
+    : available(FIRST_SESSION_MINUTES)
+      ? FIRST_SESSION_MINUTES
+      : (DURATION_PRESETS.find(available) ??
+        lowestSelectableMinutes(minimumMinutes) ??
+        FIRST_SESSION_MINUTES);
   const [preset, setPreset] = useState<number | null>(isPresetDuration(start) ? start : null);
   const [customText, setCustomText] = useState(String(start));
   const [customError, setCustomError] = useState<string | null>(null);
@@ -76,7 +97,7 @@ function DurationChoice({
       onConfirm(preset);
       return;
     }
-    const custom = parseCustomMinutes(customText);
+    const custom = parseCustomMinutes(customText, minimumMinutes);
     if (custom.ok) onConfirm(custom.minutes);
     else setCustomError(custom.message);
   };
@@ -95,6 +116,8 @@ function DurationChoice({
             key={minutes}
             label={formatMinutes(minutes)}
             selected={preset === minutes}
+            disabled={!available(minutes)}
+            disabledReason="Shorter than a session needs to count."
             onPress={() => {
               setPreset(minutes);
               setCustomError(null);
@@ -112,7 +135,7 @@ function DurationChoice({
             setCustomError(null);
           }}
           error={customError ?? undefined}
-          helper="From 5 to 180, in 5-minute steps."
+          helper={`From ${lowestSelectableMinutes(minimumMinutes) ?? CUSTOM_MAX_MINUTES} to 180, in 5-minute steps.`}
           keyboardType="number-pad"
           inputMode="numeric"
           returnKeyType="done"

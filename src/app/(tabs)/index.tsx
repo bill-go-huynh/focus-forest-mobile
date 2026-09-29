@@ -2,11 +2,12 @@ import { View, useWindowDimensions } from 'react-native';
 
 import { EmptyState } from '../../components/EmptyState';
 import { Screen } from '../../components/Screen';
+import { StartFocus } from '../../focus/StartFocus';
 import { useTheme } from '../../theme';
 
 /**
  * Home, Phase 1 shell (docs/05 §3). The tree scene holds the hero space the monthly tree
- * takes in Phase 3; Start Focus arrives with the timer in Phase 2.
+ * takes in Phase 3. Start Focus sits right under it (docs/05 §1: next to the tree).
  */
 export default function HomeScreen() {
   const theme = useTheme();
@@ -28,6 +29,7 @@ export default function HomeScreen() {
           message="Your first session will plant this month's seed."
         />
       </View>
+      <StartFocus />
     </Screen>
   );
 }

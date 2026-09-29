@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
+import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { NetworkError, type Topic } from '../api';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
@@ -7,8 +7,8 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
+import { settleSheetTransitions, until } from '../test-utils/sheets';
 import { makeTopic } from '../test-utils/topics';
-import { lightTheme } from '../theme';
 import { topicCreateQueueKey } from '../topics/topic-create-queue';
 import { TopicSnapshotStore } from '../topics/topic-snapshot-store';
 
@@ -158,9 +158,7 @@ beforeEach(async () => {
   serve(server.handler);
 });
 afterEach(async () => {
-  // A sheet closed at the end of a test finishes its exit transition inside act, so its last
-  // state update never lands after the test.
-  await act(() => new Promise<void>((resolve) => setTimeout(resolve, lightTheme.motion.base * 2)));
+  await settleSheetTransitions();
   globalThis.fetch = originalFetch;
   jest.restoreAllMocks();
 });
@@ -177,18 +175,6 @@ const rowNames = () =>
       /^(Piano|Reading|Spanish|Books|Drawing)\b/.test(label ?? ''),
     );
 
-/**
- * Waits in real time, inside act, until the condition holds (at most 10 s). Used after an
- * action that closes a sheet: the sheet leaves when its exit transition ends, on a real timer
- * of the native animation mock, and waiting inside act keeps that last update inside act.
- */
-async function until(condition: () => boolean, timeout = 10_000) {
-  const deadline = Date.now() + timeout;
-  while (!condition()) {
-    if (Date.now() > deadline) throw new Error('Timed out waiting for the condition.');
-    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
-  }
-}
 const closed = (label: string) => () => screen.queryByLabelText(label) === null;
 
 async function openTopics() {

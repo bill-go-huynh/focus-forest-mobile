@@ -182,3 +182,43 @@ describe('DurationSheet: large text', () => {
     }
   });
 });
+
+describe('DurationSheet: the session minimum', () => {
+  it('shows presets below it as unavailable, and they cannot be chosen', () => {
+    const { onConfirm } = open({ initialMinutes: 25, minimumMinutes: 20 });
+    expect(option('15 min').props.accessibilityState).toMatchObject({ disabled: true });
+    for (const name of ['25 min', '45 min', '50 min', '60 min', 'Custom']) {
+      expect(option(name).props.accessibilityState).toMatchObject({ disabled: false });
+    }
+
+    fireEvent.press(option('15 min'));
+    expect(selectedOptions()).toEqual(['25 min']);
+    confirm();
+    expect(onConfirm).toHaveBeenCalledWith(25);
+  });
+
+  it('never opens on a duration below it', () => {
+    open({ initialMinutes: 15, minimumMinutes: 20 });
+    expect(selectedOptions()).toEqual(['25 min']);
+  });
+
+  it('refuses custom minutes below it, naming the real range', () => {
+    const { onConfirm } = open({ initialMinutes: 25, minimumMinutes: 20 });
+    fireEvent.press(option('Custom'));
+    fireEvent.changeText(minutesField(), '15');
+    confirm();
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText('Choose a duration from 20 to 180 minutes.')).toBeOnTheScreen();
+  });
+
+  it('takes 10 as the shortest custom duration when the minimum is 7', () => {
+    const { onConfirm } = open({ initialMinutes: 15, minimumMinutes: 7 });
+    fireEvent.press(option('Custom'));
+    fireEvent.changeText(minutesField(), '5');
+    confirm();
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.changeText(minutesField(), '10');
+    confirm();
+    expect(onConfirm).toHaveBeenCalledWith(10);
+  });
+});

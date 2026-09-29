@@ -73,7 +73,10 @@ const happyApi: Handler = (request) => {
 };
 
 /** Requests other than the preferences read every signed-in launch makes (M13). */
-const authCalls = () => requests.filter((r) => r.url !== `${API}/me/preferences`);
+// App data a signed-in screen reads once it opens (preferences; the session rules Home's Start
+// Focus needs), not calls of the auth flow.
+const APP_DATA = [`${API}/me/preferences`, `${API}/session-rules`];
+const authCalls = () => requests.filter((r) => !APP_DATA.includes(r.url));
 
 const originalFetch = globalThis.fetch;
 let announceSpy: jest.SpyInstance;

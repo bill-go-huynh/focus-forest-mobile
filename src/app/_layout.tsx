@@ -98,6 +98,8 @@ function RootNavigator() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn}>
             <Stack.Screen name="(tabs)" />
+            {/* Focus replaces the tabs while it runs (docs/05 §1). */}
+            <Stack.Screen name="focus" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />

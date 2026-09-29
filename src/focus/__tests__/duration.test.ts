@@ -8,7 +8,10 @@ import {
   initialMinutes,
   isPresetDuration,
   isSelectableDuration,
+  lowestSelectableMinutes,
   parseCustomMinutes,
+  quickStartMinutes,
+  startMinutesForTopic,
 } from '../duration';
 
 const confirmed = (lastPlannedMinutes: number | null): PickerTopic => ({
@@ -140,5 +143,95 @@ describe('formatMinutes', () => {
     expect(formatMinutes(15)).toBe('15 min');
     expect(formatMinutes(60)).toBe('60 min');
     expect(formatMinutes(180)).toBe('180 min');
+  });
+});
+
+describe('with the session minimum (GET /session-rules → minValidMinutes)', () => {
+  const rules = (minValidMinutes: number) => ({ minValidMinutes, maxPauseMinutes: 30 });
+
+  describe('lowestSelectableMinutes', () => {
+    it.each([
+      [1, 5],
+      [5, 5],
+      [7, 10],
+      [15, 15],
+      [20, 20],
+      [21, 25],
+      [180, 180],
+    ])('is %p → %p: the first 5-minute step at or above the minimum', (minimum, lowest) => {
+      expect(lowestSelectableMinutes(minimum)).toBe(lowest);
+    });
+
+    it('is null when the minimum is above the longest selectable duration', () => {
+      expect(lowestSelectableMinutes(181)).toBeNull();
+      expect(lowestSelectableMinutes(240)).toBeNull();
+    });
+  });
+
+  describe('isSelectableDuration with a minimum', () => {
+    it('refuses durations below it, and keeps the 5-minute steps', () => {
+      expect(isSelectableDuration(15, 20)).toBe(false);
+      expect(isSelectableDuration(20, 20)).toBe(true);
+      expect(isSelectableDuration(7, 7)).toBe(false);
+      expect(isSelectableDuration(10, 7)).toBe(true);
+    });
+  });
+
+  describe('quickStartMinutes (start straight away with the remembered duration)', () => {
+    it('is the remembered duration when it can be chosen and meets the minimum', () => {
+      expect(quickStartMinutes(confirmed(25), rules(5))).toBe(25);
+      expect(quickStartMinutes(confirmed(35), rules(5))).toBe(35);
+      expect(quickStartMinutes(confirmed(20), rules(20))).toBe(20);
+    });
+
+    it('is null without a usable remembered duration: the duration is chosen first', () => {
+      expect(quickStartMinutes(confirmed(null), rules(5))).toBeNull();
+      expect(quickStartMinutes(pending, rules(5))).toBeNull();
+      expect(quickStartMinutes(confirmed(7), rules(5))).toBeNull();
+      expect(quickStartMinutes(confirmed(240), rules(5))).toBeNull();
+      // Below the current minimum: it would never count.
+      expect(quickStartMinutes(confirmed(15), rules(20))).toBeNull();
+    });
+  });
+
+  describe('startMinutesForTopic (what the duration choice opens with)', () => {
+    it('is the usable remembered duration', () => {
+      expect(startMinutesForTopic(confirmed(35), rules(5))).toBe(35);
+    });
+
+    it('is 15 without one, under the usual minimum', () => {
+      expect(startMinutesForTopic(confirmed(null), rules(5))).toBe(15);
+      expect(startMinutesForTopic(pending, rules(15))).toBe(15);
+    });
+
+    it('is the first preset at or above a higher minimum, never 15', () => {
+      expect(startMinutesForTopic(confirmed(null), rules(20))).toBe(25);
+      expect(startMinutesForTopic(confirmed(15), rules(20))).toBe(25);
+      expect(startMinutesForTopic(pending, rules(46))).toBe(50);
+    });
+
+    it('is the lowest 5-minute step when no preset meets the minimum', () => {
+      expect(startMinutesForTopic(confirmed(null), rules(61))).toBe(65);
+      expect(startMinutesForTopic(confirmed(null), rules(180))).toBe(180);
+    });
+
+    it('is null when no duration can meet the minimum', () => {
+      expect(startMinutesForTopic(confirmed(null), rules(181))).toBeNull();
+      expect(startMinutesForTopic(confirmed(200), rules(181))).toBeNull();
+    });
+  });
+
+  describe('parseCustomMinutes with a minimum', () => {
+    it('refuses durations below it and names the real range', () => {
+      expect(parseCustomMinutes('15', 20)).toEqual({
+        ok: false,
+        message: 'Choose a duration from 20 to 180 minutes.',
+      });
+      expect(parseCustomMinutes('5', 7)).toEqual({
+        ok: false,
+        message: 'Choose a duration from 10 to 180 minutes.',
+      });
+      expect(parseCustomMinutes('10', 7)).toEqual({ ok: true, minutes: 10 });
+    });
   });
 });

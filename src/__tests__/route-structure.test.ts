@@ -71,13 +71,17 @@ describe('route structure', () => {
     ]);
   });
 
-  it('has no focus route yet: the timer arrives in Phase 2 as a full-screen takeover', () => {
-    expect(routeFiles(APP).filter((file) => /focus/i.test(relative(APP, file)))).toEqual([]);
+  it('puts Focus outside the tabs, as a full-screen takeover with no tab bar (docs/05 §1)', () => {
+    expect(routeFiles(APP).filter((file) => /focus/i.test(relative(APP, file)))).toEqual([
+      join(APP, 'focus.tsx'),
+    ]);
+    expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(/name="focus"/);
   });
 
   it('keeps every screen inside the tabs or the auth group, so there is no stray route', () => {
+    // Focus is the one screen outside them: it replaces the tabs while it runs.
     const outside = routeFiles(APP).filter(
-      (file) => !file.startsWith(TABS) && !file.startsWith(AUTH),
+      (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && file !== join(APP, 'focus.tsx'),
     );
     expect(outside).toEqual([]);
   });

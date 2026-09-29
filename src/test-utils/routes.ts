@@ -11,6 +11,7 @@ import EditProfileScreen from '../app/(tabs)/profile/edit';
 import ProfileScreen from '../app/(tabs)/profile/index';
 import SettingsScreen from '../app/(tabs)/profile/settings';
 import TopicsRoute from '../app/(tabs)/profile/topics';
+import FocusRoute from '../app/focus';
 
 /** The app's real routes, for renderRouter from expo-router/testing-library. */
 export const appRoutes = {
@@ -27,4 +28,5 @@ export const appRoutes = {
   '(tabs)/profile/edit': EditProfileScreen,
   '(tabs)/profile/topics': TopicsRoute,
   '(tabs)/profile/settings': SettingsScreen,
+  focus: FocusRoute,
 };

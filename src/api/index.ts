@@ -44,6 +44,7 @@ export {
   type TopicListFilter,
   type TopicStatus,
 } from './topics';
+export { getSessionRules, sessionRulesSchema, type SessionRulesResponse } from './session-rules';
 export {
   sessionErrorCode,
   sessionSchema,
