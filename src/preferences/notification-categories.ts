@@ -22,7 +22,6 @@ export const NOTIFICATION_CATEGORIES = [
 
 /** The phase that builds each category's feature (docs/12_PRODUCT_IMPLEMENTATION_PLAN.md). */
 export const NOTIFICATION_CATEGORY_PHASE: Record<NotificationCategory, number> = {
-  scheduledFocusReminder: 2, // focus sessions
   dailyGoalReminder: 4, // goals
   streakReminder: 4, // streaks
   monthlyRecapReady: 7, // monthly recap
@@ -32,6 +31,7 @@ export const NOTIFICATION_CATEGORY_PHASE: Record<NotificationCategory, number> =
   challengeUpdate: 13, // challenges
   eventStart: 14, // events
   eventEndingSoon: 14,
+  scheduledFocusReminder: 18, // Notifications: goal and focus reminders
 };
 
 export function visibleNotificationCategories(phase = CURRENT_PHASE): NotificationCategory[] {

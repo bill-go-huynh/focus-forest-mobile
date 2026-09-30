@@ -16,8 +16,10 @@ export const secureStoreMock = {
   },
 };
 
-/** Saves a valid session, as if the user had signed in earlier. */
-export function signInForTest() {
+/** Saves a valid session, as if the user had signed in earlier (by default `user-1`). */
+export function signInForTest(
+  user: { id: string; email: string } = { id: 'user-1', email: 'mai@example.com' },
+) {
   const day = 86_400_000;
   values.clear();
   values.set(
@@ -27,7 +29,7 @@ export function signInForTest() {
       accessTokenExpiresAt: new Date(Date.now() + day).toISOString(),
       refreshToken: 'test-refresh',
       refreshTokenExpiresAt: new Date(Date.now() + 30 * day).toISOString(),
-      user: { id: 'user-1', email: 'mai@example.com' },
+      user,
     }),
   );
 }

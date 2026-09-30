@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from 'react';
 
 import { useSession } from '../api';
+import { useActiveTimer } from '../timer/ActiveTimerProvider';
 import { useSessionOutboxSnapshot } from './SessionOutboxProvider';
 import type { SessionNoteOutbox, SessionNoteOutboxSnapshot } from './session-note-outbox';
 
@@ -8,8 +9,9 @@ const NotesContext = createContext<SessionNoteOutbox | null>(null);
 
 /**
  * Reads the signed-in user's queued notes and sends them once their sessions are on the server:
- * when both queues are read, whenever the session outbox changes (a session synced), and after
- * each saved note. Sign-out forgets them in memory; storage keeps them. Place it inside
+ * when both queues and the timer are read, whenever the session outbox changes (a session
+ * synced), when the timer lets a session go, and after each saved note. Sign-out forgets them
+ * in memory; storage keeps them. Place it inside `ActiveTimerProvider` and
  * `SessionOutboxProvider`.
  */
 export function SessionNotesProvider({
@@ -24,6 +26,9 @@ export function SessionNotesProvider({
   const sessions = useSessionOutboxSnapshot();
   const current = useSyncExternalStore(notes.subscribe, notes.getSnapshot);
 
+  const timer = useActiveTimer();
+  const timerReady = timer.status === 'ready' && timer.userId === userId;
+  const heldSession = timer.timer?.id ?? null;
   const sessionsReady = sessions.status === 'ready' && sessions.userId === userId;
   const notesReady = userId !== null && current.status === 'ready' && current.userId === userId;
   const queuedSessions = sessions.items.map((item) => item.id).join(',');
@@ -35,8 +40,8 @@ export function SessionNotesProvider({
   }, [notes, userId]);
 
   useEffect(() => {
-    if (sessionsReady && notesReady) void notes.flush();
-  }, [notes, sessionsReady, notesReady, queuedSessions, queuedNotes]);
+    if (timerReady && sessionsReady && notesReady) void notes.flush();
+  }, [notes, timerReady, sessionsReady, notesReady, heldSession, queuedSessions, queuedNotes]);
 
   return <NotesContext.Provider value={notes}>{children}</NotesContext.Provider>;
 }

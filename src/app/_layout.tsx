@@ -57,7 +57,9 @@ export default function RootLayout() {
   const [sessions] = useState(() =>
     createAppSessionOutbox({ client: api.client, queryClient, topicQueue: topicCreates, receipts }),
   );
-  const [notes] = useState(() => createAppSessionNotes({ client: api.client, sessions, receipts }));
+  const [notes] = useState(() =>
+    createAppSessionNotes({ client: api.client, sessions, timers, receipts }),
+  );
   const [completions] = useState(() => new CompletionIntents());
   // Back in the foreground, after the timer is settled: the OS notifications are brought in
   // line, and what waits for the server is tried again (sessions first, then their notes).
