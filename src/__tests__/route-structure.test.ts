@@ -109,18 +109,22 @@ describe('route structure', () => {
   });
 
   it('asks for no notification permission at launch (docs/02: ask in context)', () => {
-    // Local timer notifications arrive in Phase 2 (M2.10): only their adapter may use
+    // Local timer notifications arrive in Phase 2 (M2.10): only their adapter may import
     // expo-notifications, and permission is asked when a timer first needs it, never by a route.
     const SRC = join(APP, '..');
-    const users = routeFiles(SRC).filter(
-      (file) =>
-        !file.includes(`${sep}__tests__${sep}`) &&
-        !file.includes(`${sep}test-utils${sep}`) &&
-        /expo-notifications/.test(readFileSync(file)),
+    const production = routeFiles(SRC).filter(
+      (file) => !file.includes(`${sep}__tests__${sep}`) && !file.includes(`${sep}test-utils${sep}`),
     );
-    expect(users.map((file) => relative(SRC, file))).toEqual([
+    const importing = (pattern: RegExp) =>
+      production.filter((file) => pattern.test(readFileSync(file))).map((f) => relative(SRC, f));
+    expect(importing(/from '(expo-notifications)'|require\('expo-notifications'\)/)).toEqual([
       join('notifications', 'expo-timer-notifications.ts'),
     ]);
+    // And the adapter is reached only lazily (Expo Go on Android throws when it loads): no file
+    // imports its values at the top level; os-timer-notifications requires it on demand.
+    expect(
+      importing(/^(import|export) (?!type\b)[^;]*from '\.\/expo-timer-notifications'/m),
+    ).toEqual([]);
     for (const file of routeFiles(APP)) {
       expect(readFileSync(file)).not.toMatch(/requestPermission|expo-notifications/);
     }

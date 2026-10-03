@@ -409,6 +409,9 @@ describe('Flow B + C: a session focused entirely offline on a topic created offl
     await until(() => screen.queryByLabelText('Name') !== null);
     fireEvent.changeText(screen.getByLabelText('Name'), 'Sketch club');
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    // The sheet closes with an animation: let it finish inside one act, then check it is gone.
+    await settleSheetTransitions();
+    await until(() => screen.queryByLabelText('Name') === null);
 
     await until(() => server.sessions.get(SESSION_ID)?.note === 'Hands');
     await untilStored(async () => (await noteItems()).length === 0);

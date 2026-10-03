@@ -9,7 +9,8 @@ import {
 } from './timer-notifications';
 
 /**
- * The timer's notifications through expo-notifications: the only file that uses it. The sound
+ * The timer's notifications through expo-notifications: the only file that uses it, loaded only
+ * through `os-timer-notifications` (never in Expo Go on Android, where loading it throws). The sound
  * preference is the content's `sound` on iOS and the channel on Android. No
  * notification handler is installed, so the OS default applies: nothing is shown while the app
  * is open (the Focus screen shows the end itself), and the OS shows it in the background or on

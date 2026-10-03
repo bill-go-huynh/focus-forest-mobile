@@ -85,6 +85,8 @@ For anything that reads or displays tree state or session results, also read `..
 
 ## Known issues
 
+- **Phase 2 manual QA is deferred (2026-10-03, owner's decision).** Phase 2 was closed on automated verification only; nothing has been tested on a real device yet. The full checklist, and the development-build setup it needs (`expo-dev-client` and `eas.json` are in place; EAS login, init, and the first build are not done), are in `MANUAL_QA.md`. Run it before any release or at the next major checkpoint.
+- **Expo Go on Android has no timer notifications.** Since SDK 53, loading `expo-notifications` in Expo Go on Android throws (it registers a push-token listener on load, and push was removed from Expo Go there). `src/notifications/os-timer-notifications.ts` is the only way to it: it loads `expo-timer-notifications` lazily, and in Expo Go on Android uses an adapter that never asks, schedules, or listens for taps (`osNotificationsSupported`). Nothing else may import `expo-timer-notifications` or `expo-notifications` at the top level. Notification QA needs a development build: see `MANUAL_QA.md`.
 - **Route tests that sometimes time out under load.** `navigation.test.tsx`, `settings.test.tsx`, and `profile.test.tsx` occasionally fail one test with the launch screen still on top (`accessibilityElementsHidden`), after 30–50 s, when the machine is busy; a rerun passes. Reproduced on the Phase 1 baseline without Phase 2 code. Not yet investigated: start by timing the preferences wait in `renderApp` with `--runInBand` against the default workers.
 
 ## Current state
