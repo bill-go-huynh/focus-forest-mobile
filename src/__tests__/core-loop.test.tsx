@@ -403,10 +403,10 @@ describe('Home', () => {
     expect(scene().props.tree.stage).toBe('blooming_tree');
   });
 
-  it('keeps the pending month ceremony for later and marks nothing seen', async () => {
+  it('opens the pending month ceremony (M3.4) and marks nothing seen before it is accepted', async () => {
     server.state.home = { ...server.state.home, pendingCeremony: { year: 2026, month: 9 } };
-    await openHome();
-    await treeImage();
+    renderApp(appRoutes, { initialUrl: '/' });
+    expect(await screen.findByRole('button', { name: 'Skip' })).toBeOnTheScreen();
     expect(requests.some((r) => r.url.includes('ceremony-seen'))).toBe(false);
   });
 

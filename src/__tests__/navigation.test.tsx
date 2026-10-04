@@ -3,6 +3,7 @@ import { router as expoRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { fakeFetch } from '../test-utils/api';
+import { forestMonths, forestPage } from '../test-utils/forest';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
@@ -38,7 +39,8 @@ async function openApp(initialUrl = '/') {
   return router;
 }
 
-// Profile reads GET /me/profile (M12); Insights reads the (empty) history, GET /me/sessions.
+// Profile reads GET /me/profile (M12); Insights reads the (empty) history, GET /me/sessions;
+// Forest reads a first month's forest, only the growing tree (M3.4).
 const originalFetch = globalThis.fetch;
 beforeEach(() => {
   mockColorScheme.mockReturnValue('light');
@@ -49,14 +51,16 @@ beforeEach(() => {
     body:
       new URL(url).pathname === '/me/sessions'
         ? { items: [], nextCursor: null }
-        : {
-            id: 'user-1',
-            displayName: 'Mai Anh',
-            avatarUrl: null,
-            bio: null,
-            joinDate: '2026-09-26T10:00:00.000Z',
-            timezone: 'Europe/Zurich',
-          },
+        : new URL(url).pathname === '/me/forest'
+          ? forestPage(forestMonths(1))
+          : {
+              id: 'user-1',
+              displayName: 'Mai Anh',
+              avatarUrl: null,
+              bio: null,
+              joinDate: '2026-09-26T10:00:00.000Z',
+              timezone: 'Europe/Zurich',
+            },
   })).fetch;
 });
 afterEach(() => {

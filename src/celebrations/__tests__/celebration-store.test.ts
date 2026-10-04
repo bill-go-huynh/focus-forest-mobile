@@ -245,3 +245,36 @@ describe('CelebrationStore: today’s goal reached, celebrated once (M3.3)', () 
     expect(store.getSnapshot().goalsCelebrated).toHaveLength(GOALS_CELEBRATED_MAX);
   });
 });
+
+describe('CelebrationStore: month-end ceremonies shown, until the server has them (M3.4)', () => {
+  const SEPT = { year: 2026, month: 9 };
+
+  it('remembers a shown ceremony durably until its acknowledgement is confirmed', async () => {
+    const storage = memoryStorage();
+    const { store } = await ready(storage);
+    expect(store.getSnapshot().ceremoniesShown).toEqual([]);
+    await expect(store.ceremonyShown(ADA, SEPT)).resolves.toBe(true);
+    await store.ceremonyShown(ADA, SEPT);
+    expect(store.getSnapshot().ceremoniesShown).toEqual([SEPT]);
+
+    const again = await ready(storage);
+    expect(again.store.getSnapshot().ceremoniesShown).toEqual([SEPT]);
+    await expect(again.store.ceremonyAcknowledged(ADA, SEPT)).resolves.toBe(true);
+    expect(again.store.getSnapshot().ceremoniesShown).toEqual([]);
+    expect((await ready(storage)).store.getSnapshot().ceremoniesShown).toEqual([]);
+  });
+
+  it('keeps each user’s shown ceremonies apart', async () => {
+    const storage = memoryStorage();
+    const ada = await ready(storage);
+    await ada.store.ceremonyShown(ADA, SEPT);
+    expect((await ready(storage, GRACE)).store.getSnapshot().ceremoniesShown).toEqual([]);
+  });
+
+  it('answers false when it cannot be stored', async () => {
+    const storage = memoryStorage();
+    const { store } = await ready(storage);
+    storage.failing.setItem = true;
+    await expect(store.ceremonyShown(ADA, SEPT)).resolves.toBe(false);
+  });
+});

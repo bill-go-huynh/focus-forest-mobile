@@ -9,6 +9,7 @@ import { ProgressRing } from '../components/ProgressRing';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { StartFocus } from '../focus/StartFocus';
+import { useCeremonyTrigger } from '../forest/use-ceremony-trigger';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 import type { HomeResponse } from '../api';
@@ -42,6 +43,8 @@ export function HomeScreen() {
     // Every waiting growth that no other screen (an open Completion) is showing.
     select: (pending, held) => pending.filter((intent) => !held.includes(intent.sessionId)),
   });
+  // The month-end ceremony waits while a growth moment is on screen: one sequence at a time.
+  useCeremonyTrigger(query.data?.home ?? null, focused && moment === null);
 
   return (
     <Screen title="This month">

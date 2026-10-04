@@ -33,6 +33,24 @@ beforeEach(() => {
   ).resetNotificationsMock();
 });
 
+// Capturing a view and the native share sheet are native (M3.4 recap card): tests get fakes that
+// answer a temporary image and share it, reset before each test.
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn(async () => 'file:///tmp/recap-card.png'),
+}));
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn(async () => true),
+  shareAsync: jest.fn(async () => undefined),
+}));
+beforeEach(() => {
+  const viewShot =
+    jest.requireMock<typeof import('react-native-view-shot')>('react-native-view-shot');
+  jest.mocked(viewShot.captureRef).mockReset().mockResolvedValue('file:///tmp/recap-card.png');
+  const sharing = jest.requireMock<typeof import('expo-sharing')>('expo-sharing');
+  jest.mocked(sharing.isAvailableAsync).mockReset().mockResolvedValue(true);
+  jest.mocked(sharing.shareAsync).mockReset().mockResolvedValue(undefined);
+});
+
 configure({ asyncUtilTimeout: 5_000 });
 notifyManager.setNotifyFunction((notify) => {
   act(notify);

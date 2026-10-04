@@ -177,6 +177,11 @@ function RootNavigator() {
             <Stack.Screen name="tree" />
             {/* Onboarding, once after sign-up (M3.3): it leaves by its own buttons. */}
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+            {/* Forest months (M3.4): an archived, resting, or growing month's Tree Details, the
+                monthly recap, and the month-end planting ceremony (full screen, no tab bar). */}
+            <Stack.Screen name="month/[year]/[month]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="recap/[year]/[month]" />
+            <Stack.Screen name="ceremony/[year]/[month]" options={{ gestureEnabled: false }} />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />

@@ -107,6 +107,14 @@ describe('route structure', () => {
     );
   });
 
+  it('puts the recap and the planting ceremony on the root stack, so the tab bar is hidden (M3.4)', () => {
+    const layout = readFileSync(join(APP, '_layout.tsx'));
+    expect(layout).toMatch(/name="recap\/\[year\]\/\[month\]"/);
+    expect(layout).toMatch(
+      /name="ceremony\/\[year\]\/\[month\]"\s+options=\{\{\s*gestureEnabled: false/,
+    );
+  });
+
   it('keeps every screen inside the tabs or the auth group, so there is no stray route', () => {
     // Focus and Session Completion are full-screen takeovers; Tree Details is Home's level-2
     // screen, kept on the root stack so Home stays a single tab screen; onboarding opens once
@@ -116,6 +124,11 @@ describe('route structure', () => {
       join(APP, 'completion', '[sessionId].tsx'),
       join(APP, 'tree.tsx'),
       join(APP, 'onboarding.tsx'),
+      // Forest months (M3.4): Tree Details of a past month, the recap and the planting
+      // ceremony (full screen, no tab bar, docs/05 §4).
+      join(APP, 'month', '[year]', '[month].tsx'),
+      join(APP, 'recap', '[year]', '[month].tsx'),
+      join(APP, 'ceremony', '[year]', '[month].tsx'),
     ];
     const outside = routeFiles(APP).filter(
       (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && !takeovers.includes(file),

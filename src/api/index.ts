@@ -44,6 +44,23 @@ export {
   type WeeklyGoal,
   type WeeklyGoalType,
 } from './consistency';
+export {
+  forestPageSchema,
+  getForest,
+  getRecap,
+  getTreeDetails,
+  markCeremonySeen,
+  markRecapSeen,
+  recapSchema,
+  seenStateSchema,
+  treeDetailsSchema,
+  type ForestItem,
+  type ForestPage,
+  type MonthRef,
+  type Recap,
+  type SeenState,
+  type TreeDetails,
+} from './forest';
 export { createQueryClient } from './query-client';
 export {
   archiveTopic,

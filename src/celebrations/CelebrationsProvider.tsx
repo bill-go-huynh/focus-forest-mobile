@@ -40,5 +40,5 @@ export function useCelebrations(): CelebrationsSnapshot {
   const { user } = useSession();
   return snapshot.userId === user?.id
     ? snapshot
-    : { ...snapshot, pending: [], held: [], goalsCelebrated: [] };
+    : { ...snapshot, pending: [], held: [], goalsCelebrated: [], ceremoniesShown: [] };
 }

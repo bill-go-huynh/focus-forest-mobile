@@ -19,6 +19,14 @@ export const CONSUMED_MAX = 100;
 /** Technical bound on remembered days whose reached goal was celebrated, not Product configuration. */
 export const GOALS_CELEBRATED_MAX = 60;
 
+/** Technical bound on shown ceremonies still to be acknowledged, not Product configuration. */
+export const CEREMONIES_SHOWN_MAX = 12;
+
+export interface MonthRef {
+  year: number;
+  month: number;
+}
+
 /**
  * A server-confirmed growth that still has to be shown: the session's id and start (its order),
  * and the GrowthResult exactly as the server answered it. Nothing is derived from it here.
@@ -38,6 +46,11 @@ export interface CelebrationsSnapshot {
   held: string[];
   /** Days (the server's local dates) whose reached daily goal was already celebrated. */
   goalsCelebrated: string[];
+  /**
+   * Month-end ceremonies shown here whose "seen" the server has not confirmed yet (M3.4): not
+   * shown again, and acknowledged again later. The server's `ceremonySeenAt` stays the truth.
+   */
+  ceremoniesShown: MonthRef[];
 }
 
 export interface CelebrationStoreOptions {
@@ -62,12 +75,17 @@ const documentSchema = z.strictObject({
   consumed: z.array(sessionId).max(CONSUMED_MAX),
   // Optional: documents saved before M3.3 have none and still read as version 1.
   goalsCelebrated: z.array(z.iso.date()).max(GOALS_CELEBRATED_MAX).optional(),
+  ceremoniesShown: z
+    .array(z.strictObject({ year: z.number().int(), month: z.number().int().min(1).max(12) }))
+    .max(CEREMONIES_SHOWN_MAX)
+    .optional(),
 });
 
 interface Stored {
   pending: CelebrationIntent[];
   consumed: string[];
   goalsCelebrated: string[];
+  ceremoniesShown: MonthRef[];
 }
 
 function parseDocument(value: unknown): ParsedValue<Stored> {
@@ -83,6 +101,7 @@ function parseDocument(value: unknown): ParsedValue<Stored> {
           pending: parsed.data.pending,
           consumed: parsed.data.consumed,
           goalsCelebrated: parsed.data.goalsCelebrated ?? [],
+          ceremoniesShown: parsed.data.ceremoniesShown ?? [],
         },
       }
     : { ok: false, reason: 'invalid_state' };
@@ -98,6 +117,8 @@ export function isCelebratable(growth: GrowthResult | null | undefined): growth 
   return !!growth && growth.counted && !growth.monthClosed && growth.tree !== null;
 }
 
+export const sameMonth = (a: MonthRef, b: MonthRef) => a.year === b.year && a.month === b.month;
+
 const bySessionOrder = (a: CelebrationIntent, b: CelebrationIntent) =>
   Date.parse(a.startedAt) - Date.parse(b.startedAt) || a.sessionId.localeCompare(b.sessionId);
 
@@ -107,6 +128,7 @@ const INACTIVE: CelebrationsSnapshot = {
   pending: [],
   held: [],
   goalsCelebrated: [],
+  ceremoniesShown: [],
 };
 
 /**
@@ -139,7 +161,14 @@ export class CelebrationStore {
   activate(userId: string): Promise<CelebrationsSnapshot> {
     const generation = ++this.generation;
     this.consumed = [];
-    this.set({ status: 'restoring', userId, pending: [], held: [], goalsCelebrated: [] });
+    this.set({
+      status: 'restoring',
+      userId,
+      pending: [],
+      held: [],
+      goalsCelebrated: [],
+      ceremoniesShown: [],
+    });
     const read = this.queue.then(async () => {
       if (generation !== this.generation) return this.snapshot;
       const { storage, report } = this.options;
@@ -154,6 +183,7 @@ export class CelebrationStore {
         pending: stored.kind === 'ok' ? [...stored.value.pending].sort(bySessionOrder) : [],
         held: [],
         goalsCelebrated: stored.kind === 'ok' ? stored.value.goalsCelebrated : [],
+        ceremoniesShown: stored.kind === 'ok' ? stored.value.ceremoniesShown : [],
       });
       return this.snapshot;
     });
@@ -215,6 +245,33 @@ export class CelebrationStore {
     );
   }
 
+  /** The month-end ceremony of `month` was shown: stored before its "seen" is sent. */
+  ceremonyShown(userId: string, month: MonthRef): Promise<boolean> {
+    return this.commit(userId, (current) =>
+      current.ceremoniesShown.some((m) => sameMonth(m, month))
+        ? 'unchanged'
+        : {
+            ...current,
+            ceremoniesShown: [
+              ...current.ceremoniesShown,
+              { year: month.year, month: month.month },
+            ].slice(-CEREMONIES_SHOWN_MAX),
+          },
+    );
+  }
+
+  /** The server confirmed the ceremony seen: nothing is left to send for it. */
+  ceremonyAcknowledged(userId: string, month: MonthRef): Promise<boolean> {
+    return this.commit(userId, (current) =>
+      current.ceremoniesShown.some((m) => sameMonth(m, month))
+        ? {
+            ...current,
+            ceremoniesShown: current.ceremoniesShown.filter((m) => !sameMonth(m, month)),
+          }
+        : 'unchanged',
+    );
+  }
+
   /** A screen is showing this session's celebration: nothing else presents it meanwhile. */
   hold(sessionId: string): void {
     if (this.snapshot.held.includes(sessionId)) return;
@@ -232,9 +289,16 @@ export class CelebrationStore {
   ): Promise<boolean> {
     const generation = this.generation;
     const write = this.queue.then(async () => {
-      const { status, userId: owner, pending, held, goalsCelebrated } = this.snapshot;
+      const {
+        status,
+        userId: owner,
+        pending,
+        held,
+        goalsCelebrated,
+        ceremoniesShown,
+      } = this.snapshot;
       if (generation !== this.generation || status !== 'ready' || owner !== userId) return false;
-      const next = change({ pending, consumed: this.consumed, goalsCelebrated });
+      const next = change({ pending, consumed: this.consumed, goalsCelebrated, ceremoniesShown });
       if (next === 'unchanged') return true;
       try {
         await this.options.storage.setItem(
@@ -244,6 +308,7 @@ export class CelebrationStore {
             pending: next.pending,
             consumed: next.consumed,
             goalsCelebrated: next.goalsCelebrated,
+            ceremoniesShown: next.ceremoniesShown,
           }),
         );
       } catch {
@@ -258,6 +323,7 @@ export class CelebrationStore {
         pending: next.pending,
         held,
         goalsCelebrated: next.goalsCelebrated,
+        ceremoniesShown: next.ceremoniesShown,
       });
       return true;
     });
