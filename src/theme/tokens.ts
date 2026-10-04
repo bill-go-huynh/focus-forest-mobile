@@ -37,6 +37,12 @@ export const control = { minHeight: 52, borderWidth: 2 } as const;
  */
 export const progressRing = { size: 72, strokeWidth: 8 } as const;
 
+/**
+ * The tree scene (docs/03): its aspect ratio (width / height, the art's 240 × 288 view box) and
+ * the forest-thumbnail width. PROVISIONAL, like the placeholder art.
+ */
+export const treeScene = { aspectRatio: 5 / 6, thumbnail: 96 } as const;
+
 /** Spot illustrations for empty and error states: small and calm (docs/01 §9). PROVISIONAL. */
 export const illustration = { spot: 120 } as const;
 
@@ -96,13 +102,18 @@ export const type = {
   stat: { fontSize: 22, lineHeight: 28, fontWeight: '600', fontVariant: ['tabular-nums'] },
 } as const satisfies Record<string, TypeToken>;
 
-/** Durations in milliseconds (docs/04_ANIMATION_SYSTEM.md §2). */
+/**
+ * Durations in milliseconds (docs/04_ANIMATION_SYSTEM.md §2). `ambient` holds the tree's idle
+ * cycles (docs/04 §5): the canopy sway (6–10 s), the foliage's own sway (3–6 s), and the
+ * particle drift.
+ */
 export const motion = {
   fast: 150,
   base: 300,
   progress: 600,
   reward: 1200,
   growth: 1800,
+  ambient: { sway: 8000, foliage: 4500, drift: 6000 },
 } as const;
 
 /**

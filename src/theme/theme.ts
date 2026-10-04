@@ -14,6 +14,7 @@ import {
   radius,
   space,
   spring,
+  treeScene,
   type,
   type ElevationTokens,
 } from './tokens';
@@ -45,6 +46,7 @@ export interface Theme {
   illustration: typeof illustration;
   lineIcon: typeof lineIcon;
   avatar: typeof avatar;
+  treeScene: typeof treeScene;
 }
 
 const shared = {
@@ -62,6 +64,7 @@ const shared = {
   illustration,
   lineIcon,
   avatar,
+  treeScene,
 };
 
 export const lightTheme: Theme = {

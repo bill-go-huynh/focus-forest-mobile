@@ -190,6 +190,7 @@ describe('design tokens', () => {
         'illustration',
         'lineIcon',
         'avatar',
+        'treeScene',
       ] as const) {
         expect(darkTheme[key]).toEqual(lightTheme[key]);
       }
@@ -311,6 +312,15 @@ describe('design tokens', () => {
     ] as const)('motion.%s stays within the documented range', (token, min, max) => {
       expect(lightTheme.motion[token]).toBeGreaterThanOrEqual(min);
       expect(lightTheme.motion[token]).toBeLessThanOrEqual(max);
+    });
+
+    it.each([
+      ['sway', 6000, 10000],
+      ['foliage', 3000, 6000],
+      ['drift', 3000, 12000],
+    ] as const)('motion.ambient.%s is a slow cycle in the documented range', (token, min, max) => {
+      expect(lightTheme.motion.ambient[token]).toBeGreaterThanOrEqual(min);
+      expect(lightTheme.motion.ambient[token]).toBeLessThanOrEqual(max);
     });
 
     it('defines the documented easing curves as cubic béziers', () => {

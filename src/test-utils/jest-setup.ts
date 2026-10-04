@@ -18,6 +18,13 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// Reanimated runs worklets natively; tests use the library's own mock and its Jest setup, so
+// animations run on the JS thread with Jest's timers.
+jest.mock('react-native-worklets', () => jest.requireActual('react-native-worklets/src/mock'));
+(
+  jest.requireActual('react-native-reanimated') as typeof import('react-native-reanimated')
+).setUpTests();
+
 // expo-notifications is native: tests get the OS in memory (src/test-utils/notifications-mock).
 jest.mock('expo-notifications', () => jest.requireActual('./notifications-mock').notificationsMock);
 beforeEach(() => {
