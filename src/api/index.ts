@@ -61,6 +61,22 @@ export {
   type SeenState,
   type TreeDetails,
 } from './forest';
+export {
+  DAILY_GOAL_STATES,
+  getHeatmap,
+  getLifetimeStats,
+  getMonthInsights,
+  getRecords,
+  getWeekInsights,
+  type DayCell,
+  type GoalRate,
+  type Heatmap,
+  type LifetimeStats,
+  type MonthInsights,
+  type PersonalRecord,
+  type TopicInsight,
+  type WeekInsights,
+} from './insights';
 export { createQueryClient } from './query-client';
 export {
   archiveTopic,
@@ -83,6 +99,7 @@ export {
   HISTORY_PAGE_SIZE,
   historyPageSchema,
   sessionHistoryItemSchema,
+  type HistoryFilters,
   type HistoryTopic,
   type SessionHistoryItem,
   type SessionHistoryPage,

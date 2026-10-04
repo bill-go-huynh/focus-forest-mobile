@@ -1,8 +1,9 @@
-import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, screen, within, waitFor } from 'expo-router/testing-library';
 import { TextInput } from 'react-native';
 import { Text as SvgText } from 'react-native-svg';
 
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
+import { makeLifetime } from '../test-utils/insights';
 import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
@@ -38,8 +39,11 @@ let profile:
     });
 
 /** A4 as implemented: PATCH applies only the fields sent, trimming, and blank bio → null. */
+let stats: Reply = { status: 200, body: makeLifetime() };
+
 function a4(request: FakeRequest): Reply {
   if (request.url === `${API}/me/preferences`) return { status: 200, body: makePreferences() };
+  if (request.url === `${API}/me/profile/stats`) return stats;
   if (request.url !== PROFILE_URL) return { status: 404, body: nestError(404, 'Not Found') };
   if (request.method === 'PATCH') {
     const changes = request.body as { displayName?: string; bio?: string | null };
@@ -63,6 +67,7 @@ beforeEach(() => {
   process.env.EXPO_PUBLIC_API_URL = API;
   signInForTest();
   profile = { ...PROFILE };
+  stats = { status: 200, body: makeLifetime() };
   serve(a4);
 });
 afterEach(() => {
@@ -140,12 +145,11 @@ describe('Profile (A4: GET /me/profile)', () => {
     expect(await screen.findByText('Mai Anh')).toBeOnTheScreen();
   }, 15_000);
 
-  it('shows no statistics yet: there is no real data for them', async () => {
+  it('shows no badges or achievements: they arrive in a later phase', async () => {
     await openProfile();
     await screen.findByText('Mai Anh');
-    expect(
-      screen.queryByText(/session|streak|hour|minute|\bmin\b|trees?\b|badge|focus time/i),
-    ).toBeNull();
+    // Lifetime stats are real data since A3.5 (below); badges are not built yet.
+    expect(screen.queryByText(/badge|achievement/i)).toBeNull();
   });
 
   it('shows no bio line when there is no bio', async () => {
@@ -199,6 +203,55 @@ describe('Profile (A4: GET /me/profile)', () => {
       await waitFor(() => expect(patches()).toHaveLength(1));
       expect(patches()[0]!.body).toEqual({ bio: 'Tea and code.' });
     });
+  });
+});
+
+describe('Profile lifetime stats (A3.5: GET /me/profile/stats)', () => {
+  it('shows lifetime progress under the identity, with the join date from the profile', async () => {
+    await openProfile();
+    const lifetime = within(await screen.findByTestId('profile-lifetime'));
+    for (const text of [
+      '52 h 10 min focused',
+      '120 sessions',
+      'Current streak: 4 days',
+      'Longest streak: 12 days',
+      '3 monthly trees',
+    ]) {
+      expect(lifetime.getByText(text)).toBeOnTheScreen();
+    }
+    // Identity first; the join date is still the profile's.
+    expect(screen.getByText('Joined September 2026')).toBeOnTheScreen();
+    expect(lifetime.queryByText(/Joined/)).toBeNull();
+  });
+
+  it('keeps the identity when the stats cannot load, and offers a retry', async () => {
+    stats = { status: 503, body: nestError(503, 'Busy.') };
+    await openProfile();
+    expect(
+      await screen.findByText("Your lifetime stats aren't available right now."),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('Mai Anh')).toBeOnTheScreen();
+    expect(screen.getByText('Joined September 2026')).toBeOnTheScreen();
+    stats = { status: 200, body: makeLifetime() };
+    fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('120 sessions')).toBeOnTheScreen();
+  });
+
+  it('says calmly when there is nothing yet', async () => {
+    stats = {
+      status: 200,
+      body: makeLifetime({
+        focusedMilliseconds: 0,
+        sessionCount: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        archivedTreeCount: 0,
+      }),
+    };
+    await openProfile();
+    expect(
+      await screen.findByText('Your lifetime focus starts with your first session.'),
+    ).toBeOnTheScreen();
   });
 });
 

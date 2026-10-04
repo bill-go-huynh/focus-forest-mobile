@@ -9,11 +9,12 @@ import { ListRow } from '../../../components/ListRow';
 import { Screen } from '../../../components/Screen';
 import { Skeleton, SkeletonGroup } from '../../../components/Skeleton';
 import { formatJoinDate, initialsOf, useProfile } from '../../../profile';
+import { LifetimeStats } from '../../../profile/LifetimeStats';
 import { useTheme } from '../../../theme';
 
 /**
- * Profile (docs/05 §3): the user's identity from A4. Lifetime statistics arrive with the
- * phases that produce them; nothing is shown before there is real data.
+ * Profile (docs/05 §3): the user's identity from A4, then lifetime progress (A3.5), then the
+ * entry points.
  */
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -61,6 +62,8 @@ export default function ProfileScreen() {
         </Card>
       )}
       {profile ? <Button variant="primary" label="Edit profile" onPress={openEdit} /> : null}
+      {/* Lifetime progress (A3.5), under the identity; the join date stays in the card. */}
+      <LifetimeStats />
       <ListRow
         title="Goals and rest days"
         onPress={() => router.push('/profile/goals')}

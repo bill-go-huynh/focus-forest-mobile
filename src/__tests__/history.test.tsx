@@ -13,6 +13,7 @@ import type { TimerState } from '../timer/timer-engine';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
 import { mockAppState } from '../test-utils/app-state';
 import { makeHistoryItem } from '../test-utils/history';
+import { makeWeek } from '../test-utils/insights';
 import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
@@ -131,6 +132,9 @@ function historyApi(initial: SessionHistoryItem[]) {
     if (pathname === '/session-rules')
       return { status: 200, body: { version: 1, minValidMinutes: 5, maxPauseMinutes: 30 } };
     if (pathname === '/me/topics') return { status: 200, body: [makeTopic({ ...writing })] };
+    // Insights above the history (M3.5): served, so its states never mix with the history's.
+    if (pathname === '/me/insights/week') return { status: 200, body: makeWeek() };
+    if (pathname === '/me/insights/records') return { status: 200, body: { records: [] } };
     if (pathname === '/me/sessions' && method === 'GET') {
       if (state.hold) await state.hold;
       if (state.down) return new NetworkError();
@@ -224,9 +228,11 @@ async function untilStored(key: string, check: (raw: string) => boolean = () => 
   }
   throw new Error(`Nothing stored under ${key}.`);
 }
+// Session rows only (they open the session), not the Insights above them.
 const rowNames = () =>
   screen
     .getAllByRole('button')
+    .filter((node) => node.props.accessibilityHint === 'Opens this session.')
     .map((node) => node.props.accessibilityLabel as string | undefined)
     .filter((label): label is string => !!label && /min(,|$)/.test(label));
 const rowFor = (topic: string) => screen.getByRole('button', { name: new RegExp(`^${topic}, `) });
@@ -269,7 +275,9 @@ describe('Focus history in Insights', () => {
     // An archived topic reads like any other.
     expect(rowFor('Algebra').props.accessibilityLabel).toMatch(/Completed, 50 min$/);
     expect(rowFor('Music').props.accessibilityLabel).toMatch(/Not counted, 3 min$/);
-    expect(screen.queryByText(/fail|lost|wast|abandon|archived/i)).toBeNull();
+    expect(screen.queryByText(/fail|lost|wast|abandon/i)).toBeNull();
+    // A history row never singles out an archived topic (Insights' topic list may name it).
+    expect(rowNames().filter((label) => /archived/i.test(label))).toEqual([]);
   });
 
   it('shows the Insights empty state when there are no sessions yet', async () => {

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
-import type { SessionHistoryItem } from '../api';
+import type { HistoryFilters, SessionHistoryItem } from '../api';
 import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
@@ -40,10 +40,15 @@ export function HistoryScreen() {
   );
 }
 
-function HistoryContent() {
+/**
+ * The history list (M3.5: on Insights, under its filters). With `filters`, the server's filtered
+ * sessions; discarded sessions stay listed ("Not counted"), they just add no focus.
+ */
+export function HistoryContent({ filters = null }: { filters?: HistoryFilters | null } = {}) {
   const theme = useTheme();
   const router = useRouter();
-  const { query, items, fromDevice } = useSessionHistory();
+  const { query, items, fromDevice } = useSessionHistory(filters);
+  const filtered = filters !== null && Object.values(filters).some((v) => v !== undefined);
 
   if (items === null) {
     if (query.isError) {
@@ -58,6 +63,14 @@ function HistoryContent() {
       <SkeletonGroup label="Loading your focus history">
         <Skeleton variant="text" lines={3} />
       </SkeletonGroup>
+    );
+  }
+
+  if (items.length === 0 && !fromDevice && filtered) {
+    return (
+      <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
+        No sessions match these filters.
+      </Text>
     );
   }
 

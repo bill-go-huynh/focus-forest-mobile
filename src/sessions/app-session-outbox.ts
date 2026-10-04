@@ -7,6 +7,7 @@ import type { CelebrationStore } from '../celebrations/celebration-store';
 import type { KeyValueStorage, StorageIssue } from '../common/stored-json';
 import { serverConfirmations } from '../core-loop/confirmations';
 import { invalidateCoreLoop } from '../core-loop/query-keys';
+import { invalidateInsights } from '../insights/queries';
 import { invalidateHistory } from '../history/query-keys';
 import { profileQueryKey } from '../profile/queries';
 import { invalidateTopicLists } from '../topics/query-keys';
@@ -56,6 +57,7 @@ export function createSessionOutbox({
       void invalidateTopicLists(queryClient).catch(() => undefined);
       void invalidateHistory(queryClient).catch(() => undefined);
       void invalidateCoreLoop(queryClient).catch(() => undefined);
+      void invalidateInsights(queryClient).catch(() => undefined);
     },
     // The growth is kept as a celebration first, then the receipt: until both are stored the
     // session stays queued, and a replay (200) answers the same stored growth. The count moves

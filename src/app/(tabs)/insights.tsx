@@ -1,6 +1,4 @@
-import { HistoryScreen } from '../../history/HistoryScreen';
+import { InsightsScreen } from '../../insights/InsightsScreen';
 
-/** Insights (docs/05 §1): in Phase 2, the basic focus history. Analytics arrive in Phase 6. */
-export default function InsightsScreen() {
-  return <HistoryScreen />;
-}
+/** Insights (docs/05 → Insights; M3.5): the week or month in review, records, and history. */
+export default InsightsScreen;

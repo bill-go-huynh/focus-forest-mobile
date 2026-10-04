@@ -39,14 +39,36 @@ export const historyPageSchema = z.object({
 export type SessionHistoryPage = z.infer<typeof historyPageSchema>;
 
 /**
- * GET /me/sessions: one page of the user's focus history, every status. The cursor is passed
- * back exactly as the server gave it; the client never reads it.
+ * History filters as the API names them (A3.5): a local-date range (`from`/`to`, the persisted
+ * local dates, inclusive), or a Monday `week` (local dates), or a `month` as sessions are
+ * attributed to it (as the monthly tree counts them, which is not always the same as its
+ * calendar dates); plus a topic. At most one of range, week, and month.
+ */
+export interface HistoryFilters {
+  from?: string;
+  to?: string;
+  week?: string;
+  month?: { year: number; month: number };
+  topicId?: string;
+}
+
+/**
+ * GET /me/sessions: one page of the user's focus history, every status, optionally filtered.
+ * The cursor is passed back exactly as the server gave it for the same filters; the client
+ * never reads it.
  */
 export function getSessionHistory(
   client: ApiClient,
-  { cursor }: { cursor?: string | null },
+  { cursor, filters = {} }: { cursor?: string | null; filters?: HistoryFilters },
 ): Promise<SessionHistoryPage> {
   const params = new URLSearchParams({ limit: String(HISTORY_PAGE_SIZE) });
+  if (filters.from) params.set('from', filters.from);
+  if (filters.to) params.set('to', filters.to);
+  if (filters.week) params.set('week', filters.week);
+  if (filters.month) {
+    params.set('month', `${filters.month.year}-${String(filters.month.month).padStart(2, '0')}`);
+  }
+  if (filters.topicId) params.set('topicId', filters.topicId);
   if (cursor) params.set('cursor', cursor);
   return client.request(`/me/sessions?${params.toString()}`, { schema: historyPageSchema });
 }
