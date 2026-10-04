@@ -16,6 +16,7 @@ import { MomentCaption } from './MomentCaption';
 import { dailyGoalLine, streakLine, weekLine, weeklyGoalLine } from './presentation';
 import { useHome } from './queries';
 import { useCelebrationPresenter } from './use-celebration';
+import { GOAL_REACHED_TEXT, useGoalReached } from './use-goal-met';
 import { useSceneTimeOfDay } from './use-scene-time';
 
 /**
@@ -71,7 +72,7 @@ export function HomeScreen() {
 
       <StartFocus quickTopics={home?.recentTopics ?? []} />
 
-      {home ? <HomeProgress home={home} /> : null}
+      {home ? <HomeProgress home={home} live={query.data?.home ?? null} ready={focused} /> : null}
 
       {tree ? (
         <Button variant="tertiary" label="Tree details" onPress={() => router.push('/tree')} />
@@ -80,15 +81,28 @@ export function HomeScreen() {
   );
 }
 
-/** Today's goal, the streak or rest day, this week, and the weekly goal when there is one. */
-function HomeProgress({ home }: { home: HomeResponse }) {
+/**
+ * Today's goal, the streak or rest day, this week, and the weekly goal when there is one. A
+ * goal reached is said once, from the live answer only (`live`), never from a saved Home.
+ */
+function HomeProgress({
+  home,
+  live,
+  ready,
+}: {
+  home: HomeResponse;
+  live: HomeResponse | null;
+  ready: boolean;
+}) {
   const theme = useTheme();
+  const reached = useGoalReached(live, ready);
   const daily = dailyGoalLine(home.goals.daily.today);
   const weekly = weeklyGoalLine(home.goals.weekly.thisWeek);
   const line = [theme.type.body, { color: theme.colors.text.primary }];
   return (
     <View style={{ gap: theme.space[3] }}>
       <ProgressRing progress={daily.percent} label="Daily goal" valueText={daily.valueText} />
+      {reached ? <Text style={line}>{GOAL_REACHED_TEXT}</Text> : null}
       <Text style={line}>{streakLine(home)}</Text>
       <Text style={line}>{weekLine(home.week)}</Text>
       {weekly ? (

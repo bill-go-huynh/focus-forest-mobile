@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
 
@@ -76,14 +77,18 @@ const happyApi: Handler = (request) => {
 // App data a signed-in screen reads once it opens (preferences; the session rules Home's Start
 // Focus needs; Home itself, M3.2), not calls of the auth flow.
 const APP_DATA = [`${API}/me/preferences`, `${API}/session-rules`, `${API}/me/home`];
+// Onboarding reads the suggested daily goal (M3.3).
+APP_DATA.push(`${API}/me/goals`);
 const authCalls = () => requests.filter((r) => !APP_DATA.includes(r.url));
 
 const originalFetch = globalThis.fetch;
 let announceSpy: jest.SpyInstance;
 let consoleSpies: jest.SpyInstance[];
-beforeEach(() => {
+beforeEach(async () => {
   process.env.EXPO_PUBLIC_API_URL = API;
   mockSecureStore.clear();
+  // Each test is a fresh device: a sign-up in one test leaves no onboarding state for the next.
+  await AsyncStorage.clear();
   mockSecureStoreGate = null;
   mockSecureStoreFailure = null;
   serve(happyApi);
@@ -196,13 +201,14 @@ describe('launch: restore the session, then route by its status', () => {
 });
 
 describe('sign up', () => {
-  it('creates the account, saves the name and time zone, then opens Home', async () => {
+  it('creates the account, saves the name and time zone, then opens onboarding above Home', async () => {
     const router = openApp();
     await fillSignUp();
     fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(await screen.findByTestId('tab-bar')).toBeOnTheScreen();
-    expect(router.getPathname()).toBe('/');
+    // M3.3: a new account goes through onboarding once, above Home.
+    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
+    expect(router.getPathname()).toBe('/onboarding');
     expect(authCalls().map((r) => [r.method, r.url])).toEqual([
       ['POST', `${API}/auth/sign-up`],
       ['PATCH', `${API}/me/profile`],
@@ -238,7 +244,7 @@ describe('sign up', () => {
     expect(screen.queryByTestId('tab-bar')).toBeNull();
 
     await act(async () => releaseProfile());
-    expect(await screen.findByTestId('tab-bar')).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
     expect(requests.filter((r) => r.url === `${API}/auth/sign-up`)).toHaveLength(1);
   });
 
@@ -263,7 +269,7 @@ describe('sign up', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByTestId('tab-bar')).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
     expect(requests.filter((r) => r.url === `${API}/auth/sign-up`)).toHaveLength(1);
     expect(requests.filter((r) => r.url === `${API}/me/profile`)).toHaveLength(2);
   });

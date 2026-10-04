@@ -25,6 +25,9 @@ import {
 import { createAppHomeSnapshotStore } from '../core-loop/home-snapshot-store';
 import { HomeCacheProvider } from '../core-loop/HomeCacheProvider';
 import { createAppHistorySnapshotStore, HistoryCacheProvider } from '../history';
+import { createAppOnboardingStore } from '../onboarding/onboarding-store';
+import { OnboardingNavigator } from '../onboarding/OnboardingNavigator';
+import { OnboardingProvider } from '../onboarding/OnboardingProvider';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
 import {
   createAppCompletionReceipts,
@@ -60,6 +63,7 @@ export default function RootLayout() {
   const [celebrations] = useState(createAppCelebrationStore);
   const [homeSnapshots] = useState(createAppHomeSnapshotStore);
   const [history] = useState(createAppHistorySnapshotStore);
+  const [onboarding] = useState(createAppOnboardingStore);
   const [sessions] = useState(() =>
     createAppSessionOutbox({
       client: api.client,
@@ -111,9 +115,12 @@ export default function RootLayout() {
                           {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
                           <AppearanceProviders>
                             <SafeAreaProvider>
-                              <AuthFlowProvider>
-                                <RootNavigator />
-                              </AuthFlowProvider>
+                              {/* A new account's onboarding, kept across kills (M3.3). */}
+                              <OnboardingProvider store={onboarding}>
+                                <AuthFlowProvider>
+                                  <RootNavigator />
+                                </AuthFlowProvider>
+                              </OnboardingProvider>
                               <ThemedStatusBar />
                             </SafeAreaProvider>
                           </AppearanceProviders>
@@ -168,6 +175,8 @@ function RootNavigator() {
             <Stack.Screen name="completion/[sessionId]" />
             {/* The current month's Tree Details, opened from the Home tree (docs/05). */}
             <Stack.Screen name="tree" />
+            {/* Onboarding, once after sign-up (M3.3): it leaves by its own buttons. */}
+            <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />
@@ -175,6 +184,7 @@ function RootNavigator() {
         </Stack>
       </View>
       {signedIn ? <CompletionNavigator /> : null}
+      {signedIn ? <OnboardingNavigator /> : null}
       {waitingForPreferences ? <LaunchScreen overlay /> : null}
     </View>
   );

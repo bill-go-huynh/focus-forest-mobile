@@ -26,10 +26,11 @@ describe('notification categories shown in Settings (docs/12: each phase adds it
 
   it('ties each category to the phase that builds its feature', () => {
     expect(NOTIFICATION_CATEGORY_PHASE).toEqual({
-      // Reminders about focus are Phase 18 (Notifications), not Phase 2 (focus sessions).
+      // Reminders are Phase 18 (Notifications; macro Phase 6), not the phases that build
+      // focus sessions (2) or goals and streaks (4, the Core Loop, M3.3).
       scheduledFocusReminder: 18,
-      dailyGoalReminder: 4,
-      streakReminder: 4,
+      dailyGoalReminder: 18,
+      streakReminder: 18,
       monthlyRecapReady: 7,
       badgeUnlocked: 8,
       friendInvite: 11,
@@ -51,8 +52,19 @@ describe('notification categories shown in Settings (docs/12: each phase adds it
     expect(visibleNotificationCategories(18)).toContain('scheduledFocusReminder');
   });
 
+  it('never offers daily goal or streak reminders with the Core Loop (goals and streaks)', () => {
+    for (const phase of [4, 7, 17]) {
+      expect(visibleNotificationCategories(phase)).not.toContain('dailyGoalReminder');
+      expect(visibleNotificationCategories(phase)).not.toContain('streakReminder');
+    }
+    expect(visibleNotificationCategories(18)).toEqual(
+      expect.arrayContaining(['dailyGoalReminder', 'streakReminder', 'scheduledFocusReminder']),
+    );
+  });
+
   it('adds categories as their phases arrive, keeping spec order', () => {
-    expect(visibleNotificationCategories(4)).toEqual(['dailyGoalReminder', 'streakReminder']);
+    expect(visibleNotificationCategories(4)).toEqual([]);
+    expect(visibleNotificationCategories(7)).toEqual(['monthlyRecapReady']);
     expect(visibleNotificationCategories(20)).toEqual(NOTIFICATION_CATEGORIES);
   });
 });

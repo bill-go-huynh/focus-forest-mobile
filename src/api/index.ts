@@ -27,6 +27,23 @@ export {
   type PreferenceChanges,
   type Preferences,
 } from './preferences';
+export {
+  acceptRecovery,
+  cancelRestDay,
+  clearWeeklyGoal,
+  consistencyErrorCode,
+  getGoals,
+  getRestDays,
+  getStreak,
+  restDaysSchema,
+  scheduleRestDay,
+  setDailyGoal,
+  setWeeklyGoal,
+  type Goals,
+  type RestDays,
+  type WeeklyGoal,
+  type WeeklyGoalType,
+} from './consistency';
 export { createQueryClient } from './query-client';
 export {
   archiveTopic,

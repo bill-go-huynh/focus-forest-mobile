@@ -10,6 +10,7 @@ import { MomentCaption } from '../core-loop/MomentCaption';
 import { dailyGoalLine, growthMoment, streakLine } from '../core-loop/presentation';
 import { useHome } from '../core-loop/queries';
 import { useCelebrationPresenter } from '../core-loop/use-celebration';
+import { GOAL_REACHED_TEXT, useGoalReached } from '../core-loop/use-goal-met';
 import { useSceneTimeOfDay } from '../core-loop/use-scene-time';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
@@ -92,12 +93,20 @@ function CompletionProgress() {
   const theme = useTheme();
   const { query, askedAfter } = useHome();
   const [confirmation] = useState(() => serverConfirmations.current());
-  const home = query.data?.home;
-  if (!home || askedAfter === null || askedAfter < confirmation) return null;
+  const answer = query.data?.home;
+  const home = answer && askedAfter !== null && askedAfter >= confirmation ? answer : null;
+  // Today's goal reached is said once, here or on Home, whichever shows it first.
+  const reached = useGoalReached(home, true);
+  if (!home) return null;
   const daily = dailyGoalLine(home.goals.daily.today);
   return (
     <View testID="completion-progress" style={{ gap: theme.space[2] }}>
       <ProgressRing progress={daily.percent} label="Daily goal" valueText={daily.valueText} />
+      {reached ? (
+        <Text style={[theme.type.body, { color: theme.colors.text.primary }]}>
+          {GOAL_REACHED_TEXT}
+        </Text>
+      ) : null}
       <Text style={[theme.type.body, { color: theme.colors.text.primary }]}>
         {streakLine(home)}
       </Text>

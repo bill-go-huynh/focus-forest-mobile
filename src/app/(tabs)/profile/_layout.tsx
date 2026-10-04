@@ -2,7 +2,10 @@ import { Stack } from 'expo-router';
 
 import { useTheme } from '../../../theme';
 
-/** Profile and the screens under it: Edit profile, Topics, and Settings (docs/05 §2, §4). */
+/**
+ * Profile and the screens under it: Edit profile, Goals and rest days, Topics, and Settings
+ * (docs/05 §2, §4).
+ */
 export default function ProfileLayout() {
   const theme = useTheme();
   return (
@@ -16,6 +19,7 @@ export default function ProfileLayout() {
     >
       <Stack.Screen name="index" options={{ headerShown: false, title: 'Profile' }} />
       <Stack.Screen name="edit" options={{ title: 'Edit profile' }} />
+      <Stack.Screen name="goals" options={{ title: 'Goals and rest days' }} />
       <Stack.Screen name="topics" options={{ title: 'Topics' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>

@@ -7,6 +7,7 @@ import {
   useApi,
   type ProfileChanges,
 } from '../api';
+import { useOnboardingStore } from '../onboarding/OnboardingProvider';
 import { useAuthFlow } from './AuthFlowProvider';
 import { describeAuthError, type AuthErrorDescription } from './describe-error';
 import { getDeviceTimeZone } from './device-time-zone';
@@ -19,12 +20,14 @@ const PROFILE_GENERAL_MESSAGE =
 
 /**
  * Sign up (M11): create the account (A3), then save the display name and the device time
- * zone in one PATCH /me/profile (A4), then let the app open Home. If the profile step fails,
- * the account exists: `retryProfile` repeats only that step.
+ * zone in one PATCH /me/profile (A4), then let the app open. The new account is marked
+ * onboarding-pending as soon as it exists (M3.3), so a kill before onboarding ends resumes it.
+ * If the profile step fails, the account exists: `retryProfile` repeats only that step.
  */
 export function useSignUp() {
   const { auth, client } = useApi();
   const { setCompletingSignUp } = useAuthFlow();
+  const onboarding = useOnboardingStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<AuthErrorDescription | null>(null);
   const [profilePending, setProfilePending] = useState(false);
@@ -67,7 +70,9 @@ export function useSignUp() {
     run(async () => {
       setCompletingSignUp(true);
       try {
-        await auth.signUp({ email: values.email, password: values.password });
+        const user = await auth.signUp({ email: values.email, password: values.password });
+        // Only a new account is ever marked: existing ones never go through onboarding.
+        await onboarding.markPending(user.id);
       } catch (cause) {
         setCompletingSignUp(false);
         setError(describeAuthError(cause));

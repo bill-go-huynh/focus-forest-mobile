@@ -424,6 +424,68 @@ describe('Home', () => {
   });
 });
 
+describe('today’s goal reached: said quietly, once (M3.3)', () => {
+  const REACHED = "You reached today's goal.";
+
+  it('says it once on Home from the server’s answer, never again', async () => {
+    server.state.home = goalReached(server.state.home);
+    await openHome();
+    await shows(REACHED);
+    await until(() => announced().includes(REACHED));
+    await untilAsync(async () => {
+      const raw = await AsyncStorage.getItem(celebrationsKey(USER));
+      return raw !== null && JSON.parse(raw).goalsCelebrated?.includes('2026-10-07');
+    });
+    screen.unmount();
+
+    await openHome();
+    await treeImage();
+    await pause();
+    expect(screen.queryByText(REACHED)).toBeNull();
+    expect(announced().filter((m) => m === REACHED)).toHaveLength(0);
+  });
+
+  it('says it on Completion when the session reached it, and Home does not repeat it', async () => {
+    server.state.homeAfterSession = goalReached(server.state.home);
+    server.state.growth = makeGrowth({ blossoms: { from: 1, to: 2 } });
+    await finishedTimerOnDevice();
+    renderApp(appRoutes, { initialUrl: `/completion/${SESSION_ID}` });
+    await until(() => completionProgress() !== null);
+    expect(within(completionProgress()!).getByText(REACHED)).toBeOnTheScreen();
+    // The blossoms are the tree's reward: one moment, no second animation.
+    await shows('New blossoms opened.');
+    await untilAsync(async () => {
+      const raw = await AsyncStorage.getItem(celebrationsKey(USER));
+      return raw !== null && JSON.parse(raw).goalsCelebrated?.includes('2026-10-07');
+    });
+    screen.unmount();
+
+    await openHome();
+    await treeImage();
+    await pause();
+    expect(screen.queryByText(REACHED)).toBeNull();
+  });
+
+  it('never says it from a Home saved on the device', async () => {
+    await AsyncStorage.setItem(
+      homeSnapshotKey(USER),
+      JSON.stringify({ version: 1, savedAt: 1, home: goalReached(makeHome()) }),
+    );
+    server.state.offline = true;
+    await openHome();
+    await treeImage();
+    await pause();
+    expect(screen.queryByText(REACHED)).toBeNull();
+  });
+
+  it('says nothing while the goal is not reached', async () => {
+    await openHome();
+    await treeImage();
+    await pause();
+    expect(screen.queryByText(REACHED)).toBeNull();
+  });
+});
+
 describe('Tree Details (current month)', () => {
   async function openTreeDetails() {
     await openHome();

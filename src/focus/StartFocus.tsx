@@ -49,14 +49,21 @@ const topicName = (entry: PickerTopic) =>
  * duration choice. The same handoff, rules, and start path as the sheet.
  *
  * `variant="secondary"` is the same entry where it is not the screen's main action (Tree
- * Details): only the button's weight changes.
+ * Details): only the button's weight changes. `open="replace"` puts Focus in place of the
+ * current screen (onboarding's last step), so leaving the session returns to Home.
+ * `onFocusOpening` runs (and is awaited) once the timer is stored, right before Focus opens:
+ * the one point where a session from this entry has really begun.
  */
 export function StartFocus({
   quickTopics = [],
   variant = 'primary',
+  open = 'push',
+  onFocusOpening,
 }: {
   quickTopics?: readonly Topic[];
   variant?: 'primary' | 'secondary';
+  open?: 'push' | 'replace';
+  onFocusOpening?: () => Promise<unknown>;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -69,9 +76,11 @@ export function StartFocus({
   const [homeNotice, setHomeNotice] = useState<Notice | null>(null);
   const [startFailed, setStartFailed] = useState(false);
 
-  const openFocus = () => {
+  const openFocus = async () => {
     setStep('closed');
-    router.push('/focus');
+    await onFocusOpening?.();
+    if (open === 'replace') router.replace('/focus');
+    else router.push('/focus');
   };
 
   /** True once no timer is in the way: a finished one was handed to the outbox first. */
@@ -94,7 +103,7 @@ export function StartFocus({
     setHomeNotice(null);
     const current = timers.getSnapshot().timer;
     if (current && !current.finished) {
-      openFocus();
+      void openFocus();
       return;
     }
     if (!(await clearFinished())) return;
@@ -106,7 +115,7 @@ export function StartFocus({
     setHomeNotice(null);
     const current = timers.getSnapshot().timer;
     if (current && !current.finished) {
-      openFocus();
+      void openFocus();
       return;
     }
     if (!(await clearFinished())) return;
@@ -125,7 +134,7 @@ export function StartFocus({
     });
     // Opened only once the timer is stored (or one already runs).
     if (started.ok || started.reason === 'timer_exists') {
-      openFocus();
+      void openFocus();
       return;
     }
     setStartFailed(true);

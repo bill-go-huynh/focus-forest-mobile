@@ -98,13 +98,24 @@ describe('route structure', () => {
     expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(/name="tree"/);
   });
 
+  it('puts onboarding on the root stack, outside the tabs, with no swipe back (M3.3)', () => {
+    expect(routeFiles(APP).filter((file) => /onboarding/i.test(relative(APP, file)))).toEqual([
+      join(APP, 'onboarding.tsx'),
+    ]);
+    expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(
+      /name="onboarding"\s+options=\{\{\s*gestureEnabled: false\s*\}\}/,
+    );
+  });
+
   it('keeps every screen inside the tabs or the auth group, so there is no stray route', () => {
     // Focus and Session Completion are full-screen takeovers; Tree Details is Home's level-2
-    // screen, kept on the root stack so Home stays a single tab screen.
+    // screen, kept on the root stack so Home stays a single tab screen; onboarding opens once
+    // after sign-up, above Home.
     const takeovers = [
       join(APP, 'focus.tsx'),
       join(APP, 'completion', '[sessionId].tsx'),
       join(APP, 'tree.tsx'),
+      join(APP, 'onboarding.tsx'),
     ];
     const outside = routeFiles(APP).filter(
       (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && !takeovers.includes(file),

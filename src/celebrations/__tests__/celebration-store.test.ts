@@ -2,7 +2,12 @@ import { quarantineKeyOf, type StorageIssue } from '../../common/stored-json';
 import { CLOSED_MONTH_GROWTH, makeGrowth } from '../../test-utils/core-loop';
 import { makeSessionResult } from '../../test-utils/sessions';
 import { memoryStorage } from '../../test-utils/storage';
-import { celebrationsKey, CelebrationStore, isCelebratable } from '../celebration-store';
+import {
+  celebrationsKey,
+  CelebrationStore,
+  GOALS_CELEBRATED_MAX,
+  isCelebratable,
+} from '../celebration-store';
 
 const ADA = '11111111-1111-4111-8111-111111111111';
 const GRACE = '22222222-2222-4222-8222-222222222222';
@@ -181,5 +186,62 @@ describe('CelebrationStore', () => {
     expect(store.getSnapshot()).toMatchObject({ status: 'ready', pending: [] });
     expect(storage.data.get(quarantineKeyOf(celebrationsKey(ADA)))).toBe(raw);
     expect(issues.length).toBeGreaterThan(0);
+  });
+});
+
+describe('CelebrationStore: today’s goal reached, celebrated once (M3.3)', () => {
+  const DAY = '2026-10-07';
+
+  it('marks a day’s goal celebrated durably before it shows, once', async () => {
+    const { store, storage } = await ready();
+    expect(store.getSnapshot().goalsCelebrated).toEqual([]);
+    await expect(store.celebrateGoal(ADA, DAY)).resolves.toBe(true);
+    expect(store.getSnapshot().goalsCelebrated).toEqual([DAY]);
+    expect(JSON.parse(storage.data.get(celebrationsKey(ADA))!).goalsCelebrated).toEqual([DAY]);
+    await expect(store.celebrateGoal(ADA, DAY)).resolves.toBe(true);
+    expect(store.getSnapshot().goalsCelebrated).toEqual([DAY]);
+  });
+
+  it('remembers it across a restart, per user, alongside waiting growth', async () => {
+    const storage = memoryStorage();
+    const first = await ready(storage);
+    await first.store.record(ADA, grown(S1));
+    await first.store.celebrateGoal(ADA, DAY);
+
+    const again = await ready(storage);
+    expect(again.store.getSnapshot().goalsCelebrated).toEqual([DAY]);
+    expect(pendingIds(again.store)).toEqual([S1]);
+    const grace = await ready(storage, GRACE);
+    expect(grace.store.getSnapshot().goalsCelebrated).toEqual([]);
+  });
+
+  it('reads a document saved before goals were celebrated', async () => {
+    const storage = memoryStorage();
+    storage.data.set(
+      celebrationsKey(ADA),
+      JSON.stringify({ version: 1, pending: [], consumed: [] }),
+    );
+    const { store, issues } = await ready(storage);
+    expect(store.getSnapshot()).toMatchObject({ status: 'ready', goalsCelebrated: [] });
+    expect(issues).toEqual([]);
+  });
+
+  it('answers false when it cannot be stored, so the goal is not marked', async () => {
+    const storage = memoryStorage();
+    const { store } = await ready(storage);
+    storage.failing.setItem = true;
+    await expect(store.celebrateGoal(ADA, DAY)).resolves.toBe(false);
+    expect(store.getSnapshot().goalsCelebrated).toEqual([]);
+  });
+
+  it('keeps a bounded number of days', async () => {
+    const { store } = await ready();
+    for (let day = 1; day <= GOALS_CELEBRATED_MAX + 5; day += 1) {
+      await store.celebrateGoal(
+        ADA,
+        `2026-${String(Math.ceil(day / 28)).padStart(2, '0')}-${String(((day - 1) % 28) + 1).padStart(2, '0')}`,
+      );
+    }
+    expect(store.getSnapshot().goalsCelebrated).toHaveLength(GOALS_CELEBRATED_MAX);
   });
 });

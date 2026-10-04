@@ -8,11 +8,13 @@ import HomeScreen from '../app/(tabs)/index';
 import InsightsScreen from '../app/(tabs)/insights';
 import ProfileLayout from '../app/(tabs)/profile/_layout';
 import EditProfileScreen from '../app/(tabs)/profile/edit';
+import GoalsRoute from '../app/(tabs)/profile/goals';
 import ProfileScreen from '../app/(tabs)/profile/index';
 import SettingsScreen from '../app/(tabs)/profile/settings';
 import TopicsRoute from '../app/(tabs)/profile/topics';
 import CompletionRoute from '../app/completion/[sessionId]';
 import FocusRoute from '../app/focus';
+import OnboardingRoute from '../app/onboarding';
 import TreeRoute from '../app/tree';
 
 /** The app's real routes, for renderRouter from expo-router/testing-library. */
@@ -28,9 +30,11 @@ export const appRoutes = {
   '(tabs)/profile/_layout': ProfileLayout,
   '(tabs)/profile/index': ProfileScreen,
   '(tabs)/profile/edit': EditProfileScreen,
+  '(tabs)/profile/goals': GoalsRoute,
   '(tabs)/profile/topics': TopicsRoute,
   '(tabs)/profile/settings': SettingsScreen,
   focus: FocusRoute,
   'completion/[sessionId]': CompletionRoute,
   tree: TreeRoute,
+  onboarding: OnboardingRoute,
 };

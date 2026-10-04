@@ -38,5 +38,7 @@ export function useCelebrations(): CelebrationsSnapshot {
   const store = useCelebrationStore();
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { user } = useSession();
-  return snapshot.userId === user?.id ? snapshot : { ...snapshot, pending: [], held: [] };
+  return snapshot.userId === user?.id
+    ? snapshot
+    : { ...snapshot, pending: [], held: [], goalsCelebrated: [] };
 }
