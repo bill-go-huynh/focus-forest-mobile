@@ -20,6 +20,7 @@ import { useActiveTimer } from '../timer/ActiveTimerProvider';
 import { focusedMillisecondsOf } from '../timer/submission';
 import { useTopicIdentity } from '../topics/topic-create-sync';
 import { NEW_TOPIC_DEFAULTS } from '../topics/topic-form';
+import { CompletionGrowth } from './CompletionGrowth';
 
 const MINUTE = 60_000;
 const UNKNOWN_TOPIC_NAME = 'Focus topic';
@@ -97,7 +98,11 @@ function useKnownSession(sessionId: string): Known {
 /** Title and the plain explanation that goes with it (docs/02: never "failed"). */
 function outcomeOf(known: Known & { kind: 'server' | 'device' }) {
   if (known.kind === 'device') {
-    return { title: 'Focus session finished', detail: 'Saved on this device.' };
+    // Offline: no growth, goal, or streak is claimed before the server answers (M3.2).
+    return {
+      title: 'Focus session finished',
+      detail: 'Saved on this device. Your tree and progress update once it syncs.',
+    };
   }
   if (known.session.status === 'completed') return { title: 'Session complete', detail: null };
   if (known.session.status === 'discarded') {
@@ -123,7 +128,9 @@ function useLeave() {
 /**
  * Session Completion, Phase 2 basic (docs/05): the outcome, the time focused, an optional note,
  * and Done. It shows the server's evaluation when the device has it (this process's answer, or
- * the receipt kept from an earlier one), and until then only what the device measured. No tree, goals, or streak yet (Phase 3 and later).
+ * the receipt kept from an earlier one), and until then only what the device measured. With the
+ * server's answer it adds what the session did to the tree (M3.2, `CompletionGrowth`) and the
+ * server's daily goal and streak.
  */
 export function CompletionScreen({ sessionId }: { sessionId: string }) {
   const theme = useTheme();
@@ -230,6 +237,10 @@ function CompletionContent({
       {detail ? (
         <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>{detail}</Text>
       ) : null}
+      <CompletionGrowth
+        sessionId={sessionId}
+        session={known.kind === 'server' ? known.session : null}
+      />
 
       <View style={{ gap: theme.space[3] }}>
         <Input

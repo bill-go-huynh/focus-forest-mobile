@@ -80,6 +80,13 @@ export interface SessionOutboxOptions {
    * queued and is replayed (200) on a later flush, so its answer is never known only in memory.
    */
   keepReceipt?: (userId: string, session: FocusSession) => Promise<boolean>;
+  /**
+   * Gives the user's profile a time zone (PATCH /me/profile with the device's zone) after a
+   * `timezone_required` answer; resolves true once the server accepted it. Tried at most once per
+   * flush, whatever the number of blocked sessions; then the same raw session is sent again.
+   * False (no valid device zone, or the PATCH failed) leaves the sessions `blocked_timezone`.
+   */
+  repairTimeZone?: (userId: string) => Promise<boolean>;
 }
 
 const LOWERCASE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -248,6 +255,7 @@ export class SessionOutbox {
   private async runFlush(generation: number): Promise<void> {
     const tried = new Set<string>();
     let askedForTopics = false;
+    let repairedTimeZone = false;
     for (;;) {
       if (generation !== this.generation || !this.ready()) return;
       const userId = this.snapshot.userId as string;
@@ -279,6 +287,22 @@ export class SessionOutbox {
         outcome = classify(error);
       }
       if (generation !== this.generation) return;
+
+      if (
+        outcome.kind === 'blocked' &&
+        outcome.state === 'blocked_timezone' &&
+        !repairedTimeZone &&
+        this.options.repairTimeZone
+      ) {
+        // One repair per flush; on success the same session is sent again, unchanged.
+        repairedTimeZone = true;
+        const repaired = await this.options.repairTimeZone(userId).catch(() => false);
+        if (generation !== this.generation) return;
+        if (repaired) {
+          tried.delete(next.id);
+          continue;
+        }
+      }
 
       if (outcome.kind === 'synced') {
         const { session } = outcome;

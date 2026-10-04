@@ -17,7 +17,10 @@ export function makeSubmissionBody(
   };
 }
 
-/** A session exactly as PUT /me/sessions/:id answers it (A2.5). */
+/**
+ * A session exactly as PUT /me/sessions/:id answers it (A2.5, with A3.3's `growth`: null by
+ * default, as for a session stored before Phase 3).
+ */
 export function makeSessionResult(overrides: Partial<FocusSession> = {}): FocusSession {
   return {
     id: '0192f1a2-3b4c-7d5e-8f60-718293a4b5c6',
@@ -34,6 +37,7 @@ export function makeSessionResult(overrides: Partial<FocusSession> = {}): FocusS
     month: 9,
     note: null,
     createdAt: '2026-09-27T10:25:01.000Z',
+    growth: null,
     ...overrides,
   };
 }

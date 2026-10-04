@@ -120,6 +120,13 @@ function readSeed(value: unknown): number {
 
 const TRAIT_PATTERN = /^([a-z-]+):(\d+)$/;
 
+/** A trait id of a family the renderer knows ("<family>:<value>"), or null. */
+export function knownTrait(id: string): KnownTrait | null {
+  const match = TRAIT_PATTERN.exec(id);
+  const family = TRAIT_FAMILIES.find((known) => known === match?.[1]);
+  return match && family ? { id, family, value: Number(match[2]) } : null;
+}
+
 function readTraits(list: unknown) {
   const traitIds: string[] = [];
   const traits: KnownTrait[] = [];
@@ -128,9 +135,8 @@ function readTraits(list: unknown) {
     const id: unknown = (entry as { id?: unknown } | null)?.id;
     if (typeof id !== 'string' || traitIds.includes(id)) continue;
     traitIds.push(id);
-    const match = TRAIT_PATTERN.exec(id);
-    const family = TRAIT_FAMILIES.find((known) => known === match?.[1]);
-    if (match && family) traits.push({ id, family, value: Number(match[2]) });
+    const trait = knownTrait(id);
+    if (trait) traits.push(trait);
     else unknownTraitIds.push(id);
   }
   return { traits, unknownTraitIds, traitIds };

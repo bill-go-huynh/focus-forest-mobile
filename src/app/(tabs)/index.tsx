@@ -1,35 +1,4 @@
-import { View, useWindowDimensions } from 'react-native';
+import { HomeScreen } from '../../core-loop/HomeScreen';
 
-import { EmptyState } from '../../components/EmptyState';
-import { Screen } from '../../components/Screen';
-import { StartFocus } from '../../focus/StartFocus';
-import { useTheme } from '../../theme';
-
-/**
- * Home, Phase 1 shell (docs/05 §3). The tree scene holds the hero space the monthly tree
- * takes in Phase 3. Start Focus sits right under it (docs/05 §1: next to the tree).
- */
-export default function HomeScreen() {
-  const theme = useTheme();
-  const { height } = useWindowDimensions();
-  return (
-    <Screen title="This month">
-      <View
-        testID="home-hero"
-        style={{
-          // The tree takes roughly the upper 55–65% of Home (docs/05 §3).
-          minHeight: height * 0.55,
-          justifyContent: 'center',
-          borderRadius: theme.radius.xl,
-          backgroundColor: theme.colors.surface.scene,
-        }}
-      >
-        <EmptyState
-          illustration="seed-in-soil"
-          message="Your first session will plant this month's seed."
-        />
-      </View>
-      <StartFocus />
-    </Screen>
-  );
-}
+/** Home (docs/05 §3): the monthly tree, Start Focus, and today's progress. */
+export default HomeScreen;

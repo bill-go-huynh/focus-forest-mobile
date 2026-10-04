@@ -282,7 +282,9 @@ describe('the completion of a session not yet on the server', () => {
     expect(await screen.findByRole('header', { name: 'Focus session finished' })).toBeOnTheScreen();
     expect(screen.getByText('Reading')).toBeOnTheScreen();
     expect(screen.getByText('12 min focused')).toBeOnTheScreen();
-    expect(screen.getByText('Saved on this device.')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Saved on this device. Your tree and progress update once it syncs.'),
+    ).toBeOnTheScreen();
     expect(screen.queryByText(/count|complete|fail|lost|wast|streak/i)).toBeNull();
   });
 
@@ -329,7 +331,9 @@ describe('the server’s answer', () => {
     // The server's focused time, not the device's 12 minutes.
     expect(screen.getByText('9 min focused')).toBeOnTheScreen();
     if (detail) expect(screen.getByText(detail)).toBeOnTheScreen();
-    expect(screen.queryByText('Saved on this device.')).toBeNull();
+    expect(
+      screen.queryByText('Saved on this device. Your tree and progress update once it syncs.'),
+    ).toBeNull();
   });
 
   it('upgrades the screen in place when the session syncs, keeping the note being typed', async () => {
@@ -605,7 +609,9 @@ describe('a session synced by an earlier process', () => {
     expect(screen.getByText('25 min focused')).toBeOnTheScreen();
     expect(screen.getByText('Reading')).toBeOnTheScreen();
     expect(screen.queryByText(MISSING)).toBeNull();
-    expect(screen.queryByText('Saved on this device.')).toBeNull();
+    expect(
+      screen.queryByText('Saved on this device. Your tree and progress update once it syncs.'),
+    ).toBeNull();
     // Nothing was asked of the server: the device kept its answer.
     expect(sessionCalls('PUT')).toEqual([]);
   });

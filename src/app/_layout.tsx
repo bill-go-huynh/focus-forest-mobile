@@ -14,12 +14,16 @@ import {
   useSession,
 } from '../api';
 import { AuthFlowProvider, useAuthFlow } from '../auth';
+import { createAppCelebrationStore } from '../celebrations/celebration-store';
+import { CelebrationsProvider } from '../celebrations/CelebrationsProvider';
 import { CompletionIntents, CompletionIntentsProvider, CompletionNavigator } from '../completion';
 import {
   createAppTimerNotifications,
   onTimerNotificationTap,
   TimerNotificationSync,
 } from '../notifications';
+import { createAppHomeSnapshotStore } from '../core-loop/home-snapshot-store';
+import { HomeCacheProvider } from '../core-loop/HomeCacheProvider';
 import { createAppHistorySnapshotStore, HistoryCacheProvider } from '../history';
 import { AppearanceProviders, useWaitingForPreferences } from '../preferences';
 import {
@@ -53,9 +57,18 @@ export default function RootLayout() {
     createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
   );
   const [receipts] = useState(createAppCompletionReceipts);
+  const [celebrations] = useState(createAppCelebrationStore);
+  const [homeSnapshots] = useState(createAppHomeSnapshotStore);
   const [history] = useState(createAppHistorySnapshotStore);
   const [sessions] = useState(() =>
-    createAppSessionOutbox({ client: api.client, queryClient, topicQueue: topicCreates, receipts }),
+    createAppSessionOutbox({
+      client: api.client,
+      queryClient,
+      topicQueue: topicCreates,
+      receipts,
+      celebrations,
+      currentUserId: () => api.session.getSnapshot().user?.id ?? null,
+    }),
   );
   const [notes] = useState(() =>
     createAppSessionNotes({ client: api.client, sessions, timers, receipts }),
@@ -82,27 +95,33 @@ export default function RootLayout() {
             {/* The history last loaded, so History and its sessions still show offline. */}
             <HistoryCacheProvider store={history}>
               <CompletionReceiptsProvider receipts={receipts}>
-                {/* A finished timer's session is queued on the device, then sent when it can be. */}
-                <SessionOutboxProvider outbox={sessions}>
-                  {/* Notes wait on the device until their session is on the server. */}
-                  <SessionNotesProvider notes={notes}>
-                    {/* Which Session Completion to open: a session ended here, or a tap. */}
-                    <CompletionIntentsProvider
-                      intents={completions}
-                      listenForTaps={onTimerNotificationTap}
-                    >
-                      {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-                      <AppearanceProviders>
-                        <SafeAreaProvider>
-                          <AuthFlowProvider>
-                            <RootNavigator />
-                          </AuthFlowProvider>
-                          <ThemedStatusBar />
-                        </SafeAreaProvider>
-                      </AppearanceProviders>
-                    </CompletionIntentsProvider>
-                  </SessionNotesProvider>
-                </SessionOutboxProvider>
+                {/* Server-confirmed tree growth still to be shown, kept across kills (M3.2). */}
+                <CelebrationsProvider store={celebrations}>
+                  {/* The last Home the server answered, so Home still shows offline. */}
+                  <HomeCacheProvider store={homeSnapshots}>
+                    {/* A finished timer's session is queued on the device, then sent when it can be. */}
+                    <SessionOutboxProvider outbox={sessions}>
+                      {/* Notes wait on the device until their session is on the server. */}
+                      <SessionNotesProvider notes={notes}>
+                        {/* Which Session Completion to open: a session ended here, or a tap. */}
+                        <CompletionIntentsProvider
+                          intents={completions}
+                          listenForTaps={onTimerNotificationTap}
+                        >
+                          {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+                          <AppearanceProviders>
+                            <SafeAreaProvider>
+                              <AuthFlowProvider>
+                                <RootNavigator />
+                              </AuthFlowProvider>
+                              <ThemedStatusBar />
+                            </SafeAreaProvider>
+                          </AppearanceProviders>
+                        </CompletionIntentsProvider>
+                      </SessionNotesProvider>
+                    </SessionOutboxProvider>
+                  </HomeCacheProvider>
+                </CelebrationsProvider>
               </CompletionReceiptsProvider>
             </HistoryCacheProvider>
           </TopicCreateQueueProvider>
@@ -147,6 +166,8 @@ function RootNavigator() {
             <Stack.Screen name="focus" options={{ gestureEnabled: false }} />
             {/* Session Completion, a full-screen takeover too; Done returns Home. */}
             <Stack.Screen name="completion/[sessionId]" />
+            {/* The current month's Tree Details, opened from the Home tree (docs/05). */}
+            <Stack.Screen name="tree" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />

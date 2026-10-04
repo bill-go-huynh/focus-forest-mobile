@@ -74,8 +74,8 @@ const happyApi: Handler = (request) => {
 
 /** Requests other than the preferences read every signed-in launch makes (M13). */
 // App data a signed-in screen reads once it opens (preferences; the session rules Home's Start
-// Focus needs), not calls of the auth flow.
-const APP_DATA = [`${API}/me/preferences`, `${API}/session-rules`];
+// Focus needs; Home itself, M3.2), not calls of the auth flow.
+const APP_DATA = [`${API}/me/preferences`, `${API}/session-rules`, `${API}/me/home`];
 const authCalls = () => requests.filter((r) => !APP_DATA.includes(r.url));
 
 const originalFetch = globalThis.fetch;

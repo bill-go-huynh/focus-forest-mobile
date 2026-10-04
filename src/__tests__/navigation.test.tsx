@@ -113,18 +113,12 @@ describe('four-tab navigation (docs/05 §1)', () => {
       },
     );
 
-    it('Home shows the seed shell in the tree scene, with no tree yet', async () => {
+    it('Home keeps its tree hero and Start Focus, calm when the tree cannot load (M3.2)', async () => {
       await openApp('/');
-      expect(
-        await screen.findByText("Your first session will plant this month's seed."),
-      ).toBeOnTheScreen();
-      expect(
-        screen.getByTestId('illustration-seed-in-soil', { includeHiddenElements: true }),
-      ).toBeOnTheScreen();
-      const hero = screen.getByTestId('home-hero');
-      expect(StyleSheet.flatten(hero.props.style).backgroundColor).toBe(
-        lightTheme.colors.surface.scene,
-      );
+      // This test's server has no Home: the hero says so calmly, never an empty "coming soon".
+      expect(await screen.findByText("We couldn't load your tree right now.")).toBeOnTheScreen();
+      expect(screen.getByTestId('home-hero')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Start Focus' })).toBeOnTheScreen();
     });
 
     it("Forest leads back to this month's tree on Home", async () => {

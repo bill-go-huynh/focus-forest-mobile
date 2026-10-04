@@ -78,6 +78,7 @@ function launch({
   syncTopics = jest.fn(async () => undefined),
   onSynced = jest.fn(),
   keepReceipt,
+  repairTimeZone,
 }: {
   storage?: Storage;
   send?: Send;
@@ -85,6 +86,7 @@ function launch({
   syncTopics?: jest.Mock<Promise<void>, []>;
   onSynced?: jest.Mock;
   keepReceipt?: (userId: string, session: FocusSession) => Promise<boolean>;
+  repairTimeZone?: (userId: string) => Promise<boolean>;
 } = {}) {
   const issues: StorageIssue[] = [];
   const isTopicSynced = jest.fn(synced);
@@ -97,6 +99,7 @@ function launch({
     syncTopics,
     onSynced,
     keepReceipt,
+    repairTimeZone,
   });
   return { outbox, storage, issues, isTopicSynced, syncTopics, onSynced };
 }
@@ -940,5 +943,161 @@ describe('the completion receipt: kept before the session leaves the outbox', ()
     await outbox.flush();
 
     expect(keepReceipt).toHaveBeenCalledWith(ADA, result(S1, submission(S1).body));
+  });
+});
+
+describe('time zone repair (timezone_required)', () => {
+  /** A server that refuses sessions until the profile has a time zone. */
+  function zoneServer() {
+    const srv = server();
+    const state = { zone: null as string | null };
+    const send = jest.fn<Promise<FocusSession>, [string, SessionSubmissionBody]>(
+      async (id, payload) => {
+        if (!state.zone) throw coded(422, 'timezone_required');
+        return srv.send(id, payload);
+      },
+    );
+    /** The app's repair: PATCH /me/profile with the device zone. */
+    const repair = jest.fn(async (_userId: string) => {
+      state.zone = 'Asia/Ho_Chi_Minh';
+      return true;
+    });
+    return { srv, state, send, repair };
+  }
+
+  const sentPayloads = (send: jest.Mock, id: string) =>
+    send.mock.calls.filter(([sent]) => sent === id).map(([, payload]) => payload);
+
+  it('sets the time zone once, then sends the exact same raw session again', async () => {
+    const { send, repair } = zoneServer();
+    const { outbox, storage } = await readyOutbox({ send, repairTimeZone: repair });
+    const session = submission(S1);
+    await outbox.enqueue(ADA, session);
+    const before = structuredClone(storedItems(storage)[0]!.payload);
+
+    await outbox.flush();
+
+    expect(repair).toHaveBeenCalledTimes(1);
+    expect(repair).toHaveBeenCalledWith(ADA);
+    const sent = sentPayloads(send, S1);
+    expect(sent).toHaveLength(2);
+    for (const payload of sent) expect(payload).toEqual(before);
+    expect(sent[1]).toEqual(session.body);
+    expect(storedItems(storage)).toEqual([]);
+  });
+
+  it('repairs only after a timezone_required answer, never for other 4xx answers', async () => {
+    const repair = jest.fn(async () => true);
+    for (const error of [coded(409, 'session_overlap'), coded(422, 'pauses_overlap'), coded(404)]) {
+      const { outbox } = await readyOutbox({
+        send: async () => {
+          throw error;
+        },
+        repairTimeZone: repair,
+      });
+      await outbox.enqueue(ADA, submission(S1));
+      await outbox.flush();
+    }
+    expect(repair).not.toHaveBeenCalled();
+  });
+
+  it('keeps the session blocked when the repair fails, across a restart, until a repair works', async () => {
+    const { send, state } = zoneServer();
+    const failing = jest.fn(async () => false);
+    const first = await readyOutbox({ send, repairTimeZone: failing });
+    const session = submission(S1);
+    await first.outbox.enqueue(ADA, session);
+    await first.outbox.flush();
+    expect(failing).toHaveBeenCalledTimes(1);
+    expect(storedItems(first.storage)).toEqual([
+      { id: S1, payload: session.body, state: 'blocked_timezone', reason: null, queuedAt: NOW },
+    ]);
+
+    // Relaunch on the same storage: still blocked, and the repair is tried again.
+    const working = jest.fn(async () => {
+      state.zone = 'Europe/Paris';
+      return true;
+    });
+    const second = await readyOutbox({ storage: first.storage, send, repairTimeZone: working });
+    expect(second.outbox.getSnapshot().items[0]).toMatchObject({ state: 'blocked_timezone' });
+    await second.outbox.flush();
+    expect(working).toHaveBeenCalledTimes(1);
+    expect(storedItems(second.storage)).toEqual([]);
+    expect(
+      sentPayloads(send, S1).every((p) => JSON.stringify(p) === JSON.stringify(session.body)),
+    ).toBe(true);
+  });
+
+  it('treats a repair that throws like a failed one', async () => {
+    const { send } = zoneServer();
+    const { outbox, storage } = await readyOutbox({
+      send,
+      repairTimeZone: async () => {
+        throw new NetworkError();
+      },
+    });
+    await outbox.enqueue(ADA, submission(S1));
+    await expect(outbox.flush()).resolves.toBeUndefined();
+    expect(storedItems(storage)[0]!.state).toBe('blocked_timezone');
+  });
+
+  it('tries one repair per flush for several blocked sessions', async () => {
+    const { send, state } = zoneServer();
+    const failing = jest.fn(async () => false);
+    const app = await readyOutbox({ send, repairTimeZone: failing });
+    for (const s of [submission(S1), second, third]) await app.outbox.enqueue(ADA, s);
+    await app.outbox.flush();
+    expect(failing).toHaveBeenCalledTimes(1);
+    expect(storedItems(app.storage).map((item) => item.state)).toEqual([
+      'blocked_timezone',
+      'blocked_timezone',
+      'blocked_timezone',
+    ]);
+
+    const working = jest.fn(async () => {
+      state.zone = 'UTC';
+      return true;
+    });
+    const next = await readyOutbox({ storage: app.storage, send, repairTimeZone: working });
+    await next.outbox.flush();
+    expect(working).toHaveBeenCalledTimes(1);
+    expect(storedItems(next.storage)).toEqual([]);
+  });
+
+  it('does not repair again in the same flush when the server still asks for a time zone', async () => {
+    const send = jest.fn(async () => {
+      throw coded(422, 'timezone_required');
+    });
+    const repair = jest.fn(async () => true);
+    const { outbox, storage } = await readyOutbox({ send, repairTimeZone: repair });
+    await outbox.enqueue(ADA, submission(S1));
+    await outbox.enqueue(ADA, second);
+    await outbox.flush();
+    expect(repair).toHaveBeenCalledTimes(1);
+    // The first session is sent again once after the repair; no loop.
+    expect(send).toHaveBeenCalledTimes(3);
+    expect(storedItems(storage).map((item) => item.state)).toEqual([
+      'blocked_timezone',
+      'blocked_timezone',
+    ]);
+  });
+
+  it('drops a repair that finishes after a user switch, and never sends the other user’s sessions', async () => {
+    const { send } = zoneServer();
+    let finish: (ok: boolean) => void = () => undefined;
+    const repair = jest.fn(() => new Promise<boolean>((resolve) => (finish = resolve)));
+    const { outbox, storage } = await readyOutbox({ send, repairTimeZone: repair });
+    await outbox.enqueue(ADA, submission(S1));
+    const flushing = outbox.flush();
+    await until(() => repair.mock.calls.length === 1);
+
+    await outbox.activate(GRACE);
+    finish(true);
+    await flushing;
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(outbox.getSnapshot()).toMatchObject({ userId: GRACE, items: [] });
+    expect(storedItems(storage, ADA).map((item) => item.id)).toEqual([S1]);
+    expect(storedItems(storage, GRACE)).toEqual([]);
   });
 });

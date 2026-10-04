@@ -53,12 +53,28 @@ export {
   type SessionHistoryItem,
   type SessionHistoryPage,
 } from './history';
+export {
+  currentTreeSchema,
+  getCurrentTree,
+  getHome,
+  growthResultSchema,
+  homeSchema,
+  treeStateSchema,
+  type CurrentTreeResponse,
+  type DailyProgress,
+  type GrowthResult,
+  type HomeResponse,
+  type Streak,
+  type TreeStateResponse,
+  type WeeklyProgress,
+} from './core-loop';
 export { getSessionRules, sessionRulesSchema, type SessionRulesResponse } from './session-rules';
 export {
   sessionErrorCode,
   sessionSchema,
   sessionSubmissionBodySchema,
   submitSession,
+  submittedSessionSchema,
   updateSessionNote,
   type FocusSession,
   type SessionErrorCode,

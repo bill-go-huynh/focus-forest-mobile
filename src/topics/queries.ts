@@ -23,8 +23,9 @@ export { invalidateTopicLists, topicsQueryKey, topicsRootKey } from './query-key
  * One topic list as the server orders it (GET /me/topics). Each answer is saved for an offline
  * launch. `fromDeviceCache` is true while the list shown is the saved one, not yet confirmed
  * by the server in this launch; `dataUpdatedAt` is when the server last confirmed it.
+ * `enabled: false` asks nothing until a screen needs the list.
  */
-export function useTopics(filter: TopicListFilter = {}) {
+export function useTopics(filter: TopicListFilter = {}, { enabled = true } = {}) {
   const { client } = useApi();
   const store = useTopicSnapshotStore();
   const { status, userId } = useTopicSnapshot();
@@ -39,7 +40,7 @@ export function useTopics(filter: TopicListFilter = {}) {
       return topics;
     },
     // Waits for the saved lists, so they show before an offline request fails.
-    enabled: userId !== null && (status === 'ready' || status === 'unavailable'),
+    enabled: enabled && userId !== null && (status === 'ready' || status === 'unavailable'),
   });
   return {
     ...query,

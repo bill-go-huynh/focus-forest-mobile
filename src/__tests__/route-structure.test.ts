@@ -91,9 +91,21 @@ describe('route structure', () => {
     expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(/name="completion\/\[sessionId\]"/);
   });
 
+  it('puts the current Tree Details on the root stack, opened from the Home tree (docs/05, M3.2)', () => {
+    expect(routeFiles(APP).filter((file) => /tree/i.test(relative(APP, file)))).toEqual([
+      join(APP, 'tree.tsx'),
+    ]);
+    expect(readFileSync(join(APP, '_layout.tsx'))).toMatch(/name="tree"/);
+  });
+
   it('keeps every screen inside the tabs or the auth group, so there is no stray route', () => {
-    // Focus and Session Completion are the screens outside them: full-screen takeovers.
-    const takeovers = [join(APP, 'focus.tsx'), join(APP, 'completion', '[sessionId].tsx')];
+    // Focus and Session Completion are full-screen takeovers; Tree Details is Home's level-2
+    // screen, kept on the root stack so Home stays a single tab screen.
+    const takeovers = [
+      join(APP, 'focus.tsx'),
+      join(APP, 'completion', '[sessionId].tsx'),
+      join(APP, 'tree.tsx'),
+    ];
     const outside = routeFiles(APP).filter(
       (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && !takeovers.includes(file),
     );

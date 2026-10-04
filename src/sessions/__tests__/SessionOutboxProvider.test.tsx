@@ -9,6 +9,9 @@ import {
   NOW,
   type FakeRequest,
 } from '../../test-utils/api';
+import type { GrowthResult } from '../../api/core-loop';
+import { CelebrationStore, celebrationsKey } from '../../celebrations/celebration-store';
+import { makeGrowth } from '../../test-utils/core-loop';
 import { makeSessionResult } from '../../test-utils/sessions';
 import { memoryStorage } from '../../test-utils/storage';
 import { makeTopic } from '../../test-utils/topics';
@@ -48,7 +51,16 @@ type Storage = ReturnType<typeof memoryStorage>;
 function apiServer(initial: Topic[] = [TOPIC]) {
   const topics = new Map(initial.map((topic) => [topic.id, topic]));
   const sessions = new Map<string, string>();
-  const state = { down: false, loseNextSessionAnswer: false, listsDown: false };
+  const state = {
+    down: false,
+    loseNextSessionAnswer: false,
+    listsDown: false,
+    /** The profile's time zone: sessions are refused (422) while it is null. */
+    timezone: 'UTC' as string | null,
+    /** What every stored session did to the tree (A3.3), stored with it and replayed as is. */
+    growth: makeGrowth() as GrowthResult | null,
+  };
+  const growthOf = new Map<string, GrowthResult | null>();
   const present = (topic: Topic): Topic => {
     const latest = [...sessions.values()]
       .map((json) => JSON.parse(json) as SessionSubmissionBody)
@@ -85,7 +97,27 @@ function apiServer(initial: Topic[] = [TOPIC]) {
       topics.set(id, topic);
       return { status: 201, body: present(topic) };
     }
+    if (resource === 'profile' && method === 'PATCH') {
+      state.timezone = (body as { timezone: string }).timezone;
+      return {
+        status: 200,
+        body: {
+          id: ADA.id,
+          displayName: 'Ada',
+          avatarUrl: null,
+          bio: null,
+          joinDate: '2026-09-01T00:00:00.000Z',
+          timezone: state.timezone,
+        },
+      };
+    }
     if (resource === 'sessions' && method === 'PUT') {
+      if (state.timezone === null) {
+        return {
+          status: 422,
+          body: { statusCode: 422, message: 'x', code: 'timezone_required' },
+        };
+      }
       const payload = body as SessionSubmissionBody;
       if (!topics.has(payload.topicId)) {
         return { status: 404, body: { statusCode: 404, message: 'Topic not found.' } };
@@ -99,13 +131,19 @@ function apiServer(initial: Topic[] = [TOPIC]) {
         };
       }
       sessions.set(id, json);
+      if (!growthOf.has(id)) growthOf.set(id, state.growth);
       if (state.loseNextSessionAnswer) {
         state.loseNextSessionAnswer = false;
         return new NetworkError();
       }
       return {
         status: earlier === undefined ? 201 : 200,
-        body: makeSessionResult({ id, topicId: payload.topicId, startedAt: payload.startedAt }),
+        body: makeSessionResult({
+          id,
+          topicId: payload.topicId,
+          startedAt: payload.startedAt,
+          growth: growthOf.get(id) ?? null,
+        }),
       };
     }
     return { status: 500 };
@@ -146,13 +184,17 @@ async function launch(
     report: () => undefined,
   });
   const receipts = new CompletionReceipts({ storage, report: () => undefined });
+  const celebrations = new CelebrationStore({ storage, report: () => undefined });
+  void celebrations.activate(ADA.id);
   const outbox = createSessionOutbox({
     storage,
     client: api.client,
     queryClient,
     topicQueue,
     receipts,
+    celebrations,
     report: () => undefined,
+    currentUserId: () => api.session.getSnapshot().user?.id ?? null,
     now: () => now,
   });
   await api.session.restore();
@@ -179,6 +221,7 @@ async function launch(
     timers,
     topicQueue,
     outbox,
+    celebrations,
     requests: net.requests,
     view,
   };
@@ -240,6 +283,78 @@ describe('SessionOutboxProvider', () => {
     await waitFor(() => expect(app.outbox.getSnapshot().synced[SESSION_ID]).toBeDefined());
     expect(app.timers.getSnapshot().timer).toBeNull();
     expect(queued(app.outbox)).toEqual([]);
+  });
+
+  it('sets a missing profile time zone once, then sends the same raw session again', async () => {
+    const storage = memoryStorage();
+    const expected = await finishedTimerOnDevice(storage);
+    const server = apiServer();
+    server.state.timezone = null;
+
+    const app = await launch(server.handler, storage);
+    await waitFor(() => expect(server.sessions.has(SESSION_ID)).toBe(true));
+    await waitFor(() => expect(queued(app.outbox)).toEqual([]));
+
+    const patches = app.requests.filter((r) => r.method === 'PATCH');
+    expect(patches).toHaveLength(1);
+    expect(patches[0]!.url).toContain('/me/profile');
+    expect(server.state.timezone).toEqual((patches[0]!.body as { timezone: string }).timezone);
+    expect(sessionPuts(app.requests).map((r) => r.body)).toEqual([expected.body, expected.body]);
+  });
+
+  it('keeps the server’s growth as a celebration before the session leaves the outbox', async () => {
+    const storage = memoryStorage();
+    await finishedTimerOnDevice(storage);
+    const server = apiServer();
+    // The celebration cannot be stored: the session must stay queued, to be replayed.
+    storage.failing.setItemFor = (key) => key === celebrationsKey(ADA.id);
+    const first = await launch(server.handler, storage);
+    await waitFor(() => expect(server.sessions.has(SESSION_ID)).toBe(true));
+    await waitFor(() => expect(queued(first.outbox)).toEqual([SESSION_ID]));
+    expect(first.outbox.getSnapshot().synced[SESSION_ID]).toBeUndefined();
+    first.view.unmount();
+
+    storage.failing.setItemFor = undefined;
+    const next = await launch(server.handler, storage);
+    await waitFor(() => expect(queued(next.outbox)).toEqual([]));
+    expect(next.celebrations.getSnapshot().pending).toEqual([
+      expect.objectContaining({ sessionId: SESSION_ID, growth: makeGrowth() }),
+    ]);
+  });
+
+  it('records no celebration for growth null or a closed month', async () => {
+    for (const growth of [null, { counted: true, monthClosed: true, newTraits: [], tree: null }]) {
+      const storage = memoryStorage();
+      await finishedTimerOnDevice(storage);
+      const server = apiServer();
+      server.state.growth = growth;
+      const app = await launch(server.handler, storage);
+      await waitFor(() => expect(queued(app.outbox)).toEqual([]));
+      await waitFor(() => expect(app.outbox.getSnapshot().synced[SESSION_ID]).toBeDefined());
+      expect(app.celebrations.getSnapshot().pending).toEqual([]);
+      app.view.unmount();
+    }
+  });
+
+  it('replays a lost answer into exactly one celebration', async () => {
+    const storage = memoryStorage();
+    await finishedTimerOnDevice(storage);
+    const server = apiServer();
+    server.state.loseNextSessionAnswer = true;
+
+    const first = await launch(server.handler, storage);
+    await waitFor(() => expect(sessionPuts(first.requests)).toHaveLength(1));
+    await waitFor(() => expect(first.outbox.getSnapshot().items[0]?.state).toBe('pending'));
+    expect(first.celebrations.getSnapshot().pending).toEqual([]);
+    first.view.unmount();
+
+    const next = await launch(server.handler, storage);
+    await waitFor(() => expect(queued(next.outbox)).toEqual([]));
+    await act(async () => {
+      await next.outbox.flush();
+    });
+    expect(next.celebrations.getSnapshot().pending.map((p) => p.sessionId)).toEqual([SESSION_ID]);
+    expect(server.sessions.size).toBe(1);
   });
 
   it('replays a session whose answer was lost: stored once, never duplicated', async () => {

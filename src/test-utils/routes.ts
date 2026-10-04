@@ -13,6 +13,7 @@ import SettingsScreen from '../app/(tabs)/profile/settings';
 import TopicsRoute from '../app/(tabs)/profile/topics';
 import CompletionRoute from '../app/completion/[sessionId]';
 import FocusRoute from '../app/focus';
+import TreeRoute from '../app/tree';
 
 /** The app's real routes, for renderRouter from expo-router/testing-library. */
 export const appRoutes = {
@@ -31,4 +32,5 @@ export const appRoutes = {
   '(tabs)/profile/settings': SettingsScreen,
   focus: FocusRoute,
   'completion/[sessionId]': CompletionRoute,
+  tree: TreeRoute,
 };

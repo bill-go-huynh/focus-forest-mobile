@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { ApiClient } from './client';
+import { growthResultSchema } from './core-loop';
 import { HttpError } from './errors';
 
 // The API sends ids in lowercase (Postgres canonical form), in any UUID version.
@@ -29,6 +30,12 @@ export const sessionFields = z.object({
   month: z.number().int().min(1).max(12),
   note: z.string().nullable(),
   createdAt: instant,
+  /**
+   * A3.3: what the session did to its month's tree, in the PUT answer only (null for a session
+   * stored before Phase 3). Absent from other answers (a note PATCH, History): not known there,
+   * never invented.
+   */
+  growth: growthResultSchema.nullable().optional(),
 });
 
 /** Holds for every session answer: `counted` follows the status. */
@@ -39,6 +46,13 @@ export const sessionSchema = sessionFields.refine(countedMatchesStatus, {
   message: 'counted is false exactly when the session is discarded.',
 });
 export type FocusSession = z.infer<typeof sessionSchema>;
+
+/** The PUT answer (201 or a 200 replay) always carries `growth`, stored with the session. */
+export const submittedSessionSchema = sessionFields
+  .extend({ growth: growthResultSchema.nullable() })
+  .refine(countedMatchesStatus, {
+    message: 'counted is false exactly when the session is discarded.',
+  });
 
 /** An instant exactly as `Date.prototype.toISOString` writes it: UTC, with milliseconds. */
 const canonicalInstant = z.string().refine((value) => {
@@ -94,7 +108,7 @@ export function submitSession(
   return client.request(`/me/sessions/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body,
-    schema: sessionSchema,
+    schema: submittedSessionSchema,
   });
 }
 

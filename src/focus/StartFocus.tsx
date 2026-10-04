@@ -2,16 +2,17 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import type { SessionRulesResponse } from '../api';
+import type { SessionRulesResponse, Topic } from '../api';
 import { useFontScale } from '../accessibility';
 import { Button } from '../components/Button';
+import { Chip } from '../components/Chip';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { InlineStatus } from '../components/InlineStatus';
 import { ListRow } from '../components/ListRow';
 import { Sheet } from '../components/Sheet';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
-import { TopicMark } from '../components/TopicMark';
+import { topicColorKey, TopicMark } from '../components/TopicMark';
 import { useFinishedTimerHandoff } from '../sessions/SessionOutboxProvider';
 import { useTheme } from '../theme';
 import { useActiveTimer, useActiveTimerStore } from '../timer/ActiveTimerProvider';
@@ -42,8 +43,22 @@ const topicName = (entry: PickerTopic) =>
  * lets a topic be chosen. A topic with a usable remembered duration starts at once (docs/02:
  * two taps); otherwise, or through "Change duration", the duration is chosen first. The timer
  * is stored before the Focus screen opens, with the session rules copied into it.
+ *
+ * `quickTopics` (Home's recent topics, M3.2) adds one chip per topic under the button while no
+ * session runs: a topic with a usable remembered duration starts in one tap, the others open the
+ * duration choice. The same handoff, rules, and start path as the sheet.
+ *
+ * `variant="secondary"` is the same entry where it is not the screen's main action (Tree
+ * Details): only the button's weight changes.
  */
-export function StartFocus() {
+export function StartFocus({
+  quickTopics = [],
+  variant = 'primary',
+}: {
+  quickTopics?: readonly Topic[];
+  variant?: 'primary' | 'secondary';
+}) {
+  const theme = useTheme();
   const router = useRouter();
   const timers = useActiveTimerStore();
   const timer = useActiveTimer();
@@ -59,6 +74,22 @@ export function StartFocus() {
     router.push('/focus');
   };
 
+  /** True once no timer is in the way: a finished one was handed to the outbox first. */
+  const clearFinished = async (): Promise<boolean> => {
+    const current = timers.getSnapshot().timer;
+    if (!current) return true;
+    // The finished session goes to the outbox first; never a second timer over it.
+    const handed = await handoff();
+    if (!handed.ok && timers.getSnapshot().timer) {
+      setHomeNotice({
+        message: 'Your last session is still being saved on this device.',
+        detail: 'Try again in a moment.',
+      });
+      return false;
+    }
+    return true;
+  };
+
   const onStartFocus = async () => {
     setHomeNotice(null);
     const current = timers.getSnapshot().timer;
@@ -66,19 +97,20 @@ export function StartFocus() {
       openFocus();
       return;
     }
-    if (current) {
-      // The finished session goes to the outbox first; never a second timer over it.
-      const handed = await handoff();
-      if (!handed.ok && timers.getSnapshot().timer) {
-        setHomeNotice({
-          message: 'Your last session is still being saved on this device.',
-          detail: 'Try again in a moment.',
-        });
-        return;
-      }
-    }
+    if (!(await clearFinished())) return;
     setStartFailed(false);
     setStep('topics');
+  };
+
+  const onQuickTopic = async (topic: Topic) => {
+    setHomeNotice(null);
+    const current = timers.getSnapshot().timer;
+    if (current && !current.finished) {
+      openFocus();
+      return;
+    }
+    if (!(await clearFinished())) return;
+    onTopic({ kind: 'confirmed', topic });
   };
 
   const start = async (entry: PickerTopic, minutes: number, current: SessionRulesResponse) => {
@@ -120,12 +152,38 @@ export function StartFocus() {
   return (
     <>
       <Button
-        variant="primary"
+        variant={variant}
         label={active ? 'Resume focus' : 'Start Focus'}
         onPress={() => void onStartFocus()}
         disabled={timer.status !== 'ready'}
         disabledReason="Your focus session is loading."
       />
+      {!active && timer.status === 'ready' && quickTopics.length > 0 ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+          {quickTopics.map((topic) => {
+            const quick =
+              rules.status === 'ready'
+                ? quickStartMinutes({ kind: 'confirmed', topic }, rules.rules)
+                : null;
+            return (
+              <Chip
+                key={topic.id}
+                label={quick !== null ? `${topic.name} · ${formatMinutes(quick)}` : topic.name}
+                accessibilityLabel={
+                  quick !== null
+                    ? `Start ${topic.name}, ${quick} minutes`
+                    : `Choose a duration for ${topic.name}`
+                }
+                selected={false}
+                topicColor={topicColorKey(topic.color) ?? undefined}
+                onPress={() => void onQuickTopic(topic)}
+                disabled={rules.status !== 'ready'}
+                disabledReason="Focus settings are loading."
+              />
+            );
+          })}
+        </View>
+      ) : null}
       {homeNotice ? (
         <InlineStatus
           tone="attention"

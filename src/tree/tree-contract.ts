@@ -1,3 +1,5 @@
+import type { TreeStateResponse } from '../api/core-loop';
+
 /**
  * The monthly tree as the API sends it (A3.1–A3.4: `TreeStateDto` in `GET /me/home`, session
  * growth results, and archived tree details). Product truth only: the server decides every
@@ -23,42 +25,8 @@ export const VITALITY_STATES = ['thriving', 'healthy', 'stable', 'quiet', 'recov
 
 export type VitalityState = (typeof VITALITY_STATES)[number];
 
-export interface LevelDto {
-  level: number;
-  /** The highest level the configuration defines: the renderer scales between 0 and this. */
-  maxLevel: number;
-}
-
-export interface TreeProgressDto {
-  stage: TreeStage;
-  /** 1 (Seed) to 7 (Final Form). */
-  stageNumber: number;
-  /** 0 to 1 within the current stage; null at Final Form. */
-  progressToNextStage: number | null;
-  /** Growth after the daily soft cap, in whole minutes. Never drawn from. */
-  growthMinutes: number;
-  fullness: LevelDto;
-  blossoms: LevelDto;
-  richness: { tier: number; maxTier: number };
-}
-
-export interface TreeTraitDto {
-  /** A stable identifier such as "monthly-focus-hours:10". Unknown ones are ignored visually. */
-  id: string;
-  earnedAt: string;
-}
-
-export interface TreeStateDto {
-  year: number;
-  month: number;
-  status: 'growing' | 'archived';
-  species: string;
-  /** Unsigned 32-bit integer. */
-  variationSeed: number;
-  partialFirstMonth: boolean;
-  configVersion: number;
-  progress: TreeProgressDto;
-  traits: TreeTraitDto[];
-  /** Null for an archived tree, which always renders "at rest". */
-  vitality: VitalityState | null;
-}
+/**
+ * The tree as the API sends it, checked by `treeStateSchema` (src/api/core-loop.ts). Its stage
+ * and vitality are strings: a value from a newer server is kept and the adapter falls back.
+ */
+export type TreeStateDto = TreeStateResponse;

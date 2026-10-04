@@ -20,17 +20,26 @@ export interface ChipProps {
   disabled?: boolean;
   disabledReason?: string;
   accessibilityHint?: string;
+  /** A fuller accessible name that contains what the label says (e.g. "Start Reading, 25 minutes"). */
+  accessibilityLabel?: string;
   testID?: string;
 }
 
-export function Chip({ label, selected, topicColor, icon, ...rest }: ChipProps) {
+export function Chip({
+  label,
+  selected,
+  topicColor,
+  icon,
+  accessibilityLabel,
+  ...rest
+}: ChipProps) {
   const theme = useTheme();
   const { colors, space } = theme;
   requireText(label, 'label', 'Chip');
 
   return (
     <PressableSurface
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       selected={selected}
       layout={{
         flexDirection: 'row',
