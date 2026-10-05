@@ -1,5 +1,5 @@
 import { useIsFocused, useRouter } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 
 import { Button } from '../components/Button';
@@ -14,7 +14,13 @@ import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 import type { HomeResponse } from '../api';
 import { MomentCaption } from './MomentCaption';
-import { dailyGoalLine, streakLine, weekLine, weeklyGoalLine } from './presentation';
+import {
+  dailyGoalLine,
+  streakLine,
+  weekLine,
+  weeklyGoalLine,
+  type GrowthMoment,
+} from './presentation';
 import { useHome } from './queries';
 import { useCelebrationPresenter } from './use-celebration';
 import { GOAL_REACHED_TEXT, useGoalReached } from './use-goal-met';
@@ -36,15 +42,18 @@ export function HomeScreen() {
   const sceneRef = useRef<TreeSceneHandle>(null);
   const homeTree = home?.tree ?? null;
   const tree = useMemo(() => (homeTree ? toTreeVisualState(homeTree) : null), [homeTree]);
+  const [settled, setSettled] = useState<GrowthMoment | null>(null);
   const moment = useCelebrationPresenter({
     ready: focused,
     tree,
     scene: sceneRef,
     // Every waiting growth that no other screen (an open Completion) is showing.
     select: (pending, held) => pending.filter((intent) => !held.includes(intent.sessionId)),
+    onSettled: setSettled,
   });
-  // The month-end ceremony waits while a growth moment is on screen: one sequence at a time.
-  useCeremonyTrigger(query.data?.home ?? null, focused && moment === null);
+  // The month-end ceremony waits while a growth moment plays, then follows it: one sequence at
+  // a time, never stacked, and never put off to the next launch.
+  useCeremonyTrigger(query.data?.home ?? null, focused && (moment === null || moment === settled));
 
   return (
     <Screen title="This month">

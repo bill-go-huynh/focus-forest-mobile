@@ -21,6 +21,7 @@ import { focusedMillisecondsOf } from '../timer/submission';
 import { useTopicIdentity } from '../topics/topic-create-sync';
 import { NEW_TOPIC_DEFAULTS } from '../topics/topic-form';
 import { CompletionGrowth } from './CompletionGrowth';
+import { NoteHighlight } from './NoteHighlight';
 
 const MINUTE = 60_000;
 const UNKNOWN_TOPIC_NAME = 'Focus topic';
@@ -214,6 +215,16 @@ function CompletionContent({
     return true;
   };
 
+  // The highlight is offered for the note the server has, as it reads on screen: never before
+  // the server knows the session, for a note still waiting on the device, or while one is typed.
+  const highlightable =
+    known.kind === 'server' &&
+    server !== null &&
+    server.noteHighlighted !== undefined &&
+    !!server.note &&
+    !queuedNote &&
+    (draft === null || canonicalNote(draft) === server.note);
+
   const noteStatus =
     queuedNote?.state === 'needs_attention'
       ? 'This note is still saved on this device and needs attention before it can sync.'
@@ -256,6 +267,9 @@ function CompletionContent({
         />
         {noteStatus ? <InlineStatus tone="info" message={noteStatus} /> : null}
         <Button variant="secondary" label="Save note" onPress={() => void saveNote()} />
+        {known.kind === 'server' && server ? (
+          <NoteHighlight session={server} available={highlightable} />
+        ) : null}
       </View>
 
       <Button

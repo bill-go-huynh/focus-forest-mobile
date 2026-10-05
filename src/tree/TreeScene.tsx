@@ -36,11 +36,12 @@ import type { TreeVisualState } from './visual-state';
  * the tree's state. It knows nothing about queries, routes, or sessions: callers pass the tree.
  *
  * `ref.react(reaction)` plays a growth reaction once the server has said what changed; the
- * scene already shows the new tree. Off screen it just shows the final state.
+ * scene already shows the new tree. Off screen it just shows the final state. It answers how
+ * long the reaction plays (0: shown at once), so a caller can let it finish before what follows.
  */
 
 export interface TreeSceneHandle {
-  react(reaction: TreeReaction): void;
+  react(reaction: TreeReaction): number;
 }
 
 export interface TreeSceneProps {
@@ -123,7 +124,7 @@ export function TreeScene({
       if (step.durationMs === 0) {
         for (const value of Object.values(reveal)) value.value = 1;
         setOutgoing(null);
-        return;
+        return 0;
       }
       const timing = {
         duration: step.durationMs,
@@ -146,6 +147,7 @@ export function TreeScene({
           withSpring(0, theme.spring.gentle),
         );
       }
+      return step.durationMs;
     },
   }));
 

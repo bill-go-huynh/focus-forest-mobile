@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { z } from 'zod';
 
-import { sessionHistoryItemSchema, type SessionHistoryItem } from '../api/history';
+import { storedHistoryItemSchema, type SessionHistoryItem } from '../api/history';
 import {
   readStoredJson,
   type KeyValueStorage,
@@ -32,7 +32,7 @@ export interface HistorySnapshotStoreOptions {
 const documentSchema = z.strictObject({
   version: z.literal(1),
   savedAt: z.number().int().nonnegative(),
-  items: z.array(sessionHistoryItemSchema).max(HISTORY_SNAPSHOT_MAX),
+  items: z.array(storedHistoryItemSchema).max(HISTORY_SNAPSHOT_MAX),
 });
 
 function parseDocument(

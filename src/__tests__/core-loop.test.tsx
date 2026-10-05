@@ -770,6 +770,27 @@ describe('offline completion, then the sync', () => {
     expect(screen.queryByText('New blossoms opened.')).toBeNull();
   });
 
+  it('keeps a growth that syncs while the user is on another tab, and shows it back on Home, once', async () => {
+    await openOfflineCompletion();
+    fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+    await screen.findByRole('button', { name: /Start Focus/ });
+    act(() => router.navigate('/forest'));
+    await screen.findByRole('header', { name: 'Forest' });
+
+    server.state.offline = false;
+    await appState.emit('background');
+    await appState.emit('active');
+    await untilAsync(async () => server.sessions.size === 1);
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 300)));
+    // Home is not on screen: nothing was shown, so nothing is consumed.
+    expect(await pendingCelebrations()).toHaveLength(1);
+
+    act(() => router.navigate('/'));
+    await shows('New blossoms opened.');
+    await untilAsync(async () => (await pendingCelebrations()).length === 0);
+    expect(announced().filter((m) => m === 'New blossoms opened.')).toHaveLength(1);
+  });
+
   it('keeps a celebration across a kill and shows it on the next Home, once', async () => {
     await storeCelebration(
       USER,

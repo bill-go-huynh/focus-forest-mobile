@@ -7,6 +7,8 @@ import {
   sessionSchema,
   sessionSubmissionBodySchema,
   submitSession,
+  setSessionNoteHighlight,
+  storedSessionSchema,
   updateSessionNote,
 } from '../sessions';
 
@@ -200,5 +202,51 @@ describe('updateSessionNote (PATCH /me/sessions/:id/note)', () => {
       body: nestError(404, 'Session not found.'),
     }));
     await expect(updateSessionNote(api.client, ID, 'x')).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('noteHighlighted (A3.4) in session answers', () => {
+  it('is required in every session answer from the API, PUT and PATCH alike', () => {
+    const { noteHighlighted: _omitted, ...withoutFlag } = makeSessionResult({ id: ID });
+    expect(sessionSchema.safeParse(withoutFlag).success).toBe(false);
+    expect(
+      sessionSchema.safeParse(makeSessionResult({ id: ID, note: 'n', noteHighlighted: true }))
+        .success,
+    ).toBe(true);
+  });
+
+  it('may be absent from a copy the device saved before it was read: unknown, never false', () => {
+    const { noteHighlighted: _omitted, ...withoutFlag } = makeSessionResult({ id: ID });
+    const parsed = storedSessionSchema.parse(withoutFlag);
+    expect(parsed.noteHighlighted).toBeUndefined();
+  });
+});
+
+describe('setSessionNoteHighlight (PUT|DELETE /me/sessions/:id/note/highlight)', () => {
+  it('highlights with PUT and answers the validated session', async () => {
+    const answer = makeSessionResult({ id: ID, note: 'Chapter 4', noteHighlighted: true });
+    const { api, requests } = await setup(() => ({ status: 200, body: answer }));
+    await expect(setSessionNoteHighlight(api.client, ID, true)).resolves.toEqual(answer);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({
+      url: `https://api.example.com/me/sessions/${ID}/note/highlight`,
+      method: 'PUT',
+    });
+  });
+
+  it('removes the highlight with DELETE', async () => {
+    const answer = makeSessionResult({ id: ID, note: 'Chapter 4', noteHighlighted: false });
+    const { api, requests } = await setup(() => ({ status: 200, body: answer }));
+    await expect(setSessionNoteHighlight(api.client, ID, false)).resolves.toEqual(answer);
+    expect(requests[0]).toMatchObject({
+      url: `https://api.example.com/me/sessions/${ID}/note/highlight`,
+      method: 'DELETE',
+    });
+  });
+
+  it('reads the server’s refusal code, never the text', async () => {
+    const { api } = await setup(() => coded(422, 'note_required'));
+    const error = await setSessionNoteHighlight(api.client, ID, true).catch((e: unknown) => e);
+    expect(sessionErrorCode(error)).toBe('note_required');
   });
 });

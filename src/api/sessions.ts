@@ -29,6 +29,13 @@ export const sessionFields = z.object({
   year: z.number().int(),
   month: z.number().int().min(1).max(12),
   note: z.string().nullable(),
+  /**
+   * A3.4: whether the note is highlighted for its month's Tree Details and recap. Sent in every
+   * session answer (PUT, note PATCH, highlight PUT|DELETE, History). Only a session with a note
+   * is highlighted; clearing the note clears it. Changing it after the month is archived changes
+   * the live session only, never the archived snapshot.
+   */
+  noteHighlighted: z.boolean(),
   createdAt: instant,
   /**
    * A3.3: what the session did to its month's tree, in the PUT answer only (null for a session
@@ -45,7 +52,18 @@ export const countedMatchesStatus = (session: { counted: boolean; status: string
 export const sessionSchema = sessionFields.refine(countedMatchesStatus, {
   message: 'counted is false exactly when the session is discarded.',
 });
-export type FocusSession = z.infer<typeof sessionSchema>;
+
+/**
+ * A session answer as the device saved it (completion receipts): one saved before X3.G read
+ * `noteHighlighted` lacks it. Absent means unknown, never false; the highlight control waits
+ * for a server answer that says.
+ */
+export const storedSessionSchema = sessionFields
+  .extend({ noteHighlighted: z.boolean().optional() })
+  .refine(countedMatchesStatus, {
+    message: 'counted is false exactly when the session is discarded.',
+  });
+export type FocusSession = z.infer<typeof storedSessionSchema>;
 
 /** The PUT answer (201 or a 200 replay) always carries `growth`, stored with the session. */
 export const submittedSessionSchema = sessionFields
@@ -130,6 +148,22 @@ export function updateSessionNote(
 }
 
 /**
+ * Highlights the note for its month's recap (PUT /me/sessions/:id/note/highlight) or removes the
+ * highlight (DELETE). Idempotent; answers the whole session. A session without a note cannot be
+ * highlighted (422 `note_required`). Online only: there is no queue. No retry by itself.
+ */
+export function setSessionNoteHighlight(
+  client: ApiClient,
+  id: string,
+  highlighted: boolean,
+): Promise<FocusSession> {
+  return client.request(`/me/sessions/${encodeURIComponent(id)}/note/highlight`, {
+    method: highlighted ? 'PUT' : 'DELETE',
+    schema: sessionSchema,
+  });
+}
+
+/**
  * The stable session error codes. 409: `session_overlap` (another saved session covers this
  * time), `session_id_conflict` (the id was used for another submission). 422: the evaluator's
  * rejections, `ends_in_future` (the device clock is ahead; the same payload succeeds later), and
@@ -141,6 +175,7 @@ export type SessionErrorCode =
   | 'session_id_conflict'
   | 'ends_in_future'
   | 'timezone_required'
+  | 'note_required'
   | 'invalid_time'
   | 'invalid_planned_duration'
   | 'ends_before_start'
@@ -154,6 +189,7 @@ const CODES_BY_STATUS: Record<number, readonly SessionErrorCode[]> = {
   422: [
     'ends_in_future',
     'timezone_required',
+    'note_required',
     'invalid_time',
     'invalid_planned_duration',
     'ends_before_start',

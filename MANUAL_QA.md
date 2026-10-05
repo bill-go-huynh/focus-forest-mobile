@@ -3,6 +3,8 @@
 > **Trạng thái: HOÃN** (2026-10-03, theo quyết định của chủ dự án để phát triển nhanh hơn).
 > Phase 2 mới chỉ được đóng bằng kiểm tra tự động: `npm run check` (unit, integration, mutation), API `npm run check`, và integration checkpoint `5e9b784`.
 > **Chưa có buổi QA nào trên thiết bị thật.** Phải chạy hết file này trước khi phát hành, hoặc ở checkpoint lớn kế tiếp.
+>
+> **Cập nhật X3 (2026-10-04):** Phase 3 (Core Loop) cũng chỉ được đóng bằng kiểm tra tự động (integration X3 trên HTTP + PostgreSQL thật, contract capture dùng chung với mobile, mutation có mục tiêu). Phần còn nợ của Phase 3 nằm ở mục **Phase 3: Core Loop** bên dưới. Vẫn **HOÃN**: không làm trong X3, làm cùng đợt QA hoặc phát hành.
 
 ## Trước mỗi buổi QA
 
@@ -107,6 +109,52 @@ Cách khác: cài Android Studio và JDK 17, đặt `ANDROID_HOME`, rồi chạy
 - [ ] Load more với hơn 30 session, không có dòng trùng.
 - [ ] Dark mode dễ đọc trên Focus, Completion, History.
 - [ ] Focus chạy 10–15 phút: ring và countdown không giật, máy không nóng hay tốn pin bất thường.
+
+## Phase 3: Core Loop (HOÃN, ghi lại ở X3)
+
+X3 đã kiểm tra tự động toàn bộ chuỗi Focus → session → cây → goals/streak/rest → Home/Completion → đóng tháng → Forest → Recap → Insights. Những mục dưới đây cần thiết bị, OS hoặc mắt người, nên **chưa chạy**.
+
+### P3.1 Ma trận thiết bị
+- [ ] iOS (một iPhone gần đây, development build).
+- [ ] Android (một máy đời mới, development build).
+- [ ] Một máy Android tầm trung (RAM khoảng 4 GB): Home, Forest, Insights cuộn mượt, không nóng máy.
+- [ ] Chữ lớn (khoảng 200%) trên cả hai nền tảng.
+- [ ] Dark và light theme trên cả hai nền tảng.
+
+### P3.2 Tree renderer
+- [ ] SVG cây vẽ đúng ở mọi stage (Seed → Final Form), không vỡ layer, không lệch tỉ lệ.
+- [ ] Reanimated: transform origin của canopy đúng (lắc quanh gốc, không quanh góc), gust tắt dần êm.
+- [ ] Hero trên Home: reaction tăng trưởng (stage cross-fade, blossoms, trait) chạy một lần, không giật.
+- [ ] Forest thumbnails: đứng yên, không có ambient animation; cuộn landscape 36+ tháng vẫn mượt, chỉ vài thumbnail được mount.
+- [ ] Background/foreground: idle sway dừng khi app vào nền, chạy lại khi quay về; ánh sáng theo giờ đổi đúng lúc quay lại.
+
+### P3.3 Accessibility
+- [ ] VoiceOver (iOS): mỗi TreeScene đọc đúng một mô tả, không đọc layer SVG bên trong.
+- [ ] TalkBack (Android): như trên; Forest List view đọc đủ tháng, kể cả tháng nghỉ ("a quiet month").
+- [ ] Chữ 200%: Home, Tree Details, Goals, Forest List, Recap, Insights (ngày, topic, records), Profile không bị cắt và cuộn tới mọi nút.
+- [ ] Thứ tự focus hợp lý trên Ceremony, Recap (Next, Back, Share) và Insights (chip Week/Month, ngày, bộ lọc History).
+- [ ] Bật Reduce Motion của OS: cây không lắc idle; tăng trưởng chỉ là cross-fade ngắn; ceremony đi thẳng tới hạt giống; thông tin vẫn đọc đủ.
+
+### P3.4 Share native
+- [ ] Chụp thẻ recap thành ảnh: ảnh đúng thẻ (tháng, cây, stage, focus, ngày active, streak), không có note, topic hay id.
+- [ ] Share sheet mở được trên iOS và Android; gửi được qua ít nhất một app.
+- [ ] Huỷ share sheet: app quay lại trang share bình thường, không báo lỗi.
+- [ ] Share không khả dụng (ví dụ simulator, hoặc không có app nhận): app chia sẻ chữ, hoặc báo "Sharing isn't available right now.".
+- [ ] File PNG tạm: không lưu vào thư viện ảnh, không xin quyền ảnh; không dồn file tạm sau nhiều lần share.
+
+### P3.5 Focus timer
+- [ ] Khoá màn hình giữa session: hết giờ vẫn đúng mốc, Completion đúng.
+- [ ] App vào nền giữa session: quay lại thấy đúng thời gian còn lại.
+- [ ] Kill app rồi mở lại giữa session: Resume focus đúng; kill sau khi hết giờ: session được lưu, sync một lần, celebration hiện đúng một lần.
+- [ ] Local notification khi hết giờ (development build): chạm mở đúng Completion.
+
+### P3.6 Ranh giới tháng
+- [ ] Để app ở foreground qua nửa đêm cuối tháng (giờ thật của máy), rồi qua hết grace period (mặc định 3 giờ): mở Home thấy cây tháng mới và ceremony của tháng vừa đóng.
+- [ ] Ceremony hiện một lần; Skip hoặc trồng xong thì không lặp lại; kill trước khi chấp nhận thì lần mở sau hiện lại.
+- [ ] Có session vừa sync đúng lúc mở tháng mới: khoảnh khắc tăng trưởng chạy trước, ceremony theo sau, không chồng lên nhau (X3 đã sửa và kiểm tra tự động; cần xem bằng mắt).
+- [ ] Highlight note (X3.G): mở một session có note từ History, bấm **Highlight in monthly recap**, thấy dòng đã highlight; bấm **Remove from monthly recap** thì mất. Offline: báo cần kết nối, không đổi gì. Xoá note thì highlight cũng mất.
+- [ ] Sau khi tháng đóng: recap và Tree Details của tháng đó giữ đúng note đã highlight lúc archive, kể cả khi sau đó sửa note, bỏ highlight hay highlight note khác của tháng ấy.
+- [ ] Session offline thuộc tháng đã đóng, sync sau: lưu bình thường, Completion nói tháng đó đã nằm trong forest, không có celebration; Insights giải thích chênh lệch, Forest/Recap giữ nguyên.
 
 ## Khi gặp lỗi, ghi lại
 

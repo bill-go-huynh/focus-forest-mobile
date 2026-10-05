@@ -28,6 +28,15 @@ export function CompletionReceiptsProvider({
   return <ReceiptsContext.Provider value={receipts}>{children}</ReceiptsContext.Provider>;
 }
 
+/** The receipts store, to keep a newer server answer for a session (X3.G: a note highlight). */
+export function useCompletionReceipts(): CompletionReceipts {
+  const receipts = useContext(ReceiptsContext);
+  if (!receipts) {
+    throw new Error('useCompletionReceipts must be used inside CompletionReceiptsProvider.');
+  }
+  return receipts;
+}
+
 /** The server's answers the device kept for the user's recent sessions. */
 export function useCompletionReceiptsSnapshot(): CompletionReceiptsSnapshot {
   const receipts = useContext(ReceiptsContext);

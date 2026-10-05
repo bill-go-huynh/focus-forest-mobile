@@ -32,24 +32,31 @@ export function reactionFor(moment: GrowthMoment, tree: TreeVisualState): TreeRe
  * this screen owns (Completion: its own session; Home: every one no screen holds). When the
  * screen can show them, the moment is committed to state first; only after that render does the
  * scene react, the caption get announced, and the intents get consumed (stored). Several intents
- * become one moment, the others said in words.
+ * become one moment, the others said in words. `onSettled` hears the moment once its reaction
+ * has finished playing (X3: Home's month ceremony follows it instead of waiting for a relaunch).
  */
 export function useCelebrationPresenter({
   ready,
   tree,
   scene,
   select,
+  onSettled,
 }: {
   ready: boolean;
   tree: TreeVisualState | null;
   scene: RefObject<TreeSceneHandle | null>;
   select: (pending: CelebrationIntent[], held: string[]) => CelebrationIntent[];
+  onSettled?: (moment: GrowthMoment) => void;
 }): GrowthMoment | null {
   const { user } = useSession();
   const store = useCelebrationStore();
   const celebrations = useCelebrations();
   const [shown, setShown] = useState<Shown | null>(null);
   const played = useRef<string | null>(null);
+  const settled = useRef(onSettled);
+  useEffect(() => {
+    settled.current = onSettled;
+  });
 
   const waiting =
     celebrations.status === 'ready' ? select(celebrations.pending, celebrations.held) : [];
@@ -70,9 +77,11 @@ export function useCelebrationPresenter({
     const key = shown.sessionIds.join(',');
     if (played.current === key) return;
     played.current = key;
-    scene.current?.react(reactionFor(shown.moment, tree));
+    const duration = scene.current?.react(reactionFor(shown.moment, tree)) ?? 0;
     announce(shown.moment.caption);
     void store.consume(shown.userId, shown.sessionIds);
+    const timer = setTimeout(() => settled.current?.(shown.moment), duration);
+    return () => clearTimeout(timer);
   }, [shown, tree, scene, store]);
 
   return shown?.moment ?? null;

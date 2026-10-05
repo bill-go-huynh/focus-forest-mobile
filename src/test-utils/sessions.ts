@@ -36,6 +36,7 @@ export function makeSessionResult(overrides: Partial<FocusSession> = {}): FocusS
     year: 2026,
     month: 9,
     note: null,
+    noteHighlighted: false,
     createdAt: '2026-09-27T10:25:01.000Z',
     growth: null,
     ...overrides,

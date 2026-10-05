@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { z } from 'zod';
 
-import { sessionSchema, type FocusSession } from '../api/sessions';
+import { storedSessionSchema, type FocusSession } from '../api/sessions';
 import {
   readStoredJson,
   type KeyValueStorage,
@@ -31,7 +31,7 @@ export interface CompletionReceiptsOptions {
 const documentSchema = z.strictObject({
   version: z.literal(1),
   receipts: z
-    .array(sessionSchema)
+    .array(storedSessionSchema)
     .max(COMPLETION_RECEIPTS_MAX)
     .refine((receipts) => new Set(receipts.map((r) => r.id)).size === receipts.length),
 });

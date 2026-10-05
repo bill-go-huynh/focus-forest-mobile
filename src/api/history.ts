@@ -29,7 +29,17 @@ export const sessionHistoryItemSchema = sessionFields
   .refine((item) => item.topic.id === item.topicId, {
     message: 'The topic summary is the session’s topic.',
   });
-export type SessionHistoryItem = z.infer<typeof sessionHistoryItemSchema>;
+
+/** A history item as the device saved it (the offline history): see `storedSessionSchema`. */
+export const storedHistoryItemSchema = sessionFields
+  .extend({ noteHighlighted: z.boolean().optional(), topic: historyTopicSchema })
+  .refine(countedMatchesStatus, {
+    message: 'counted is false exactly when the session is discarded.',
+  })
+  .refine((item) => item.topic.id === item.topicId, {
+    message: 'The topic summary is the session’s topic.',
+  });
+export type SessionHistoryItem = z.infer<typeof storedHistoryItemSchema>;
 
 /** One page, newest first (startedAt DESC, id DESC). `nextCursor` is opaque; null at the end. */
 export const historyPageSchema = z.object({
