@@ -16,6 +16,8 @@ import TopicsRoute from '../app/(tabs)/profile/topics';
 import CompletionRoute from '../app/completion/[sessionId]';
 import FocusRoute from '../app/focus';
 import CeremonyRoute from '../app/ceremony/[year]/[month]';
+import CollectionItemRoute from '../app/collection/[kind]/[id]';
+import CollectionRoute from '../app/collection/index';
 import MonthRoute from '../app/month/[year]/[month]';
 import OnboardingRoute from '../app/onboarding';
 import RecapRoute from '../app/recap/[year]/[month]';
@@ -47,4 +49,6 @@ export const appRoutes = {
   'month/[year]/[month]': MonthRoute,
   'recap/[year]/[month]': RecapRoute,
   'ceremony/[year]/[month]': CeremonyRoute,
+  'collection/index': CollectionRoute,
+  'collection/[kind]/[id]': CollectionItemRoute,
 };

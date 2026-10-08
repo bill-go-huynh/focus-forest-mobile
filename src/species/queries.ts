@@ -9,7 +9,7 @@ import {
   type CurrentTreeResponse,
 } from '../api';
 import { currentTreeQueryKey, homeQueryKey } from '../core-loop/query-keys';
-import { equipmentQueryKey, speciesQueryKey } from '../progression/query-keys';
+import { collectionQueryKey, equipmentQueryKey, speciesQueryKey } from '../progression/query-keys';
 import { environmentFrom, type SceneEnvironment } from '../tree';
 
 /**
@@ -23,8 +23,8 @@ export function useSpecies(enabled = true) {
 
 /**
  * Chooses the current month's species (PUT /me/trees/current/species). Online only, nothing
- * optimistic: the answer is the current tree, which replaces the cached one; Home and the
- * species are asked again. A refusal (`species_locked`, …) reads the species again.
+ * optimistic: the answer is the current tree, which replaces the cached one; Home, the
+ * species, and the collection are asked again. A refusal (`species_locked`, …) reads the species again.
  */
 export function useSelectSpecies() {
   const { client } = useApi();
@@ -35,6 +35,8 @@ export function useSelectSpecies() {
       queryClient.setQueryData(currentTreeQueryKey, tree);
       void queryClient.invalidateQueries({ queryKey: homeQueryKey }).catch(() => undefined);
       void queryClient.invalidateQueries({ queryKey: speciesQueryKey }).catch(() => undefined);
+      // The Collection Book marks the month's species (`selected`).
+      void queryClient.invalidateQueries({ queryKey: collectionQueryKey }).catch(() => undefined);
     },
     onError: (error) => {
       if (progressionErrorCode(error) !== null) {

@@ -3,11 +3,9 @@ import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
 import { Avatar } from '../components/Avatar';
 import { useTheme } from '../theme';
+import { KNOWN_PROFILE_FRAMES } from '../tree/environment';
 import { ENVIRONMENT_PALETTE } from '../tree/species/palette';
 import { useEquipment } from './queries';
-
-/** Profile frames the app can draw; any other id draws the plain avatar. */
-const KNOWN_FRAMES = ['twig-frame'] as const;
 
 /**
  * The profile avatar in the equipped profile frame (docs/10 → Profile frames: a subtle ring
@@ -17,7 +15,7 @@ const KNOWN_FRAMES = ['twig-frame'] as const;
 export function FramedAvatar({ initials }: { initials: string | null }) {
   const theme = useTheme();
   const frame = useEquipment().data?.profileFrame?.id ?? null;
-  const known = KNOWN_FRAMES.find((id) => id === frame) ?? null;
+  const known = KNOWN_PROFILE_FRAMES.find((id) => id === frame) ?? null;
   if (!known) return <Avatar initials={initials} />;
   const inner = theme.avatar.lg;
   const ring = theme.space[2];

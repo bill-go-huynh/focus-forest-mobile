@@ -131,6 +131,10 @@ describe('route structure', () => {
       join(APP, 'month', '[year]', '[month].tsx'),
       join(APP, 'recap', '[year]', '[month].tsx'),
       join(APP, 'ceremony', '[year]', '[month].tsx'),
+      // The Collection Book and an item's detail (M4.3): Forest's level-2 and level-3 screens
+      // (docs/05: Forest → Collection Book), on the root stack like the forest months.
+      join(APP, 'collection', 'index.tsx'),
+      join(APP, 'collection', '[kind]', '[id].tsx'),
     ];
     const outside = routeFiles(APP).filter(
       (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && !takeovers.includes(file),

@@ -110,6 +110,13 @@ export function ForestScreen() {
           <Skeleton variant="block" />
         </SkeletonGroup>
       )}
+      {/* The collection entry, secondary to the landscape (docs/05 → Personal forest); it does
+          not depend on the forest loading. */}
+      <ListRow
+        title="Collection Book"
+        onPress={() => router.push('/collection')}
+        accessibilityHint="Opens the trees, badges, and garden pieces you have collected."
+      />
     </Screen>
   );
 }

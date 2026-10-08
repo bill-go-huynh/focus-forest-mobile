@@ -184,6 +184,12 @@ function RootNavigator() {
             <Stack.Screen name="month/[year]/[month]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="recap/[year]/[month]" />
             <Stack.Screen name="ceremony/[year]/[month]" options={{ gestureEnabled: false }} />
+            {/* The Collection Book and an item's detail (M4.3), from the Forest. */}
+            <Stack.Screen name="collection/index" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen
+              name="collection/[kind]/[id]"
+              options={{ headerShown: true, title: '' }}
+            />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="(auth)" />

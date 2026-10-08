@@ -15,6 +15,8 @@ export const BASE_ENVIRONMENT: SceneEnvironment = { background: null, decoration
 /** Backgrounds and decorations the renderer can draw; any other id draws nothing. */
 export const KNOWN_BACKGROUNDS = ['meadow', 'misty-hills'] as const;
 export const KNOWN_DECORATIONS = ['mossy-stones', 'stone-lantern'] as const;
+/** Profile frames the app can draw (on Profile only); any other id draws the plain avatar. */
+export const KNOWN_PROFILE_FRAMES = ['twig-frame'] as const;
 
 /** The garden the server says is equipped; the base environment while that is not known. */
 export function environmentFrom(equipment: Equipment | undefined | null): SceneEnvironment {

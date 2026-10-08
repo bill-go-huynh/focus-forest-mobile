@@ -8,6 +8,7 @@ import { ListRow } from '../../../components/ListRow';
 import { Screen } from '../../../components/Screen';
 import { Skeleton, SkeletonGroup } from '../../../components/Skeleton';
 import { formatJoinDate, initialsOf, useProfile } from '../../../profile';
+import { ForestVignette } from '../../../profile/ForestVignette';
 import { LifetimeStats } from '../../../profile/LifetimeStats';
 import { ProfileShowcase } from '../../../progression/ProfileShowcase';
 import { FramedAvatar } from '../../../species/FramedAvatar';
@@ -15,7 +16,8 @@ import { useTheme } from '../../../theme';
 
 /**
  * Profile (docs/05 §3): the user's identity from A4, then lifetime progress (A3.5), the badge
- * showcase and Achievements once the user has a badge (M4.1), then the entry points.
+ * showcase and Achievements once the user has a badge (M4.1), then the entry points. The forest
+ * vignette of recent trees sits with the identity (M4.3).
  */
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -63,6 +65,8 @@ export default function ProfileScreen() {
         </Card>
       )}
       {profile ? <Button variant="primary" label="Edit profile" onPress={openEdit} /> : null}
+      {/* The identity's small forest vignette (docs/05 §3), once a tree was archived. */}
+      <ForestVignette />
       {/* Lifetime progress (A3.5), under the identity; the join date stays in the card. */}
       <LifetimeStats />
       <ProfileShowcase onOpen={() => router.push('/profile/achievements')} />

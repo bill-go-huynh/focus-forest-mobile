@@ -9,3 +9,6 @@ export const speciesQueryKey = ['me', 'species'] as const;
 
 /** The equipped garden and profile frame (GET /me/equipment). */
 export const equipmentQueryKey = ['me', 'equipment'] as const;
+
+/** The derived Collection Book (GET /me/collection). */
+export const collectionQueryKey = ['me', 'collection'] as const;

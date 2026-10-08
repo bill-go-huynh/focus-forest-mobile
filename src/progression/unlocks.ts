@@ -78,7 +78,9 @@ const plural = (n: number, word: string) => (n === 1 ? word : `${word}s`);
  * days as whole numbers, a unit this version does not know as bare numbers. Null when the
  * achievement keeps its progress hidden (First Session).
  */
-export function progressText(achievement: Achievement): string | null {
+export function progressText(
+  achievement: Pick<Achievement, 'progressVisible' | 'unit' | 'current' | 'target'>,
+): string | null {
   if (!achievement.progressVisible) return null;
   const { unit, current, target } = achievement;
   switch (unit) {
@@ -94,7 +96,7 @@ export function progressText(achievement: Achievement): string | null {
 }
 
 /** How full the bar is: the server's count toward its target, never past it. */
-export function progressRatio(achievement: Achievement): number {
+export function progressRatio(achievement: Pick<Achievement, 'current' | 'target'>): number {
   return Math.min(1, achievement.current / achievement.target);
 }
 

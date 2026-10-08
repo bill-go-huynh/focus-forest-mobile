@@ -111,6 +111,15 @@ export {
   type ProgressionResult,
   type SpeciesList,
 } from './progression';
+export {
+  collectionSchema,
+  getCollection,
+  type Collection,
+  type CollectionItem,
+  type CollectionItemKind,
+  type CollectionSection,
+  type UnlockHint,
+} from './collection';
 export { createQueryClient } from './query-client';
 export {
   archiveTopic,

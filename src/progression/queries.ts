@@ -8,7 +8,7 @@ import {
   useApi,
   type Badges,
 } from '../api';
-import { achievementsQueryKey, badgesQueryKey } from './query-keys';
+import { achievementsQueryKey, badgesQueryKey, collectionQueryKey } from './query-keys';
 
 /**
  * The signed-in user's badges. Read only to show them: an unlock is celebrated from the action
@@ -34,7 +34,11 @@ export function useSetShowcase() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (badgeIds: readonly string[]) => setShowcase(client, badgeIds),
-    onSuccess: (badges: Badges) => queryClient.setQueryData(badgesQueryKey, badges),
+    onSuccess: (badges: Badges) => {
+      queryClient.setQueryData(badgesQueryKey, badges);
+      // The Collection Book marks showcased badges (`showcasePosition`).
+      void queryClient.invalidateQueries({ queryKey: collectionQueryKey }).catch(() => undefined);
+    },
     onError: (error) => {
       if (progressionErrorCode(error) !== null) {
         void queryClient.invalidateQueries({ queryKey: badgesQueryKey }).catch(() => undefined);
