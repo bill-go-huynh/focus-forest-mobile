@@ -7,6 +7,7 @@ import { NetworkError, type GrowthResult, type HomeResponse, type Topic } from '
 import type { ProgressionResult } from '../api/progression';
 import { celebrationsKey } from '../celebrations/celebration-store';
 import { completionReceiptsKey } from '../sessions/completion-receipts';
+import { motion } from '../theme/tokens';
 import { homeSnapshotKey } from '../core-loop/home-snapshot-store';
 import { sceneClock } from '../core-loop/scene-clock';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
@@ -1018,12 +1019,17 @@ describe('unlocks after focus: the tree first, one badge, the rest in a line (M4
     server.state.home = { ...server.state.home, pendingCeremony: { year: 2026, month: 9 } };
     await storeCelebration(USER, SESSION_ID, makeGrowth(), FIRST_UNLOCKS);
     await openHome();
-    await shows('New badge: First Session');
-    // Still on Home a moment later: the ceremony waits for the unlock, then follows it.
-    await pause(400);
-    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
-    expect(
-      await screen.findByRole('button', { name: 'Skip' }, { timeout: 5_000 }),
-    ).toBeOnTheScreen();
+    // Measured by order and gap, not a fixed wait: a slow machine only makes the gap longer.
+    let badgeAt: number | null = null;
+    let skipAt: number | null = null;
+    await until(() => {
+      const now = Date.now();
+      if (badgeAt === null && screen.queryByText('New badge: First Session')) badgeAt = now;
+      if (skipAt === null && screen.queryByRole('button', { name: 'Skip' })) skipAt = now;
+      return skipAt !== null;
+    }, 10_000);
+    expect(badgeAt).not.toBeNull();
+    // The reading pause is the reward duration (docs/04): never a hurried hand-off.
+    expect(skipAt! - badgeAt!).toBeGreaterThanOrEqual(motion.reward * 0.8);
   });
 });
