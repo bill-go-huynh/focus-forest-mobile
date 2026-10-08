@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTrackScreen } from '../analytics';
 import { useFontScale } from '../accessibility';
 import type {
   DayCell,
@@ -83,6 +84,7 @@ function scopeText(scope: Scope): string {
  * history with its filters. Every number is the server's for that exact period.
  */
 export function InsightsScreen() {
+  useTrackScreen('insights_opened');
   const theme = useTheme();
   const { isLargeText } = useFontScale();
   const [period, setPeriod] = useState<Period>({ kind: 'week', weekStart: null });

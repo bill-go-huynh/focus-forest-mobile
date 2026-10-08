@@ -156,6 +156,30 @@ X3 đã kiểm tra tự động toàn bộ chuỗi Focus → session → cây �
 - [ ] Sau khi tháng đóng: recap và Tree Details của tháng đó giữ đúng note đã highlight lúc archive, kể cả khi sau đó sửa note, bỏ highlight hay highlight note khác của tháng ấy.
 - [ ] Session offline thuộc tháng đã đóng, sync sau: lưu bình thường, Completion nói tháng đó đã nằm trong forest, không có celebration; Insights giải thích chênh lệch, Forest/Recap giữ nguyên.
 
+## Phase 4: Progression và chuẩn bị Checkpoint (HOÃN, ghi lại ở CR.7)
+
+X4 và CR.X đã kiểm tra tự động contract, logic và màn hình. Các mục dưới cần thiết bị hoặc mắt người.
+
+### P4.1 Unlock và badge
+- [ ] Session vượt mốc (ví dụ first session): cây phản ứng trước, rồi tới badge, một badge nổi bật, phần còn lại gói trong một dòng "Also unlocked"; không có gì hiện trong lúc đang focus.
+- [ ] Có ceremony cuối tháng cùng lúc: unlock đọc xong mới tới ceremony, không chồng lên nhau.
+- [ ] Reduce Motion: badge chỉ fade, vẫn đọc được tên.
+
+### P4.2 Loài và garden
+- [ ] Chọn loài khi cây còn là Seed (Home → "Choose this month's tree"): preview Seed và Final Form của mỗi loài nhìn hợp lý (art vẫn là placeholder).
+- [ ] Sau session đầu tiên của tháng: Tree Details không còn "Change species", màn chọn loài báo đã khoá.
+- [ ] Garden đã trang bị (Misty Hills, Stone Lantern) chỉ hiện quanh cây tháng hiện tại, không hiện ở tháng đã lưu trữ hay recap.
+
+### P4.3 Collection Book
+- [ ] Forest → Collection Book: lưới đều, món chưa có là silhouette, hint không có chữ gây gấp gáp.
+- [ ] Trang bị và bỏ trang bị một decoration, quay lại Home thấy đổi ngay; offline thì báo cần kết nối, không đổi gì.
+- [ ] Profile: vignette 3 cây gần nhất, bấm vào mở Forest; khung avatar (Twig Frame) khi đã trang bị.
+
+### P4.4 Analytics (Checkpoint)
+- [ ] Settings → Privacy → "Share usage data" bật sẵn, có dòng giải thích; tắt thì không còn event nào được gửi (xem admin → user → Usage data: Not shared).
+- [ ] Mở app, vào Forest, Recap, Insights, bắt đầu một focus: admin → Checkpoint thấy ngày active tăng.
+- [ ] Offline vài phút rồi online lại: event được gửi sau, không mất.
+
 ## Khi gặp lỗi, ghi lại
 
 - Bước đang làm, hành vi mong đợi và hành vi thực tế.

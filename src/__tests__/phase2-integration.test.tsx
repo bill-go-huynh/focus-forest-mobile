@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, screen } from 'expo-router/testing-library';
 
+import { analyticsKey } from '../analytics/analytics-queue';
 import { NetworkError, type FocusSession, type Topic } from '../api';
 import type { SessionHistoryItem } from '../api/history';
 import { sessionRulesKey } from '../focus/session-rules';
@@ -199,10 +200,13 @@ const queuedTopics = async (userId = ADA.id) =>
   (await read<{ items: { id: string; state: string }[] }>(topicCreateQueueKey(userId)))?.items ??
   [];
 /** Writes that change server state, in the order they were sent. */
+const ANALYTICS = '/me/analytics/events';
+/** Product writes. Usage events (CR.6) are telemetry, checked on their own. */
 const writes = () =>
   requests
     .filter((r) => r.method !== 'GET')
     .filter((r) => !r.url.endsWith('/me/preferences'))
+    .filter((r) => !r.url.endsWith(ANALYTICS))
     .map((r) => `${r.method} ${new URL(r.url).pathname}`);
 const shows = (text: string | RegExp) => until(() => screen.queryByText(text) !== null);
 /** Waits inside act for an element while background sync runs, then returns it. */
@@ -617,6 +621,20 @@ describe('Flow M: one device, two users', () => {
       ],
       [completionReceiptsKey(ADA.id), JSON.stringify({ version: 1, receipts: [synced] })],
       [
+        analyticsKey(ADA.id),
+        JSON.stringify([
+          {
+            id: '0a0a0a0a-0000-4000-8000-00000000ada1',
+            name: 'app_opened',
+            occurredAt: '2026-10-06T08:00:00.000Z',
+            localDate: '2026-10-06',
+            platform: 'ios',
+            appVersion: '0.1.0',
+            props: {},
+          },
+        ]),
+      ],
+      [
         historySnapshotKey(ADA.id),
         JSON.stringify({
           version: 1,
@@ -643,6 +661,7 @@ describe('Flow M: one device, two users', () => {
       sessionOutboxKey,
       sessionNoteOutboxKey,
       completionReceiptsKey,
+      analyticsKey,
       historySnapshotKey,
       topicCreateQueueKey,
       topicSnapshotKey,
@@ -680,6 +699,13 @@ describe('Flow M: one device, two users', () => {
     expect(screen.queryByText('Ada pending')).toBeNull();
     await act(() => new Promise<void>((resolve) => setTimeout(resolve, 300)));
     expect(writes()).toEqual([]);
+    // Bea's usage events are hers only: Ada's queued event is never sent with them.
+    expect(
+      requests
+        .filter((r) => r.url.endsWith(ANALYTICS))
+        .flatMap((r) => (r.body as { events: { id: string }[] }).events)
+        .map((event) => event.id),
+    ).not.toContain('0a0a0a0a-0000-4000-8000-00000000ada1');
     online.unmount();
 
     // Ada's data is exactly as she left it.

@@ -32,7 +32,10 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
-type SwitchKey = 'sound' | 'haptics' | 'reducedMotion' | NotificationCategory;
+type DisplaySwitch = 'sound' | 'haptics' | 'reducedMotion' | 'shareUsageData';
+type SwitchKey = DisplaySwitch | NotificationCategory;
+const isDisplaySwitch = (key: SwitchKey): key is DisplaySwitch =>
+  key === 'sound' || key === 'haptics' || key === 'reducedMotion' || key === 'shareUsageData';
 type Flipped = Partial<Record<SwitchKey, boolean>>;
 
 /** The saved preferences with the switches that are still saving shown as flipped. */
@@ -40,7 +43,7 @@ function withFlipped(data: Preferences, flipped: Flipped): Preferences {
   const shown = { ...data };
   const notifications: Record<string, { enabled: boolean }> = { ...data.notifications };
   for (const [key, value] of Object.entries(flipped) as [SwitchKey, boolean][]) {
-    if (key === 'sound' || key === 'haptics' || key === 'reducedMotion') shown[key] = value;
+    if (isDisplaySwitch(key)) shown[key] = value;
     else notifications[key] = { ...notifications[key], enabled: value };
   }
   return { ...shown, notifications: notifications as Preferences['notifications'] };
@@ -51,7 +54,7 @@ const SAVE_GENERAL_MESSAGE = "We couldn't save that change. Please try again.";
 
 /**
  * Settings, under Profile (docs/05 §4): theme, sound, haptics, reduced motion, the
- * notification categories that exist so far, and sign out. Each change saves on its own
+ * notification categories that exist so far, usage data sharing (CR.6), and sign out. Each change saves on its own
  * (A5: PATCH /me/preferences). Sound and haptics are stored now; their behavior comes with
  * the timer in Phase 2.
  */
@@ -88,9 +91,7 @@ export default function SettingsScreen() {
         return rest;
       });
     change(
-      key === 'sound' || key === 'haptics' || key === 'reducedMotion'
-        ? { [key]: value }
-        : { notifications: { [key]: { enabled: value } } },
+      isDisplaySwitch(key) ? { [key]: value } : { notifications: { [key]: { enabled: value } } },
       settled,
     );
   };
@@ -149,6 +150,14 @@ export default function SettingsScreen() {
               }
               value={data.reducedMotion}
               onValueChange={(reducedMotion) => flip('reducedMotion', reducedMotion)}
+            />
+          </Section>
+          <Section title="Privacy">
+            <SwitchRow
+              label="Share usage data"
+              description="Helps us see whether Focus Forest is useful: when the app is opened and which screens are used. Your notes and topic names are never shared."
+              value={data.shareUsageData}
+              onValueChange={(shareUsageData) => flip('shareUsageData', shareUsageData)}
             />
           </Section>
           <NotificationSettings

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
+import { useTrackScreen } from '../analytics';
 import type { ForestItem } from '../api';
 import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
@@ -32,6 +33,7 @@ const LANDSCAPE_WINDOW = { initialNumToRender: 6, maxToRenderPerBatch: 4, window
  * order for screen readers and quick lookup. Months, kinds, and order are the server's.
  */
 export function ForestScreen() {
+  useTrackScreen('forest_opened');
   const theme = useTheme();
   const router = useRouter();
   const { query, items, summary, progression } = useForest();

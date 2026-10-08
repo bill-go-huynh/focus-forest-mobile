@@ -11,6 +11,8 @@ export const preferencesSchema = z.object({
   sound: z.boolean(),
   haptics: z.boolean(),
   reducedMotion: z.boolean(),
+  /** Product analytics (CR.1/CR.6): on by default, can be turned off in Settings. */
+  shareUsageData: z.boolean(),
   notifications: z.object({
     dailyGoalReminder: reminder,
     scheduledFocusReminder: reminder,
@@ -33,6 +35,7 @@ export interface PreferenceChanges {
   sound?: boolean;
   haptics?: boolean;
   reducedMotion?: boolean;
+  shareUsageData?: boolean;
   notifications?: Partial<
     Record<NotificationCategory, { enabled?: boolean; time?: string | null }>
   >;

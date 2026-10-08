@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { useTrackScreen } from '../analytics';
 import type { MonthRef, Recap } from '../api';
 import { Button } from '../components/Button';
 import { ErrorState } from '../components/ErrorState';
@@ -22,6 +23,7 @@ import { recapPages, type RecapPage } from './recap-format';
  * that mark is separate from the month-end ceremony.
  */
 export function RecapScreen({ month }: { month: MonthRef }) {
+  useTrackScreen('recap_opened', { year: month.year, month: month.month });
   const recap = useRecap(month);
   const markSeen = useMarkRecapSeen();
   const marked = useRef(false);

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import type { SessionRulesResponse, Topic } from '../api';
 import { useFontScale } from '../accessibility';
+import { useTrackEvent } from '../analytics';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { EmptyState } from '../components/EmptyState';
@@ -74,6 +75,7 @@ export function StartFocus({
   const [step, setStep] = useState<Step>('closed');
   const [choice, setChoice] = useState<{ entry: PickerTopic; minutes: number } | null>(null);
   const [homeNotice, setHomeNotice] = useState<Notice | null>(null);
+  const track = useTrackEvent();
   const [startFailed, setStartFailed] = useState(false);
 
   const openFocus = async () => {
@@ -132,6 +134,7 @@ export function StartFocus({
         maxPauseMinutes: current.maxPauseMinutes,
       },
     });
+    if (started.ok) track('focus_started', { plannedMinutes: minutes });
     // Opened only once the timer is stored (or one already runs).
     if (started.ok || started.reason === 'timer_exists') {
       void openFocus();

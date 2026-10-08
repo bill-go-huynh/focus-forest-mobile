@@ -158,7 +158,9 @@ afterEach(async () => {
 });
 
 const shows = (text: string | RegExp) => until(() => screen.queryByText(text) !== null);
-const writes = () => requests.filter((r) => r.method !== 'GET');
+/** Product writes. Usage events (CR.6) are telemetry, not a goal or rest-day change. */
+const writes = () =>
+  requests.filter((r) => r.method !== 'GET' && !r.url.endsWith('/me/analytics/events'));
 const writesTo = (path: string) => writes().filter((r) => new URL(r.url).pathname === path);
 const homeRequests = () => requests.filter((r) => r.url === `${API}/me/home`);
 const pause = (ms = 200) => act(() => new Promise<void>((resolve) => setTimeout(resolve, ms)));

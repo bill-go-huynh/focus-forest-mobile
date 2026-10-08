@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 
+import { useTrackScreen } from '../analytics';
 import type { CurrentTreeResponse, Topic, TreeStateResponse } from '../api';
 import { ErrorState } from '../components/ErrorState';
 import { Screen } from '../components/Screen';
@@ -31,6 +32,7 @@ const MINUTE = 60_000;
  * with the Forest (M3.4).
  */
 export function TreeDetailsScreen() {
+  useTrackScreen('tree_details_opened');
   const theme = useTheme();
   const current = useCurrentTree();
   const { home } = useHome();

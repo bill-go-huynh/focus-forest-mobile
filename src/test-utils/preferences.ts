@@ -9,6 +9,7 @@ export function makePreferences(overrides: Partial<Preferences> = {}): Preferenc
     sound: true,
     haptics: true,
     reducedMotion: false,
+    shareUsageData: true,
     notifications: {
       dailyGoalReminder: reminder,
       scheduledFocusReminder: reminder,

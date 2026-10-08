@@ -34,7 +34,7 @@ function applyChanges(current: Preferences, changes: PreferenceChanges): Prefere
 /** The current values of exactly the fields a change touches, to restore them on failure. */
 function snapshotOf(current: Preferences, changes: PreferenceChanges): PreferenceChanges {
   const snapshot: PreferenceChanges = {};
-  for (const key of ['theme', 'sound', 'haptics', 'reducedMotion'] as const) {
+  for (const key of ['theme', 'sound', 'haptics', 'reducedMotion', 'shareUsageData'] as const) {
     if (changes[key] !== undefined) Object.assign(snapshot, { [key]: current[key] });
   }
   if (changes.notifications) {
