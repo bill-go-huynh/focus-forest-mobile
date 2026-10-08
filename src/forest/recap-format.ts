@@ -16,6 +16,7 @@ export type RecapPage =
   | { kind: 'streak'; value: string }
   | { kind: 'bestDay'; value: string }
   | { kind: 'bestWeek'; value: string }
+  | { kind: 'badges'; badges: Recap['badges'] }
   | { kind: 'records'; lines: string[] }
   | { kind: 'notes'; notes: { sessionId: string; note: string }[] }
   | { kind: 'share' };
@@ -69,6 +70,8 @@ export function recapPages(recap: Recap): RecapPage[] {
       value: `Week of ${longDate(weekStart)} · ${formatMinutes(focusedMinutes)}`,
     });
   }
+  // M4.1: the badges earned in the month, as frozen at archive (docs/05 §3 recap order).
+  if (recap.badges.length > 0) pages.push({ kind: 'badges', badges: recap.badges });
   if (recap.newRecords.length > 0) {
     pages.push({ kind: 'records', lines: recap.newRecords.map(recordLine) });
   }

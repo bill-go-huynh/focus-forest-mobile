@@ -1,5 +1,7 @@
+import type { GrowthResult } from '../../api/core-loop';
 import { quarantineKeyOf, type StorageIssue } from '../../common/stored-json';
 import { CLOSED_MONTH_GROWTH, makeGrowth } from '../../test-utils/core-loop';
+import { FIRST_UNLOCKS, NO_PROGRESSION } from '../../test-utils/progression';
 import { makeSessionResult } from '../../test-utils/sessions';
 import { memoryStorage } from '../../test-utils/storage';
 import {
@@ -276,5 +278,95 @@ describe('CelebrationStore: month-end ceremonies shown, until the server has the
     const { store } = await ready(storage);
     storage.failing.setItem = true;
     await expect(store.ceremonyShown(ADA, SEPT)).resolves.toBe(false);
+  });
+});
+
+describe('CelebrationStore: unlocks an action caused, celebrated once (M4.1)', () => {
+  const earned = (id: string, growth: GrowthResult | null = makeGrowth()) =>
+    makeSessionResult({ id, growth, progression: FIRST_UNLOCKS });
+
+  it('keeps the server’s progression with the growth, exactly as answered', async () => {
+    const { store } = await ready();
+    await expect(store.record(ADA, earned(S1))).resolves.toBe(true);
+    expect(store.getSnapshot().pending[0]).toMatchObject({
+      sessionId: S1,
+      growth: makeGrowth(),
+      progression: FIRST_UNLOCKS,
+    });
+  });
+
+  it('records unlocks with no tree moment (a late session of an archived month)', async () => {
+    const { store, storage } = await ready();
+    await expect(store.record(ADA, earned(S1, CLOSED_MONTH_GROWTH))).resolves.toBe(true);
+    expect(store.getSnapshot().pending).toEqual([
+      expect.objectContaining({ sessionId: S1, growth: null, progression: FIRST_UNLOCKS }),
+    ]);
+    // It survives a restart like any other celebration.
+    const again = await ready(storage);
+    expect(again.store.getSnapshot().pending[0]?.progression).toEqual(FIRST_UNLOCKS);
+  });
+
+  it('records nothing for an empty or missing progression without a tree moment', async () => {
+    const { store, storage } = await ready();
+    for (const progression of [NO_PROGRESSION, null, undefined]) {
+      await store.record(
+        ADA,
+        makeSessionResult({ id: S1, growth: CLOSED_MONTH_GROWTH, progression }),
+      );
+    }
+    expect(stored(storage)).toBeNull();
+    // An empty result with growth is a growth celebration only.
+    await store.record(
+      ADA,
+      makeSessionResult({ id: S2, growth: makeGrowth(), progression: NO_PROGRESSION }),
+    );
+    expect(store.getSnapshot().pending[0]?.progression).toBeUndefined();
+  });
+
+  it('never celebrates a replayed or consumed unlock again', async () => {
+    const { store } = await ready();
+    await store.record(ADA, earned(S1));
+    await store.record(ADA, earned(S1));
+    expect(pendingIds(store)).toEqual([S1]);
+    await store.consume(ADA, [S1]);
+    await store.record(ADA, earned(S1));
+    expect(pendingIds(store)).toEqual([]);
+  });
+
+  it('reads a document saved before M4.1 (no progression on its intents)', async () => {
+    const storage = memoryStorage();
+    storage.data.set(
+      celebrationsKey(ADA),
+      JSON.stringify({
+        version: 1,
+        pending: [{ sessionId: S1, startedAt: '2026-10-07T09:00:00.000Z', growth: makeGrowth() }],
+        consumed: [],
+      }),
+    );
+    const { store, issues } = await ready(storage);
+    expect(pendingIds(store)).toEqual([S1]);
+    expect(issues).toEqual([]);
+  });
+
+  it('refuses a stored intent with neither a tree moment nor an unlock', async () => {
+    const storage = memoryStorage();
+    storage.data.set(
+      celebrationsKey(ADA),
+      JSON.stringify({
+        version: 1,
+        pending: [
+          {
+            sessionId: S1,
+            startedAt: '2026-10-07T09:00:00.000Z',
+            growth: null,
+            progression: NO_PROGRESSION,
+          },
+        ],
+        consumed: [],
+      }),
+    );
+    const { store, issues } = await ready(storage);
+    expect(pendingIds(store)).toEqual([]);
+    expect(issues.map((issue) => issue.code)).toContain('invalid_state');
   });
 });

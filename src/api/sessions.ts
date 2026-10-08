@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { ApiClient } from './client';
 import { growthResultSchema } from './core-loop';
 import { HttpError } from './errors';
+import { progressionResultSchema } from './progression';
 
 // The API sends ids in lowercase (Postgres canonical form), in any UUID version.
 const uuid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -43,6 +44,12 @@ export const sessionFields = z.object({
    * never invented.
    */
   growth: growthResultSchema.nullable().optional(),
+  /**
+   * A4.2–A4.3: what the session caused in progression (badges, and the species and cosmetics
+   * they unlocked), in the PUT answer only (null for a session stored before A4.2). Absent from
+   * other answers and from receipts saved before M4.1: unknown, never invented.
+   */
+  progression: progressionResultSchema.nullable().optional(),
 });
 
 /** Holds for every session answer: `counted` follows the status. */
@@ -65,9 +72,15 @@ export const storedSessionSchema = sessionFields
   });
 export type FocusSession = z.infer<typeof storedSessionSchema>;
 
-/** The PUT answer (201 or a 200 replay) always carries `growth`, stored with the session. */
+/**
+ * The PUT answer (201 or a 200 replay) always carries `growth` and `progression`, stored with
+ * the session and answered unchanged on a replay.
+ */
 export const submittedSessionSchema = sessionFields
-  .extend({ growth: growthResultSchema.nullable() })
+  .extend({
+    growth: growthResultSchema.nullable(),
+    progression: progressionResultSchema.nullable(),
+  })
   .refine(countedMatchesStatus, {
     message: 'counted is false exactly when the session is discarded.',
   });

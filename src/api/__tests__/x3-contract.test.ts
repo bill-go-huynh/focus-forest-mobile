@@ -80,10 +80,32 @@ describe('X3 contract: the captured API answers parse with the app’s schemas',
         unread(contract[name], SCHEMAS[name].parse(contract[name])),
       ]),
     );
-    // Every field the server sends is read (X3.G: `noteHighlighted` drives the note's highlight).
+    // Every field the server sends is read (X3.G: `noteHighlighted` drives the note's highlight;
+    // M4.1: `progression` drives unlocks, and recap badges are typed).
     expect(
       Object.fromEntries(Object.entries(ignored).filter(([, keys]) => keys.length > 0)),
     ).toEqual({});
+  });
+
+  it('reads what each session caused in progression, and the month’s badges (M4.1)', () => {
+    const first = submittedSessionSchema.parse(contract.sessionFirst);
+    expect(first.progression?.newlyEarnedBadges.map((badge) => badge.id)).toEqual([
+      'first-session',
+    ]);
+    expect(first.progression?.newlyUnlockedSpecies.map((species) => species.id)).toEqual(['oak']);
+    const nothing = { newlyEarnedBadges: [], newlyUnlockedSpecies: [], newlyUnlockedCosmetics: [] };
+    for (const name of ['sessionDiscarded', 'sessionOctober', 'sessionLate'] as const) {
+      expect(submittedSessionSchema.parse(contract[name]).progression).toEqual(nothing);
+    }
+    // The recap and the archived month carry the same frozen badges, with display fields.
+    const recap = recapSchema.parse(contract.recap);
+    expect(recap.badges.map((badge) => badge.id)).toEqual([
+      'first-session',
+      'focus-streak:3',
+      'focus-streak:7',
+    ]);
+    const archived = treeDetailsSchema.parse(contract.treeArchived);
+    expect(archived.kind === 'archived' && archived.badges).toEqual(recap.badges);
   });
 
   it('keeps the semantics each screen binds to', () => {

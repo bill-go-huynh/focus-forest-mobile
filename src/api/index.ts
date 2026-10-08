@@ -32,6 +32,8 @@ export {
   cancelRestDay,
   clearWeeklyGoal,
   consistencyErrorCode,
+  recoveryResultSchema,
+  type RecoveryResult,
   getGoals,
   getRestDays,
   getStreak,
@@ -77,6 +79,23 @@ export {
   type TopicInsight,
   type WeekInsights,
 } from './insights';
+export {
+  achievementsSchema,
+  badgesSchema,
+  getAchievements,
+  getBadges,
+  progressionErrorCode,
+  progressionResultSchema,
+  setShowcase,
+  SHOWCASE_MAX,
+  unlockedAnything,
+  type Achievement,
+  type Achievements,
+  type Badge,
+  type Badges,
+  type EarnedBadge,
+  type ProgressionResult,
+} from './progression';
 export { createQueryClient } from './query-client';
 export {
   archiveTopic,

@@ -13,16 +13,11 @@ import { useCeremonyTrigger } from '../forest/use-ceremony-trigger';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 import type { HomeResponse } from '../api';
+import { BadgeUnlock } from '../progression/BadgeUnlock';
 import { MomentCaption } from './MomentCaption';
-import {
-  dailyGoalLine,
-  streakLine,
-  weekLine,
-  weeklyGoalLine,
-  type GrowthMoment,
-} from './presentation';
+import { dailyGoalLine, streakLine, weekLine, weeklyGoalLine } from './presentation';
 import { useHome } from './queries';
-import { useCelebrationPresenter } from './use-celebration';
+import { useCelebrationPresenter, type Presented } from './use-celebration';
 import { GOAL_REACHED_TEXT, useGoalReached } from './use-goal-met';
 import { useSceneTimeOfDay } from './use-scene-time';
 
@@ -42,8 +37,8 @@ export function HomeScreen() {
   const sceneRef = useRef<TreeSceneHandle>(null);
   const homeTree = home?.tree ?? null;
   const tree = useMemo(() => (homeTree ? toTreeVisualState(homeTree) : null), [homeTree]);
-  const [settled, setSettled] = useState<GrowthMoment | null>(null);
-  const moment = useCelebrationPresenter({
+  const [settled, setSettled] = useState<Presented | null>(null);
+  const presented = useCelebrationPresenter({
     ready: focused,
     tree,
     scene: sceneRef,
@@ -51,9 +46,12 @@ export function HomeScreen() {
     select: (pending, held) => pending.filter((intent) => !held.includes(intent.sessionId)),
     onSettled: setSettled,
   });
-  // The month-end ceremony waits while a growth moment plays, then follows it: one sequence at
-  // a time, never stacked, and never put off to the next launch.
-  useCeremonyTrigger(query.data?.home ?? null, focused && (moment === null || moment === settled));
+  // The month-end ceremony waits while a growth moment or an unlock plays, then follows it: one
+  // sequence at a time, never stacked, and never put off to the next launch.
+  useCeremonyTrigger(
+    query.data?.home ?? null,
+    focused && (presented === null || presented === settled),
+  );
 
   return (
     <Screen title="This month">
@@ -75,7 +73,10 @@ export function HomeScreen() {
             onRetry={() => void query.refetch()}
           />
         )}
-        {moment ? <MomentCaption moment={moment} /> : null}
+        {presented?.moment ? <MomentCaption moment={presented.moment} /> : null}
+        {presented?.unlock && presented.revealed ? (
+          <BadgeUnlock moment={presented.unlock} reveal />
+        ) : null}
       </View>
 
       {fromDevice && query.isError ? (

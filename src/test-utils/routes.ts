@@ -7,6 +7,7 @@ import ForestScreen from '../app/(tabs)/forest';
 import HomeScreen from '../app/(tabs)/index';
 import InsightsScreen from '../app/(tabs)/insights';
 import ProfileLayout from '../app/(tabs)/profile/_layout';
+import AchievementsRoute from '../app/(tabs)/profile/achievements';
 import EditProfileScreen from '../app/(tabs)/profile/edit';
 import GoalsRoute from '../app/(tabs)/profile/goals';
 import ProfileScreen from '../app/(tabs)/profile/index';
@@ -33,6 +34,7 @@ export const appRoutes = {
   '(tabs)/profile/_layout': ProfileLayout,
   '(tabs)/profile/index': ProfileScreen,
   '(tabs)/profile/edit': EditProfileScreen,
+  '(tabs)/profile/achievements': AchievementsRoute,
   '(tabs)/profile/goals': GoalsRoute,
   '(tabs)/profile/topics': TopicsRoute,
   '(tabs)/profile/settings': SettingsScreen,

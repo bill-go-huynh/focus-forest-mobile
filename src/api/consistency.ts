@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import type { ApiClient } from './client';
 import { goalsSchema, streakSchema } from './core-loop';
+import { progressionResultSchema } from './progression';
 import { HttpError } from './errors';
 
 /**
@@ -75,15 +76,22 @@ export function getStreak(client: ApiClient): Promise<z.infer<typeof streakSchem
   return client.request('/me/streak', { schema: streakSchema });
 }
 
-/** Accepts the offered recovery of `missedDate`. Idempotent: a repeat answers the same streak. */
-export function acceptRecovery(
-  client: ApiClient,
-  missedDate: string,
-): Promise<z.infer<typeof streakSchema>> {
+/**
+ * A4.2.G: the recovery answer is the streak plus what the recovered day earned (a longer longest
+ * streak can cross a streak badge). Stored with the recovery and answered unchanged on a
+ * repeat; null for a recovery stored before A4.2.G.
+ */
+export const recoveryResultSchema = streakSchema.extend({
+  progression: progressionResultSchema.nullable(),
+});
+export type RecoveryResult = z.infer<typeof recoveryResultSchema>;
+
+/** Accepts the offered recovery of `missedDate`. Idempotent: a repeat answers the same result. */
+export function acceptRecovery(client: ApiClient, missedDate: string): Promise<RecoveryResult> {
   return client.request('/me/streak/recoveries', {
     method: 'POST',
     body: { missedDate },
-    schema: streakSchema,
+    schema: recoveryResultSchema,
   });
 }
 

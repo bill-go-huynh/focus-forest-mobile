@@ -21,6 +21,7 @@ import {
   SEPTEMBER,
 } from '../test-utils/forest';
 import { makePreferences } from '../test-utils/preferences';
+import { FIRST_SESSION, STREAK_7 } from '../test-utils/progression';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
@@ -349,6 +350,17 @@ describe('archived Tree Details', () => {
     expect(screen.queryByText(/event/i)).toBeNull();
   });
 
+  it('names the badges earned in the month, from the archived snapshot (M4.1)', async () => {
+    server.state.details = {
+      ...(archivedDetails() as object),
+      badges: [FIRST_SESSION, STREAK_7],
+    };
+    await openSeptember();
+    expect(screen.getByRole('header', { name: 'Badges earned' })).toBeOnTheScreen();
+    expect(screen.getByText('First Session')).toBeOnTheScreen();
+    expect(screen.getByText('7-Day Streak')).toBeOnTheScreen();
+  });
+
   it('leaves out a top topic and notes the month did not have', async () => {
     server.state.details = archivedDetails({
       stats: archivedStats({ topTopic: null }),
@@ -554,6 +566,22 @@ describe('monthly recap', () => {
     });
     renderApp(appRoutes, { initialUrl: '/recap/2026/9' });
     expect(await screen.findByText('Page 1 of 5')).toBeOnTheScreen();
+  });
+
+  it('gives the month’s badges their own page, after its best week (docs/05 §3)', async () => {
+    server.state.recap = makeRecap({ badges: [FIRST_SESSION, STREAK_7] });
+    renderApp(appRoutes, { initialUrl: '/recap/2026/9' });
+    expect(await screen.findByText('Page 1 of 11')).toBeOnTheScreen();
+    for (let page = 2; page <= 7; page += 1) {
+      next();
+      await screen.findByText(`Page ${page} of 11`);
+    }
+    expect(screen.getByText('Week of Monday, September 14 · 9 h')).toBeOnTheScreen();
+    next();
+    await screen.findByText('Page 8 of 11');
+    expect(screen.getByRole('header', { name: 'Badges earned' })).toBeOnTheScreen();
+    expect(screen.getByText('First Session')).toBeOnTheScreen();
+    expect(screen.getByText('7-Day Streak')).toBeOnTheScreen();
   });
 
   it('marks the recap seen once it shows, not when only its data was loaded', async () => {

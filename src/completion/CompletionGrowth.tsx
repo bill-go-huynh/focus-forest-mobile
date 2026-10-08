@@ -7,6 +7,8 @@ import { useCelebrations, useCelebrationStore } from '../celebrations/Celebratio
 import { ProgressRing } from '../components/ProgressRing';
 import { serverConfirmations } from '../core-loop/confirmations';
 import { MomentCaption } from '../core-loop/MomentCaption';
+import { BadgeUnlock } from '../progression/BadgeUnlock';
+import { unlockMoment } from '../progression/unlocks';
 import { dailyGoalLine, growthMoment, streakLine } from '../core-loop/presentation';
 import { useHome } from '../core-loop/queries';
 import { useCelebrationPresenter } from '../core-loop/use-celebration';
@@ -17,7 +19,7 @@ import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 
 /**
  * What the session did to the month's tree, on Session Completion (docs/05, docs/04 §5), from
- * the server's GrowthResult only. While this screen is open it owns its session's celebration:
+ * the server's GrowthResult only, then what it unlocked (M4.1, from its `progression`). While this screen is open it owns its session's celebration:
  * a growth that arrives here (a sync while the screen is open) plays in place, once, and is
  * consumed after it shows. Without the server's answer (`session` null) nothing is claimed. A
  * session stored before Phase 3 (`growth: null`) shows no tree; a late session of an archived
@@ -50,12 +52,27 @@ export function CompletionGrowth({
   const growth = isCelebratable(answered) ? answered : seen;
   const tree = useMemo(() => (growth?.tree ? toTreeVisualState(growth.tree) : null), [growth]);
 
-  const moment = useCelebrationPresenter({
+  const presented = useCelebrationPresenter({
     ready: session !== null,
     tree,
     scene: sceneRef,
     select: (all) => all.filter((intent) => intent.sessionId === sessionId),
   });
+
+  const moment = presented?.moment ?? null;
+  // What the session unlocked (M4.1): revealed here once the tree has reacted, when this screen
+  // plays it; described without motion when it was shown before. "Shown before" is known only
+  // once the device has read its celebrations: while they are read, nothing is claimed.
+  const described = useMemo(() => unlockMoment([session?.progression]), [session?.progression]);
+  const celebrationsRead = celebrations.status === 'ready' || celebrations.status === 'unavailable';
+  const unlock = presented?.unlock
+    ? presented.revealed
+      ? { moment: presented.unlock, reveal: true }
+      : null
+    : celebrationsRead && !pending && described
+      ? { moment: described, reveal: false }
+      : null;
+  const unlocked = unlock ? <BadgeUnlock moment={unlock.moment} reveal={unlock.reveal} /> : null;
 
   if (!session) return null;
   if (session.growth?.monthClosed) {
@@ -64,9 +81,12 @@ export function CompletionGrowth({
       { month: 'long', year: 'numeric', timeZone: 'UTC' },
     );
     return (
-      <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
-        {`Saved to ${month}. That month's tree is already resting in your forest.`}
-      </Text>
+      <View style={{ gap: theme.space[3] }}>
+        <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
+          {`Saved to ${month}. That month's tree is already resting in your forest.`}
+        </Text>
+        {unlocked}
+      </View>
     );
   }
   return (
@@ -78,6 +98,7 @@ export function CompletionGrowth({
           <MomentCaption moment={moment ?? growthMoment([growth])} />
         </>
       ) : null}
+      {unlocked}
       <CompletionProgress />
     </View>
   );

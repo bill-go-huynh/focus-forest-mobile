@@ -18,8 +18,8 @@ export function makeSubmissionBody(
 }
 
 /**
- * A session exactly as PUT /me/sessions/:id answers it (A2.5, with A3.3's `growth`: null by
- * default, as for a session stored before Phase 3).
+ * A session exactly as PUT /me/sessions/:id answers it (A2.5, with A3.3's `growth` and A4.2's
+ * `progression`: null by default, as for a session stored before them).
  */
 export function makeSessionResult(overrides: Partial<FocusSession> = {}): FocusSession {
   return {
@@ -39,6 +39,7 @@ export function makeSessionResult(overrides: Partial<FocusSession> = {}): FocusS
     noteHighlighted: false,
     createdAt: '2026-09-27T10:25:01.000Z',
     growth: null,
+    progression: null,
     ...overrides,
   };
 }

@@ -117,7 +117,8 @@ export function useAcceptRecovery() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (missedDate: string) => acceptRecovery(client, missedDate),
-    onSuccess: (streak) => {
+    onSuccess: ({ progression: _progression, ...streak }) => {
+      // The streak part is GET /me/streak's answer; the progression is shown by the screen.
       queryClient.setQueryData(streakQueryKey, streak);
       // A kept streak can reach a milestone: the tree and Home are asked again.
       void invalidateCoreLoop(queryClient).catch(() => undefined);

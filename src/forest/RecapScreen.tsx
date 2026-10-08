@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { ErrorState } from '../components/ErrorState';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
+import { BadgeMark } from '../progression/BadgeMark';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene } from '../tree';
 import { monthTitle } from './forest-format';
@@ -122,6 +123,26 @@ function PageContent({ page, recap }: { page: RecapPage; recap: Recap }) {
       return <Hero label="Your best day" value={page.value} />;
     case 'bestWeek':
       return <Hero label="Your best week" value={page.value} />;
+    case 'badges':
+      return (
+        <View style={{ gap: theme.space[3] }}>
+          <Text
+            accessibilityRole="header"
+            style={[theme.type.headline, { color: theme.colors.text.secondary }]}
+          >
+            Badges earned
+          </Text>
+          {page.badges.map((badge) => (
+            <View
+              key={badge.id}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[3] }}
+            >
+              <BadgeMark badge={badge} />
+              <Text style={[body, { flexShrink: 1 }]}>{badge.name}</Text>
+            </View>
+          ))}
+        </View>
+      );
     case 'records':
       return (
         <View style={{ gap: theme.space[2] }}>

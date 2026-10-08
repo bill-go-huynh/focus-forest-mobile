@@ -38,6 +38,18 @@ export const control = { minHeight: 52, borderWidth: 2 } as const;
 export const progressRing = { size: 72, strokeWidth: 8 } as const;
 
 /**
+ * Achievement progress (docs/01 §8: a slim linear bar plus a fraction). PROVISIONAL, like the
+ * progress ring.
+ */
+export const progressBar = { height: 6 } as const;
+
+/**
+ * Badge art sizes (docs/10 → Badges: readable at ~48px): `mark` in lists and the showcase,
+ * `reveal` for the unlock moment. PROVISIONAL, like the placeholder badge art.
+ */
+export const badge = { mark: 48, reveal: 96 } as const;
+
+/**
  * The tree scene (docs/03): its aspect ratio (width / height, the art's 240 × 288 view box) and
  * the forest-thumbnail width. PROVISIONAL, like the placeholder art.
  */

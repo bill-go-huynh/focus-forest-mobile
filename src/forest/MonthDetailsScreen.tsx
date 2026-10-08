@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { ErrorState } from '../components/ErrorState';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
+import { BadgeMark } from '../progression/BadgeMark';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene } from '../tree';
 import { formatMinutes, monthTitle } from './forest-format';
@@ -102,8 +103,24 @@ function Details({ details }: { details: TreeDetails }) {
           ))}
         </View>
       ) : null}
-      {/* Badges and events arrive in later phases: nothing is shown while there are none. */}
-      {badges.length > 0 ? <Text style={body}>{plural(badges.length, 'badge')}</Text> : null}
+      {/* The month's badges, as frozen at archive (M4.1); none shows nothing. */}
+      {badges.length > 0 ? (
+        <View style={{ gap: theme.space[2] }}>
+          <Text accessibilityRole="header" style={header}>
+            Badges earned
+          </Text>
+          {badges.map((badge) => (
+            <View
+              key={badge.id}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[3] }}
+            >
+              <BadgeMark badge={badge} />
+              <Text style={[body, { flexShrink: 1 }]}>{badge.name}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {/* Events arrive in a later phase: nothing is shown while there are none. */}
       {events.length > 0 ? <Text style={body}>{plural(events.length, 'event')}</Text> : null}
       <Button
         variant="primary"

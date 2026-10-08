@@ -4,7 +4,9 @@ import { act, fireEvent, screen, within } from 'expo-router/testing-library';
 import { AccessibilityInfo } from 'react-native';
 
 import { NetworkError, type GrowthResult, type HomeResponse, type Topic } from '../api';
+import type { ProgressionResult } from '../api/progression';
 import { celebrationsKey } from '../celebrations/celebration-store';
+import { completionReceiptsKey } from '../sessions/completion-receipts';
 import { homeSnapshotKey } from '../core-loop/home-snapshot-store';
 import { sceneClock } from '../core-loop/scene-clock';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
@@ -17,6 +19,7 @@ import {
   withWeeklyGoal,
 } from '../test-utils/core-loop';
 import { makePreferences } from '../test-utils/preferences';
+import { FIRST_UNLOCKS, HOURS_100, makeProgression, STREAK_7 } from '../test-utils/progression';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
@@ -86,6 +89,8 @@ function coreLoopApi() {
       { traits: ['streak-days:7', 'event-lantern:1'] },
     ),
     growth: makeGrowth() as GrowthResult | null,
+    /** What the next stored session earned (A4.2–A4.3); null as before A4.2. */
+    progression: null as ProgressionResult | null,
     reducedMotion: true,
     loseNextSessionAnswer: false,
     /** PUT /me/sessions fails like a lost connection; Home still answers. */
@@ -132,6 +137,7 @@ function coreLoopApi() {
         endedAt: payload.endedAt,
         status: 'completed',
         growth: state.growth,
+        progression: state.progression,
       });
       sessions.set(id, stored);
       if (state.homeAfterSession) state.home = state.homeAfterSession;
@@ -224,12 +230,17 @@ async function pendingCelebrations(userId = USER): Promise<string[]> {
     ? []
     : (JSON.parse(raw) as { pending: { sessionId: string }[] }).pending.map((p) => p.sessionId);
 }
-async function storeCelebration(userId: string, sessionId: string, growth: GrowthResult) {
+async function storeCelebration(
+  userId: string,
+  sessionId: string,
+  growth: GrowthResult | null,
+  progression?: ProgressionResult,
+) {
   await AsyncStorage.setItem(
     celebrationsKey(userId),
     JSON.stringify({
       version: 1,
-      pending: [{ sessionId, startedAt: '2026-10-07T09:00:00.000Z', growth }],
+      pending: [{ sessionId, startedAt: '2026-10-07T09:00:00.000Z', growth, progression }],
       consumed: [],
     }),
   );
@@ -869,5 +880,150 @@ describe('offline completion, then the sync', () => {
     await shows('New blossoms opened.');
     await untilAsync(async () => (await pendingCelebrations()).length === 0);
     expect(announced().filter((m) => m === 'New blossoms opened.')).toHaveLength(1);
+  });
+});
+
+describe('unlocks after focus: the tree first, one badge, the rest in a line (M4.1)', () => {
+  async function openCompletion() {
+    await finishedTimerOnDevice();
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockClear();
+    renderApp(appRoutes, { initialUrl: `/completion/${SESSION_ID}` });
+  }
+  const said = (text: string) => announced().filter((m) => m === text).length;
+
+  it('reveals the session’s badge on Completion and names what it unlocked, once', async () => {
+    server.state.progression = FIRST_UNLOCKS;
+    await openCompletion();
+    await shows('Your tree grew.');
+    await shows('New badge: First Session');
+    expect(screen.getByText('Also unlocked: the Oak tree.')).toBeOnTheScreen();
+    await until(() => said('New badge: First Session') === 1);
+    await untilAsync(async () => (await pendingCelebrations()).length === 0);
+    await pause();
+    expect(said('New badge: First Session')).toBe(1);
+  });
+
+  it('shows the badge only after the tree has reacted (full motion)', async () => {
+    server.state.reducedMotion = false;
+    server.state.growth = makeGrowth({ blossoms: { from: 1, to: 2 } });
+    server.state.progression = makeProgression({ newlyEarnedBadges: [STREAK_7] });
+    await openCompletion();
+    await shows('New blossoms opened.');
+    expect(screen.queryByText('New badge: 7-Day Streak')).toBeNull();
+    await shows('New badge: 7-Day Streak');
+  });
+
+  it('describes the unlocks of a session shown before, without revealing them again', async () => {
+    server.state.progression = FIRST_UNLOCKS;
+    await openCompletion();
+    await shows('New badge: First Session');
+    await untilAsync(async () => (await pendingCelebrations()).length === 0);
+    screen.unmount();
+
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockClear();
+    renderApp(appRoutes, { initialUrl: `/completion/${SESSION_ID}` });
+    await shows('New badge: First Session');
+    expect(screen.getByText('Also unlocked: the Oak tree.')).toBeOnTheScreen();
+    await pause();
+    expect(said('New badge: First Session')).toBe(0);
+  });
+
+  it('never shows the unlock before the tree while the device is still reading its celebrations', async () => {
+    // A session synced earlier, its celebration still waiting (the app was killed before Home).
+    const session = makeSessionResult({
+      id: SESSION_ID,
+      topicId: reading.id,
+      status: 'completed',
+      growth: makeGrowth(),
+      progression: FIRST_UNLOCKS,
+    });
+    await AsyncStorage.setItem(
+      completionReceiptsKey(USER),
+      JSON.stringify({ version: 1, receipts: [session] }),
+    );
+    await storeCelebration(USER, SESSION_ID, makeGrowth(), FIRST_UNLOCKS);
+    // The celebrations are read later than the receipts.
+    const getItem = AsyncStorage.getItem as jest.Mock;
+    const read = getItem.getMockImplementation()!;
+    getItem.mockImplementation(async (key: string) => {
+      if (key === celebrationsKey(USER)) await new Promise((resolve) => setTimeout(resolve, 600));
+      return read(key);
+    });
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockClear();
+    renderApp(appRoutes, { initialUrl: `/completion/${SESSION_ID}` });
+    // The tree's moment is played (and said) first; the badge never shows before it.
+    let badgeBeforeTree = false;
+    await until(() => {
+      const badge = screen.queryByText('New badge: First Session') !== null;
+      const treePlayed = announced().includes('Your tree grew.');
+      if (badge && !treePlayed) badgeBeforeTree = true;
+      return badge && treePlayed;
+    }, 10_000);
+    expect(badgeBeforeTree).toBe(false);
+    getItem.mockImplementation(read);
+  });
+
+  it('shows what a late session of an archived month earned, with no tree', async () => {
+    server.state.growth = CLOSED_MONTH_GROWTH;
+    server.state.progression = makeProgression({ newlyEarnedBadges: [HOURS_100] });
+    await openCompletion();
+    await shows(/already resting in your forest/);
+    await shows('New badge: 100 Hours');
+    expect(screen.queryByRole('image', { name: /tree/ })).toBeNull();
+    await untilAsync(async () => (await pendingCelebrations()).length === 0);
+  });
+
+  it('shows no unlock for a session that earned nothing, or stored before A4.2', async () => {
+    for (const progression of [makeProgression(), null]) {
+      await AsyncStorage.clear();
+      server = coreLoopApi();
+      server.state.progression = progression;
+      serve();
+      await openCompletion();
+      await shows('Your tree grew.');
+      await pause();
+      expect(screen.queryByText(/New badge|Also unlocked/)).toBeNull();
+      screen.unmount();
+    }
+  });
+
+  it('shows on Home what synced while the user was away, once', async () => {
+    await storeCelebration(USER, SESSION_ID, makeGrowth(), FIRST_UNLOCKS);
+    await openHome();
+    await shows('Your tree grew.');
+    await shows('New badge: First Session');
+    await untilAsync(async () => (await pendingCelebrations()).length === 0);
+    screen.unmount();
+
+    await openHome();
+    await treeImage();
+    await pause();
+    expect(screen.queryByText('New badge: First Session')).toBeNull();
+  });
+
+  it('shows on Home an unlock with no tree moment', async () => {
+    await storeCelebration(
+      USER,
+      SESSION_ID,
+      null,
+      makeProgression({ newlyEarnedBadges: [HOURS_100] }),
+    );
+    await openHome();
+    await shows('New badge: 100 Hours');
+    expect(screen.queryByText('Your tree grew.')).toBeNull();
+    await untilAsync(async () => (await pendingCelebrations()).length === 0);
+  });
+
+  it('lets the month ceremony follow only once the unlock could be read', async () => {
+    server.state.home = { ...server.state.home, pendingCeremony: { year: 2026, month: 9 } };
+    await storeCelebration(USER, SESSION_ID, makeGrowth(), FIRST_UNLOCKS);
+    await openHome();
+    await shows('New badge: First Session');
+    // Still on Home a moment later: the ceremony waits for the unlock, then follows it.
+    await pause(400);
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(
+      await screen.findByRole('button', { name: 'Skip' }, { timeout: 5_000 }),
+    ).toBeOnTheScreen();
   });
 });

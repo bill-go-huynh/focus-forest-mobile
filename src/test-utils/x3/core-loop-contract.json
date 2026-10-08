@@ -52,6 +52,30 @@
       "counted": true,
       "newTraits": [],
       "monthClosed": false
+    },
+    "progression": {
+      "newlyEarnedBadges": [
+        {
+          "id": "first-session",
+          "name": "First Session",
+          "description": "Your first counted focus session.",
+          "category": "focus",
+          "rarity": "common",
+          "artworkId": "first-session",
+          "earnedAt": "2026-09-01T22:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedSpecies": [
+        {
+          "id": "oak",
+          "name": "Oak",
+          "description": "A sturdy oak, grown from your first focus session.",
+          "rarity": "common",
+          "baseSpeciesId": null,
+          "unlockedAt": "2026-09-01T22:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedCosmetics": []
     }
   },
   "sessionDiscarded": {
@@ -103,6 +127,11 @@
       "counted": false,
       "newTraits": [],
       "monthClosed": false
+    },
+    "progression": {
+      "newlyEarnedBadges": [],
+      "newlyUnlockedSpecies": [],
+      "newlyUnlockedCosmetics": []
     }
   },
   "homeGrowing": {
@@ -511,6 +540,11 @@
       "counted": true,
       "newTraits": [],
       "monthClosed": false
+    },
+    "progression": {
+      "newlyEarnedBadges": [],
+      "newlyUnlockedSpecies": [],
+      "newlyUnlockedCosmetics": []
     }
   },
   "sessionLate": {
@@ -534,6 +568,11 @@
       "counted": true,
       "newTraits": [],
       "monthClosed": true
+    },
+    "progression": {
+      "newlyEarnedBadges": [],
+      "newlyUnlockedSpecies": [],
+      "newlyUnlockedCosmetics": []
     }
   },
   "forest": {
@@ -702,7 +741,35 @@
         "sessionId": "00000000-0000-4000-8000-000000000005"
       }
     ],
-    "badges": [],
+    "badges": [
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-09-01T22:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:3",
+        "name": "3-Day Streak",
+        "description": "Focused 3 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-3",
+        "earnedAt": "2026-09-03T22:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:7",
+        "name": "7-Day Streak",
+        "description": "Focused 7 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-7",
+        "earnedAt": "2026-09-08T22:00:00.000Z"
+      }
+    ],
     "events": []
   },
   "treeResting": {
@@ -808,7 +875,35 @@
       "focusedMinutes": 380,
       "weeklyGoalsMet": 1
     },
-    "badges": [],
+    "badges": [
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-09-01T22:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:3",
+        "name": "3-Day Streak",
+        "description": "Focused 3 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-3",
+        "earnedAt": "2026-09-03T22:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:7",
+        "name": "7-Day Streak",
+        "description": "Focused 7 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-7",
+        "earnedAt": "2026-09-08T22:00:00.000Z"
+      }
+    ],
     "events": [],
     "newRecords": [
       {

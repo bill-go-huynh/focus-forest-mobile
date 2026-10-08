@@ -2,6 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { z } from 'zod';
 
 import { growthResultSchema, type GrowthResult } from '../api/core-loop';
+import {
+  progressionResultSchema,
+  unlockedAnything,
+  type ProgressionResult,
+} from '../api/progression';
 import type { FocusSession } from '../api/sessions';
 import {
   readStoredJson,
@@ -28,13 +33,16 @@ export interface MonthRef {
 }
 
 /**
- * A server-confirmed growth that still has to be shown: the session's id and start (its order),
- * and the GrowthResult exactly as the server answered it. Nothing is derived from it here.
+ * A server-confirmed moment that still has to be shown: the session's id and start (its order),
+ * the GrowthResult exactly as the server answered it when it is a tree moment (else null), and
+ * what the session unlocked (M4.1) when it unlocked anything. At least one of the two is there.
+ * Nothing is derived from them here.
  */
 export interface CelebrationIntent {
   sessionId: string;
   startedAt: string;
-  growth: GrowthResult;
+  growth: GrowthResult | null;
+  progression?: ProgressionResult;
 }
 
 export interface CelebrationsSnapshot {
@@ -65,11 +73,15 @@ const documentSchema = z.strictObject({
   version: z.literal(1),
   pending: z
     .array(
-      z.strictObject({
-        sessionId,
-        startedAt: z.iso.datetime(),
-        growth: growthResultSchema.refine(isCelebratable),
-      }),
+      z
+        .strictObject({
+          sessionId,
+          startedAt: z.iso.datetime(),
+          growth: growthResultSchema.refine(isCelebratable).nullable(),
+          // Optional: intents saved before M4.1 have none and still read as version 1.
+          progression: progressionResultSchema.refine(unlockedAnything).optional(),
+        })
+        .refine((intent) => intent.growth !== null || intent.progression !== undefined),
     )
     .refine((items) => new Set(items.map((item) => item.sessionId)).size === items.length),
   consumed: z.array(sessionId).max(CONSUMED_MAX),
@@ -199,19 +211,27 @@ export class CelebrationStore {
   }
 
   /**
-   * Records the server's answer for `userId` (the active user). Resolves true when there is
-   * nothing more to keep: stored now, already pending or consumed, or nothing to celebrate.
+   * Records the server's answer for `userId` (the active user): its tree moment and what it
+   * unlocked (M4.1; a late session of an archived month can unlock without a tree moment).
+   * Resolves true when there is nothing more to keep: stored now, already pending or consumed,
+   * or nothing to celebrate.
    * False when it could not be stored, so the caller keeps the session queued and replays it.
    */
   record(userId: string, session: FocusSession): Promise<boolean> {
-    const growth = session.growth;
-    if (!isCelebratable(growth)) return Promise.resolve(true);
+    const growth = isCelebratable(session.growth) ? session.growth : null;
+    const progression = unlockedAnything(session.progression) ? session.progression! : undefined;
+    if (!growth && !progression) return Promise.resolve(true);
     return this.commit(userId, (current) => {
       const { pending, consumed } = current;
       if (consumed.includes(session.id) || pending.some((p) => p.sessionId === session.id)) {
         return 'unchanged';
       }
-      const intent = { sessionId: session.id, startedAt: session.startedAt, growth };
+      const intent: CelebrationIntent = {
+        sessionId: session.id,
+        startedAt: session.startedAt,
+        growth,
+        ...(progression ? { progression } : {}),
+      };
       return { ...current, pending: [...pending, intent].sort(bySessionOrder) };
     });
   }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
-import { useFontScale } from '../accessibility';
+import { announce, useFontScale } from '../accessibility';
 import type { Goals, RestDays, Streak, WeeklyGoal } from '../api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -15,6 +15,8 @@ import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { dailyGoalLine, weeklyGoalLine } from '../core-loop/presentation';
 import { useHome } from '../core-loop/queries';
+import { BadgeUnlock } from '../progression/BadgeUnlock';
+import { unlockMoment, type UnlockMoment } from '../progression/unlocks';
 import { useTheme } from '../theme';
 import { DailyGoalPicker } from './DailyGoalPicker';
 import {
@@ -516,14 +518,25 @@ function RecoveryOffer({ streak }: { streak: Streak }) {
   const accept = useAcceptRecovery();
   const [asking, setAsking] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [unlock, setUnlock] = useState<UnlockMoment | null>(null);
   const offer = streak.recovery.offer;
 
   const confirm = () => {
     if (!offer) return;
     setAsking(false);
     setStatus(null);
+    setUnlock(null);
     accept.mutate(offer.missedDate, {
-      onSuccess: () => setStatus({ tone: 'neutral', message: 'Your streak is kept.' }),
+      onSuccess: ({ progression }) => {
+        setStatus({ tone: 'neutral', message: 'Your streak is kept.' });
+        // What the kept day earned (A4.2.G), from this answer only: shown and said once.
+        const unlocked = unlockMoment([progression]);
+        setUnlock(unlocked);
+        if (unlocked) {
+          announce(unlocked.caption);
+          if (unlocked.line) announce(unlocked.line);
+        }
+      },
       onError: (error) => setStatus({ tone: 'attention', message: recoveryErrorText(error) }),
     });
   };
@@ -550,6 +563,7 @@ function RecoveryOffer({ streak }: { streak: Streak }) {
         </Card>
       ) : null}
       <StatusLine status={status} />
+      {unlock ? <BadgeUnlock moment={unlock} reveal /> : null}
       <Confirmation
         visible={asking && offer !== null}
         presentation="modal"

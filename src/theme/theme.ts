@@ -1,6 +1,7 @@
 import { darkColors, lightColors, type ColorTokens } from './colors';
 import {
   avatar,
+  badge,
   control,
   easing,
   elevationFor,
@@ -10,6 +11,7 @@ import {
   lineIcon,
   motion,
   opacity,
+  progressBar,
   progressRing,
   radius,
   space,
@@ -43,6 +45,8 @@ export interface Theme {
   control: typeof control;
   interaction: typeof interaction;
   progressRing: typeof progressRing;
+  progressBar: typeof progressBar;
+  badge: typeof badge;
   illustration: typeof illustration;
   lineIcon: typeof lineIcon;
   avatar: typeof avatar;
@@ -61,6 +65,8 @@ const shared = {
   control,
   interaction,
   progressRing,
+  progressBar,
+  badge,
   illustration,
   lineIcon,
   avatar,

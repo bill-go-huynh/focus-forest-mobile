@@ -6,6 +6,7 @@ import {
   SEPTEMBER,
 } from '../../test-utils/forest';
 import { makeCurrentTree } from '../../test-utils/core-loop';
+import { FIRST_SESSION } from '../../test-utils/progression';
 import type { ApiClient } from '../client';
 import {
   forestPageSchema,
@@ -116,10 +117,14 @@ describe('forest contracts (A3.4)', () => {
       ).toBe('growing');
     });
 
-    it('accepts future badges and events as lists, empty or not', () => {
+    it('reads the month’s badges with their display fields, and keeps future events as data', () => {
+      const withBadges = archivedDetails({ badges: [FIRST_SESSION], events: [{ id: 'x' }] });
+      const parsed = treeDetailsSchema.parse(withBadges);
+      expect(parsed.kind === 'archived' && parsed.badges).toEqual([FIRST_SESSION]);
+      // A badge without its display fields is not a badge the app can show (M4.1).
       expect(
         treeDetailsSchema.safeParse(archivedDetails({ badges: [{ id: 'x' }] as never[] })).success,
-      ).toBe(true);
+      ).toBe(false);
     });
   });
 

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import type { ApiClient } from './client';
 import { currentTreeSchema, treeStateSchema } from './core-loop';
+import { earnedBadgeSchema } from './progression';
 
 /**
  * The forest, a month's Tree Details, and the monthly recap (A3.4). The forest is the server's
@@ -84,8 +85,10 @@ export const archivedStatsSchema = z.object({
 /** A note highlighted for its month, as it read at archive. Private: the owner only. */
 const highlightedNoteSchema = z.object({ sessionId: z.string(), note: z.string() });
 
-// Badges (Phase 8) and events (Phase 11) arrive later: kept as data, shown only when present.
+// Events (Phase 5) arrive later: kept as data, shown only when present.
 const futureList = z.array(z.unknown());
+/** A4.2: owned badges earned in the month's window, copied at archive and never regenerated. */
+const monthBadges = z.array(earnedBadgeSchema);
 
 export const treeDetailsSchema = z.discriminatedUnion('kind', [
   z.object({
@@ -95,7 +98,7 @@ export const treeDetailsSchema = z.discriminatedUnion('kind', [
     tree: treeStateSchema,
     stats: archivedStatsSchema,
     highlightedNotes: z.array(highlightedNoteSchema),
-    badges: futureList,
+    badges: monthBadges,
     events: futureList,
   }),
   z.object({ kind: z.literal('growing'), ...monthRef, ...currentTreeSchema.shape }),
@@ -120,7 +123,7 @@ export const recapSchema = z.object({
     }),
   ),
   highlightedNotes: z.array(highlightedNoteSchema),
-  badges: futureList,
+  badges: monthBadges,
   events: futureList,
   ceremonySeenAt: instant.nullable(),
   recapSeenAt: instant.nullable(),

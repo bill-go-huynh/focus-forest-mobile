@@ -10,11 +10,12 @@ import { Screen } from '../../../components/Screen';
 import { Skeleton, SkeletonGroup } from '../../../components/Skeleton';
 import { formatJoinDate, initialsOf, useProfile } from '../../../profile';
 import { LifetimeStats } from '../../../profile/LifetimeStats';
+import { ProfileShowcase } from '../../../progression/ProfileShowcase';
 import { useTheme } from '../../../theme';
 
 /**
- * Profile (docs/05 §3): the user's identity from A4, then lifetime progress (A3.5), then the
- * entry points.
+ * Profile (docs/05 §3): the user's identity from A4, then lifetime progress (A3.5), the badge
+ * showcase and Achievements once the user has a badge (M4.1), then the entry points.
  */
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -64,6 +65,7 @@ export default function ProfileScreen() {
       {profile ? <Button variant="primary" label="Edit profile" onPress={openEdit} /> : null}
       {/* Lifetime progress (A3.5), under the identity; the join date stays in the card. */}
       <LifetimeStats />
+      <ProfileShowcase onOpen={() => router.push('/profile/achievements')} />
       <ListRow
         title="Goals and rest days"
         onPress={() => router.push('/profile/goals')}

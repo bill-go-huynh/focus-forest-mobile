@@ -3,6 +3,7 @@ import { act, fireEvent, screen, within } from 'expo-router/testing-library';
 import { AccessibilityInfo } from 'react-native';
 
 import { NetworkError, type Goals, type RestDays, type Streak } from '../api';
+import type { ProgressionResult } from '../api/progression';
 import { homeSnapshotKey } from '../core-loop/home-snapshot-store';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
 import { mockAppState } from '../test-utils/app-state';
@@ -15,6 +16,7 @@ import {
 } from '../test-utils/consistency';
 import { HOME_TODAY, makeCurrentTree, makeHome } from '../test-utils/core-loop';
 import { makePreferences } from '../test-utils/preferences';
+import { makeProgression, STREAK_7 } from '../test-utils/progression';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
@@ -65,6 +67,8 @@ function consistencyApi() {
     recoveryAnswer: null as Reply | null,
     /** The streak the server has once the recovery is stored. */
     streakAfterRecovery: null as Streak | null,
+    /** What the recovered day earned (A4.2.G); null as for a recovery from before it. */
+    recoveryProgression: null as ProgressionResult | null,
   };
   const home = () =>
     makeHome({
@@ -124,7 +128,7 @@ function consistencyApi() {
       const answer = once('recoveryAnswer');
       if (answer) return answer;
       state.streak = state.streakAfterRecovery ?? state.streak;
-      return { status: 201, body: state.streak };
+      return { status: 201, body: { ...state.streak, progression: state.recoveryProgression } };
     }
     return { status: 500, body: nestError(500, 'Not in this test.') };
   };
@@ -531,9 +535,42 @@ describe('streak recovery', () => {
     ).toContain('Your streak is kept.');
   });
 
+  it('shows what the kept streak earned once the server says so (A4.2.G), never before', async () => {
+    server.state.streak = streakWithOffer(6);
+    server.state.streakAfterRecovery = makeStreak({ current: 7, longest: 7 });
+    server.state.recoveryProgression = makeProgression({ newlyEarnedBadges: [STREAK_7] });
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockClear();
+    await openGoals();
+    expect(screen.queryByText('New badge: 7-Day Streak')).toBeNull();
+    fireEvent.press(await screen.findByRole('button', { name: 'Keep my streak' }));
+    const confirm = await screen.findAllByRole('button', { name: 'Keep my streak' });
+    fireEvent.press(confirm[confirm.length - 1]!);
+    await shows('Your streak is kept.');
+    await shows('New badge: 7-Day Streak');
+    const said = jest.mocked(AccessibilityInfo.announceForAccessibility).mock.calls.map(([m]) => m);
+    expect(said.filter((m) => m === 'New badge: 7-Day Streak')).toHaveLength(1);
+  });
+
+  it('shows no unlock for a recovery that earned nothing, or one stored before A4.2.G', async () => {
+    for (const progression of [makeProgression(), null]) {
+      server.state.streak = streakWithOffer(4);
+      server.state.recoveryProgression = progression;
+      await openGoals();
+      fireEvent.press(await screen.findByRole('button', { name: 'Keep my streak' }));
+      const confirm = await screen.findAllByRole('button', { name: 'Keep my streak' });
+      fireEvent.press(confirm[confirm.length - 1]!);
+      await shows('Your streak is kept.');
+      expect(screen.queryByText(/New badge|Also unlocked/)).toBeNull();
+      screen.unmount();
+    }
+  });
+
   it('treats a repeated acceptance (200) as kept', async () => {
     server.state.streak = streakWithOffer(12);
-    server.state.recoveryAnswer = { status: 200, body: makeStreak({ current: 13, longest: 13 }) };
+    server.state.recoveryAnswer = {
+      status: 200,
+      body: { ...makeStreak({ current: 13, longest: 13 }), progression: null },
+    };
     await openGoals();
     fireEvent.press(await screen.findByRole('button', { name: 'Keep my streak' }));
     const confirm = await screen.findAllByRole('button', { name: 'Keep my streak' });
