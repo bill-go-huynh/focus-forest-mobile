@@ -1,5 +1,5 @@
 import { memo, useId, useMemo, type ComponentProps, type ReactNode } from 'react';
-import { StyleSheet, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import Svg, {
   Circle,
@@ -13,10 +13,18 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
-import { composeTree, type Ellipse, type TraitMark } from './composition';
-import { ambientFor, particlesFor, sceneColors, type SceneColors } from './scene';
+import {
+  composeTree,
+  type Dot,
+  type Ellipse,
+  type TraitMark,
+  type TreeComposition,
+} from './composition';
+import { KNOWN_BACKGROUNDS, KNOWN_DECORATIONS } from './environment';
+import { ambientFor, mix, particlesFor, sceneColors, type SceneColors } from './scene';
 import { SIGNATURE_PALETTE, type LightingPreset } from './signature/palette';
-import { TREE_VIEWBOX } from './signature/stages';
+import { GROUND_Y, TREE_VIEWBOX } from './signature/stages';
+import { ENVIRONMENT_PALETTE } from './species/palette';
 import type { TreeVisualState } from './visual-state';
 
 /**
@@ -68,10 +76,13 @@ export const TreeArt = memo(function TreeArt({
   tree,
   lighting,
   motion = {},
+  effects = true,
 }: {
   tree: TreeVisualState;
   lighting: LightingPreset;
   motion?: TreeArtMotion;
+  /** A rare variant's effect; off where it cannot be seen (a forest thumbnail). */
+  effects?: boolean;
 }) {
   const composition = useMemo(() => composeTree(tree), [tree]);
   const ambient = ambientFor(tree.ambience);
@@ -168,22 +179,7 @@ export const TreeArt = memo(function TreeArt({
               />
             ))}
             {c.fruit.map((dot) => (
-              <G key={dot.key}>
-                <SvgEllipse
-                  cx={dot.cx}
-                  cy={dot.cy + dot.r * 0.3}
-                  rx={dot.r * 0.8}
-                  ry={dot.r}
-                  fill={colors.fruit}
-                />
-                <SvgEllipse
-                  cx={dot.cx}
-                  cy={dot.cy - dot.r * 0.55}
-                  rx={dot.r}
-                  ry={dot.r * 0.45}
-                  fill={colors.fruitCap}
-                />
-              </G>
+              <Fruit key={dot.key} dot={dot} shape={c.fruitShape} colors={colors} />
             ))}
           </Layer>
         </Animated.View>
@@ -191,10 +187,7 @@ export const TreeArt = memo(function TreeArt({
         <Animated.View style={[StyleSheet.absoluteFill, motion.blossoms]}>
           <Layer>
             {c.blossoms.map((dot) => (
-              <G key={dot.key}>
-                <Circle cx={dot.cx} cy={dot.cy} r={dot.r} fill={colors.blossom} />
-                <Circle cx={dot.cx} cy={dot.cy} r={dot.r * 0.4} fill={colors.blossomCenter} />
-              </G>
+              <Bloom key={dot.key} dot={dot} bloom={c.bloom} colors={colors} />
             ))}
           </Layer>
         </Animated.View>
@@ -214,6 +207,14 @@ export const TreeArt = memo(function TreeArt({
             ))}
           </Layer>
         </Animated.View>
+
+        {effects && c.effect ? (
+          <View testID={`tree-effect-${c.effect}`} style={StyleSheet.absoluteFill}>
+            <Layer>
+              <SpeciesEffectArt composition={c} colors={colors} night={lighting.night} />
+            </Layer>
+          </View>
+        ) : null}
       </Animated.View>
 
       {particles.length > 0 ? (
@@ -235,29 +236,247 @@ export const TreeArt = memo(function TreeArt({
   );
 });
 
-/** Sky, sun or moon, far hills, and ground: the scene's base environment (docs/10 §2). */
-export const Backdrop = memo(function Backdrop({ lighting }: { lighting: LightingPreset }) {
+/**
+ * Sky, sun or moon, far hills, and ground: the scene's base environment (docs/10 §2), which the
+ * Meadow background is. An equipped Misty Hills adds far hills in mist (docs/03 §7 layer 2).
+ * Any other background id draws the base environment alone.
+ */
+export const Backdrop = memo(function Backdrop({
+  lighting,
+  background = null,
+}: {
+  lighting: LightingPreset;
+  background?: string | null;
+}) {
   const skyId = `sky-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const { celestial } = lighting;
+  const known = KNOWN_BACKGROUNDS.find((id) => id === background) ?? null;
+  const e = ENVIRONMENT_PALETTE;
+  const shade = (color: string) => mix(color, lighting.shade.color, lighting.shade.amount);
   return (
-    <Layer>
-      <Defs>
-        <LinearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={lighting.sky[0]} />
-          <Stop offset="1" stopColor={lighting.sky[1]} />
-        </LinearGradient>
-      </Defs>
-      <Rect x={0} y={0} width={W} height={H} fill={`url(#${skyId})`} />
-      <Circle cx={celestial.x} cy={celestial.y} r={celestial.r} fill={celestial.color} />
-      <Path
-        d={`M0 214 Q60 190 120 204 T${W} 198 L${W} ${H} L0 ${H} Z`}
-        fill={lighting.hills}
-        opacity={SIGNATURE_PALETTE.opacity.hills}
-      />
-      <Path d={`M0 246 Q120 238 ${W} 246 L${W} ${H} L0 ${H} Z`} fill={lighting.ground} />
-    </Layer>
+    <View testID={known ? `scene-background-${known}` : undefined} style={StyleSheet.absoluteFill}>
+      <Layer>
+        <Defs>
+          <LinearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={lighting.sky[0]} />
+            <Stop offset="1" stopColor={lighting.sky[1]} />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width={W} height={H} fill={`url(#${skyId})`} />
+        <Circle cx={celestial.x} cy={celestial.y} r={celestial.r} fill={celestial.color} />
+        {/* Far hills in mist sit behind the near hills (layer 2). */}
+        {known === 'misty-hills' ? (
+          <>
+            <Path
+              d={`M0 190 Q50 168 104 184 T${W} 176 L${W} 214 L0 214 Z`}
+              fill={shade(e.farHills)}
+            />
+            <Rect x={0} y={176} width={W} height={34} fill={e.mist} opacity={e.mistOpacity} />
+          </>
+        ) : null}
+        <Path
+          d={`M0 214 Q60 190 120 204 T${W} 198 L${W} ${H} L0 ${H} Z`}
+          fill={lighting.hills}
+          opacity={SIGNATURE_PALETTE.opacity.hills}
+        />
+        <Path d={`M0 246 Q120 238 ${W} 246 L${W} ${H} L0 ${H} Z`} fill={lighting.ground} />
+      </Layer>
+    </View>
   );
 });
+
+/**
+ * An equipped decoration on the ground in front of the tree (docs/03 §7 layer 17): beside the
+ * mound, never on the tree, so it can never pass for something the tree earned. Any other id
+ * draws nothing.
+ */
+export const GardenDecoration = memo(function GardenDecoration({
+  decoration,
+  lighting,
+}: {
+  decoration: string | null;
+  lighting: LightingPreset;
+}) {
+  const known = KNOWN_DECORATIONS.find((id) => id === decoration) ?? null;
+  if (!known) return null;
+  const e = ENVIRONMENT_PALETTE;
+  const shade = (color: string) => mix(color, lighting.shade.color, lighting.shade.amount);
+  const y = GROUND_Y + 6;
+  return (
+    <View testID={`scene-decoration-${known}`} style={StyleSheet.absoluteFill}>
+      <Layer>
+        {known === 'mossy-stones' ? (
+          <G>
+            <SvgEllipse cx={30} cy={y} rx={9} ry={5} fill={shade(e.stone)} />
+            <SvgEllipse cx={30} cy={y - 3} rx={7} ry={2.5} fill={shade(e.moss)} />
+            <SvgEllipse cx={44} cy={y + 2} rx={6} ry={3.5} fill={shade(e.stoneShade)} />
+            <SvgEllipse cx={210} cy={y + 1} rx={7} ry={4} fill={shade(e.stone)} />
+            <SvgEllipse cx={210} cy={y - 2} rx={5} ry={2} fill={shade(e.moss)} />
+          </G>
+        ) : (
+          <G>
+            {lighting.daylight ? null : (
+              <Circle
+                cx={206}
+                cy={y - 16}
+                r={9}
+                fill={e.lanternLight}
+                opacity={e.lanternLightOpacity}
+              />
+            )}
+            <Rect x={202} y={y - 8} width={8} height={10} fill={shade(e.lantern)} />
+            <Rect x={199} y={y - 20} width={14} height={9} rx={1.5} fill={shade(e.lantern)} />
+            <Rect x={203} y={y - 18} width={6} height={5} fill={e.lanternLight} />
+            <Path d={`M197 ${y - 20} L206 ${y - 26} L215 ${y - 20} Z`} fill={shade(e.stoneShade)} />
+          </G>
+        )}
+      </Layer>
+    </View>
+  );
+});
+
+/** A species' bloom expression at one blossom slot (docs/03 §9: each in its own idiom). */
+function Bloom({
+  dot,
+  bloom,
+  colors,
+}: {
+  dot: Dot;
+  bloom: TreeComposition['bloom'];
+  colors: SceneColors;
+}) {
+  switch (bloom) {
+    case 'flowers':
+      return (
+        <G>
+          <Circle cx={dot.cx} cy={dot.cy} r={dot.r} fill={colors.blossom} />
+          <Circle cx={dot.cx} cy={dot.cy} r={dot.r * 0.4} fill={colors.blossomCenter} />
+        </G>
+      );
+    case 'tips':
+      // Fresh bright tips on a conifer.
+      return (
+        <SvgEllipse
+          cx={dot.cx}
+          cy={dot.cy}
+          rx={dot.r * 0.45}
+          ry={dot.r * 1.1}
+          fill={colors.blossom}
+          rotation={-20}
+          origin={`${dot.cx}, ${dot.cy}`}
+        />
+      );
+    case 'leaf-shift':
+      // Warm leaves turning in the canopy.
+      return (
+        <SvgEllipse
+          cx={dot.cx}
+          cy={dot.cy}
+          rx={dot.r * 1.25}
+          ry={dot.r * 0.8}
+          fill={colors.blossom}
+          rotation={25}
+          origin={`${dot.cx}, ${dot.cy}`}
+        />
+      );
+    case 'buds':
+      return <Circle cx={dot.cx} cy={dot.cy} r={dot.r * 0.7} fill={colors.blossom} />;
+  }
+}
+
+/** A species' fruit at one fruit slot. */
+function Fruit({
+  dot,
+  shape,
+  colors,
+}: {
+  dot: Dot;
+  shape: TreeComposition['fruitShape'];
+  colors: SceneColors;
+}) {
+  const { cx, cy, r } = dot;
+  switch (shape) {
+    case 'acorn':
+      return (
+        <G>
+          <SvgEllipse cx={cx} cy={cy + r * 0.3} rx={r * 0.8} ry={r} fill={colors.fruit} />
+          <SvgEllipse cx={cx} cy={cy - r * 0.55} rx={r} ry={r * 0.45} fill={colors.fruitCap} />
+        </G>
+      );
+    case 'cherry':
+      return (
+        <G>
+          <Path
+            d={`M${cx} ${cy - r * 1.6} L${cx - r * 0.6} ${cy} M${cx} ${cy - r * 1.6} L${cx + r * 0.6} ${cy}`}
+            stroke={colors.fruitCap}
+            strokeWidth={0.8}
+          />
+          <Circle cx={cx - r * 0.6} cy={cy} r={r * 0.6} fill={colors.fruit} />
+          <Circle cx={cx + r * 0.6} cy={cy} r={r * 0.6} fill={colors.fruit} />
+        </G>
+      );
+    case 'cone':
+      return <SvgEllipse cx={cx} cy={cy} rx={r * 0.6} ry={r * 1.1} fill={colors.fruit} />;
+    case 'samara':
+      return (
+        <G>
+          <SvgEllipse
+            cx={cx - r * 0.5}
+            cy={cy}
+            rx={r}
+            ry={r * 0.35}
+            fill={colors.fruit}
+            rotation={30}
+            origin={`${cx}, ${cy}`}
+          />
+          <SvgEllipse
+            cx={cx + r * 0.5}
+            cy={cy}
+            rx={r}
+            ry={r * 0.35}
+            fill={colors.fruit}
+            rotation={-30}
+            origin={`${cx}, ${cy}`}
+          />
+        </G>
+      );
+    case 'berry':
+      return <Circle cx={cx} cy={cy} r={r * 0.75} fill={colors.fruit} />;
+  }
+}
+
+/**
+ * A rare variant's effect (docs/03 §9 → Rare trees): small static glints on the canopy (golden
+ * light, frost, or a soft luminous edge that shows more at night). Never a glow behind the tree,
+ * which is richness's, and never a new element in the tree's slots.
+ */
+function SpeciesEffectArt({
+  composition: c,
+  colors,
+  night,
+}: {
+  composition: TreeComposition;
+  colors: SceneColors;
+  night: boolean;
+}) {
+  const clusters =
+    c.effect === 'ancient-frost' ? [...c.foliage.back, ...c.foliage.main] : c.foliage.main;
+  const opacity = c.effect === 'luminous' ? (night ? 0.9 : 0.45) : 0.8;
+  return (
+    <>
+      {clusters.map((cluster) => (
+        <Circle
+          key={`${cluster.key}-effect`}
+          cx={cluster.cx - cluster.rx * 0.3}
+          cy={cluster.cy - cluster.ry * 0.55}
+          r={c.effect === 'ancient-frost' ? 1.4 : 1.7}
+          fill={colors.effect}
+          opacity={opacity}
+        />
+      ))}
+    </>
+  );
+}
 
 /** The scene light over everything (docs/03 §7 layer 19): warmth follows vitality. */
 export function LightOverlay({ color, opacity }: SceneColors['light']) {

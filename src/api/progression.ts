@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { ApiClient } from './client';
+import { currentTreeSchema, type CurrentTreeResponse } from './core-loop';
 import { HttpError } from './errors';
 
 const instant = z.iso.datetime();
@@ -123,4 +124,112 @@ export function setShowcase(client: ApiClient, badgeIds: readonly string[]): Pro
 export function progressionErrorCode(error: unknown): string | null {
   if (!(error instanceof HttpError) || error.status >= 500) return null;
   return error.code;
+}
+
+/**
+ * A4.3: an owned species, and whether it can be chosen for a month now (a retired one stays
+ * owned but cannot). Its drawing is the app's, by id; an id it cannot draw is the signature
+ * species.
+ */
+export const ownedSpeciesSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  rarity: z.string(),
+  baseSpeciesId: z.string().nullable(),
+  selectable: z.boolean(),
+});
+export type OwnedSpecies = z.infer<typeof ownedSpeciesSchema>;
+
+/**
+ * GET /me/species: owned species in catalog order, and the current month's species with whether
+ * it is frozen (`locked`: the tree grew past Seed). Only the server decides both.
+ */
+export const speciesListSchema = z.object({
+  items: z.array(ownedSpeciesSchema),
+  current: z.object({
+    year: z.number().int(),
+    month: z.number().int().min(1).max(12),
+    speciesId: z.string(),
+    locked: z.boolean(),
+  }),
+});
+export type SpeciesList = z.infer<typeof speciesListSchema>;
+
+/** A4.3: a cosmetic as the app shows it; its type is also its equipment slot. */
+export const cosmeticSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  type: z.string(),
+  rarity: z.string(),
+  artworkId: z.string(),
+});
+export type Cosmetic = z.infer<typeof cosmeticSchema>;
+
+export const cosmeticsSchema = z.object({
+  items: z.array(cosmeticSchema.extend({ equipped: z.boolean() })),
+});
+export type Cosmetics = z.infer<typeof cosmeticsSchema>;
+
+/**
+ * GET /me/equipment: one cosmetic or nothing per garden slot (nothing draws the app's default),
+ * and the profile frame. Presentation only: never part of a tree, an archive, or a recap.
+ */
+export const equipmentSchema = z.object({
+  forest: z.object({
+    background: cosmeticSchema.nullable(),
+    decoration: cosmeticSchema.nullable(),
+    fauna: cosmeticSchema.nullable(),
+    weather: cosmeticSchema.nullable(),
+    effect: cosmeticSchema.nullable(),
+  }),
+  profileFrame: cosmeticSchema.nullable(),
+});
+export type Equipment = z.infer<typeof equipmentSchema>;
+
+/** The equipment slots of A4.3: the garden's and the profile frame. */
+export type EquipmentSlot = keyof Equipment['forest'] | 'profile_frame';
+
+export function getSpecies(client: ApiClient): Promise<SpeciesList> {
+  return client.request('/me/species', { schema: speciesListSchema });
+}
+
+/**
+ * Chooses the current month's species (open while its tree is a Seed). Answers the current tree
+ * in the new species; refusals are `species_locked` (409), `species_not_owned` and
+ * `species_not_selectable` (422).
+ */
+export function selectSpecies(client: ApiClient, speciesId: string): Promise<CurrentTreeResponse> {
+  return client.request('/me/trees/current/species', {
+    method: 'PUT',
+    body: { speciesId },
+    schema: currentTreeSchema,
+  });
+}
+
+export function getCosmetics(client: ApiClient): Promise<Cosmetics> {
+  return client.request('/me/cosmetics', { schema: cosmeticsSchema });
+}
+
+export function getEquipment(client: ApiClient): Promise<Equipment> {
+  return client.request('/me/equipment', { schema: equipmentSchema });
+}
+
+/** Puts an owned cosmetic of the slot's type in the slot (M4.3's Collection Book equips). */
+export function equipCosmetic(
+  client: ApiClient,
+  slot: EquipmentSlot,
+  cosmeticId: string,
+): Promise<Equipment> {
+  return client.request(`/me/equipment/${slot}`, {
+    method: 'PUT',
+    body: { cosmeticId },
+    schema: equipmentSchema,
+  });
+}
+
+/** Empties the slot: the app draws its default. Idempotent. */
+export function unequipSlot(client: ApiClient, slot: EquipmentSlot): Promise<Equipment> {
+  return client.request(`/me/equipment/${slot}`, { method: 'DELETE', schema: equipmentSchema });
 }

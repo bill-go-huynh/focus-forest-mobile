@@ -19,6 +19,7 @@ import CeremonyRoute from '../app/ceremony/[year]/[month]';
 import MonthRoute from '../app/month/[year]/[month]';
 import OnboardingRoute from '../app/onboarding';
 import RecapRoute from '../app/recap/[year]/[month]';
+import SpeciesRoute from '../app/species';
 import TreeRoute from '../app/tree';
 
 /** The app's real routes, for renderRouter from expo-router/testing-library. */
@@ -40,6 +41,7 @@ export const appRoutes = {
   '(tabs)/profile/settings': SettingsScreen,
   focus: FocusRoute,
   'completion/[sessionId]': CompletionRoute,
+  species: SpeciesRoute,
   tree: TreeRoute,
   onboarding: OnboardingRoute,
   'month/[year]/[month]': MonthRoute,

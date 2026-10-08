@@ -11,3 +11,6 @@ export {
 } from './tree-contract';
 export { TreeScene, type TreeSceneHandle, type TreeSceneProps } from './TreeScene';
 export { toTreeVisualState, type TreeVisualState } from './visual-state';
+export { BASE_ENVIRONMENT, environmentFrom, type SceneEnvironment } from './environment';
+export { speciesDefinition, speciesKeyOf, type SpeciesKey } from './species';
+export { speciesPreview } from './preview';

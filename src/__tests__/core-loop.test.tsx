@@ -20,6 +20,7 @@ import {
   withWeeklyGoal,
 } from '../test-utils/core-loop';
 import { makePreferences } from '../test-utils/preferences';
+import { makeEquipment } from '../test-utils/rewards';
 import { FIRST_UNLOCKS, HOURS_100, makeProgression, STREAK_7 } from '../test-utils/progression';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
@@ -125,6 +126,8 @@ function coreLoopApi() {
       return new Promise<Reply>((resolve) => heldHome.push(() => resolve(reply)));
     }
     if (pathname === '/me/trees/current') return { status: 200, body: state.currentTree };
+    // Nothing equipped (A4.3): Home draws the base garden.
+    if (pathname === '/me/equipment') return { status: 200, body: makeEquipment() };
     const [, , resource, id = ''] = pathname.split('/');
     if (resource === 'sessions' && method === 'PUT') {
       if (state.sessionsDown) return new NetworkError();

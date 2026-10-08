@@ -8,6 +8,7 @@ import { defaultGoals, makeGoals } from '../test-utils/consistency';
 import { makeHome } from '../test-utils/core-loop';
 import { onboardingKey } from '../onboarding/onboarding-store';
 import { makePreferences } from '../test-utils/preferences';
+import { makeEquipment } from '../test-utils/rewards';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { settleSheetTransitions, until } from '../test-utils/sheets';
@@ -76,6 +77,8 @@ function newAccountApi() {
       return { status: 200, body: { ...home, tree: { ...home.tree, partialFirstMonth: true } } };
     }
     if (pathname === '/me/goals') return { status: 200, body: state.goals };
+    // Nothing equipped (A4.3): Home draws the base garden.
+    if (pathname === '/me/equipment') return { status: 200, body: makeEquipment() };
     if (pathname === '/me/goals/daily' && method === 'PUT') {
       if (state.goalsOffline) return new NetworkError();
       const { minutes } = body as { minutes: number };

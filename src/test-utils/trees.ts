@@ -28,6 +28,8 @@ export interface TreeFixtureOptions {
   seed?: number;
   year?: number;
   month?: number;
+  /** The species id as the API sends it (A4.3); `signature` by default. */
+  species?: string;
 }
 
 export function treeDto({
@@ -41,12 +43,13 @@ export function treeDto({
   seed = 2_654_435_761,
   year = 2026,
   month = 10,
+  species = 'signature',
 }: TreeFixtureOptions = {}): TreeStateDto {
   return {
     year,
     month,
     status,
-    species: 'signature',
+    species,
     variationSeed: seed,
     partialFirstMonth: false,
     configVersion: 5,

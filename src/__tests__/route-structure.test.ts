@@ -123,6 +123,8 @@ describe('route structure', () => {
       join(APP, 'focus.tsx'),
       join(APP, 'completion', '[sessionId].tsx'),
       join(APP, 'tree.tsx'),
+      // Species choice (M4.2) is Home's level-2 screen too (docs/05: Home → Species choice).
+      join(APP, 'species.tsx'),
       join(APP, 'onboarding.tsx'),
       // Forest months (M3.4): Tree Details of a past month, the recap and the planting
       // ceremony (full screen, no tab bar, docs/05 §4).

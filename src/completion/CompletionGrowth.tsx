@@ -8,6 +8,7 @@ import { ProgressRing } from '../components/ProgressRing';
 import { serverConfirmations } from '../core-loop/confirmations';
 import { MomentCaption } from '../core-loop/MomentCaption';
 import { BadgeUnlock } from '../progression/BadgeUnlock';
+import { useGardenEnvironment } from '../species/queries';
 import { unlockMoment } from '../progression/unlocks';
 import { dailyGoalLine, growthMoment, streakLine } from '../core-loop/presentation';
 import { useHome } from '../core-loop/queries';
@@ -37,6 +38,8 @@ export function CompletionGrowth({
   const celebrations = useCelebrations();
   const timeOfDay = useSceneTimeOfDay();
   const sceneRef = useRef<TreeSceneHandle>(null);
+  // The month's garden (M4.2): a growing month's tree only, which a counted session's is.
+  const environment = useGardenEnvironment();
 
   // This screen shows its session's growth: Home leaves it alone meanwhile.
   useEffect(() => {
@@ -93,7 +96,7 @@ export function CompletionGrowth({
     <View style={{ gap: theme.space[3] }}>
       {tree && growth ? (
         <>
-          <TreeScene ref={sceneRef} tree={tree} timeOfDay={timeOfDay} />
+          <TreeScene ref={sceneRef} tree={tree} timeOfDay={timeOfDay} environment={environment} />
           {/* A moment shown before (consumed) is described, not played again. */}
           <MomentCaption moment={moment ?? growthMoment([growth])} />
         </>

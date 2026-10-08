@@ -14,6 +14,9 @@ import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 import type { HomeResponse } from '../api';
 import { BadgeUnlock } from '../progression/BadgeUnlock';
+import { useGardenEnvironment, useSpecies } from '../species/queries';
+import { choiceOpen } from '../species/species-format';
+import { SPECIES_SCREEN_TITLE } from '../species/SpeciesScreen';
 import { MomentCaption } from './MomentCaption';
 import { dailyGoalLine, streakLine, weekLine, weeklyGoalLine } from './presentation';
 import { useHome } from './queries';
@@ -37,6 +40,10 @@ export function HomeScreen() {
   const sceneRef = useRef<TreeSceneHandle>(null);
   const homeTree = home?.tree ?? null;
   const tree = useMemo(() => (homeTree ? toTreeVisualState(homeTree) : null), [homeTree]);
+  const environment = useGardenEnvironment();
+  // The species choice is open only while the month's tree is a Seed: asked only then.
+  const species = useSpecies(tree?.stage === 'seed' && tree.lifecycle === 'growing');
+  const offerSpecies = tree?.stage === 'seed' && species.data ? choiceOpen(species.data) : false;
   const [settled, setSettled] = useState<Presented | null>(null);
   const presented = useCelebrationPresenter({
     ready: focused,
@@ -60,7 +67,13 @@ export function HomeScreen() {
         style={{ minHeight: height * 0.45, justifyContent: 'center', gap: theme.space[3] }}
       >
         {tree ? (
-          <TreeScene ref={sceneRef} tree={tree} timeOfDay={timeOfDay} active={focused} />
+          <TreeScene
+            ref={sceneRef}
+            tree={tree}
+            timeOfDay={timeOfDay}
+            active={focused}
+            environment={environment}
+          />
         ) : query.isPending || restoring ? (
           <SkeletonGroup label="Loading your tree">
             <Skeleton variant="block" />
@@ -89,6 +102,14 @@ export function HomeScreen() {
 
       {tree ? (
         <Button variant="tertiary" label="Tree details" onPress={() => router.push('/tree')} />
+      ) : null}
+      {/* Optional, and only while the server says the month's choice is open (M4.2). */}
+      {offerSpecies ? (
+        <Button
+          variant="tertiary"
+          label={SPECIES_SCREEN_TITLE}
+          onPress={() => router.push('/species')}
+        />
       ) : null}
     </Screen>
   );

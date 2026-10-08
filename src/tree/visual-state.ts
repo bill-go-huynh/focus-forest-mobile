@@ -5,6 +5,7 @@ import {
   type TreeStateDto,
   type VitalityState,
 } from './tree-contract';
+import { speciesKeyOf, type SpeciesKey } from './species';
 
 /**
  * The one adapter between the API's tree state and the renderer (docs/03 §14). It normalizes
@@ -36,8 +37,8 @@ export interface TreeVisualState {
   year: number;
   month: number;
   lifecycle: 'growing' | 'archived';
-  /** The species the renderer draws: the signature species until more exist (Phase 9). */
-  species: 'signature';
+  /** The species the renderer draws (M4.2): a species it knows, else the signature species. */
+  species: SpeciesKey;
   /** The species identifier as sent. */
   speciesId: string;
   stage: TreeStage;
@@ -68,7 +69,7 @@ export function toTreeVisualState(dto: TreeStateDto): TreeVisualState {
     year: dto.year,
     month: dto.month,
     lifecycle: archived ? 'archived' : 'growing',
-    species: 'signature',
+    species: speciesKeyOf(typeof dto.species === 'string' ? dto.species : 'signature'),
     speciesId: typeof dto.species === 'string' ? dto.species : 'signature',
     stage: readStage(progress.stage, progress.stageNumber),
     stageProgress: unitOrNull(progress.progressToNextStage),

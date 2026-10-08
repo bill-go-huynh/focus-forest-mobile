@@ -79,6 +79,8 @@ const happyApi: Handler = (request) => {
 const APP_DATA = [`${API}/me/preferences`, `${API}/session-rules`, `${API}/me/home`];
 // Onboarding reads the suggested daily goal (M3.3).
 APP_DATA.push(`${API}/me/goals`);
+// Home draws the equipped garden around this month's tree (M4.2).
+APP_DATA.push(`${API}/me/equipment`);
 const authCalls = () => requests.filter((r) => !APP_DATA.includes(r.url));
 
 const originalFetch = globalThis.fetch;

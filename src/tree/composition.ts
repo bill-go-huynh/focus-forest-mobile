@@ -9,6 +9,15 @@ import {
   type SlotSet,
 } from './signature/stages';
 import { traitLook } from './signature/trait-decorations';
+import {
+  reshapePath,
+  reshapePoint,
+  speciesDefinition,
+  type BloomExpression,
+  type FruitShape,
+  type SpeciesEffect,
+  type SpeciesKey,
+} from './species';
 import type { TreeStage } from './tree-contract';
 import { pick } from './variation';
 import type { TreeVisualState, VisualLevel } from './visual-state';
@@ -60,6 +69,13 @@ export interface TraitMark {
 
 export interface TreeComposition {
   stage: TreeStage;
+  /** The species drawn (docs/03 §9), and how it expresses blossoms, fruit, and particles. */
+  species: SpeciesKey;
+  bloom: BloomExpression;
+  fruitShape: FruitShape;
+  particle: 'pollen' | 'petal';
+  /** A rare variant's effect: presentation only, never an earned layer. */
+  effect: SpeciesEffect | null;
   viewBox: typeof TREE_VIEWBOX;
   /** Paths (roots, trunk, branches) are drawn mirrored; shapes and points already are. */
   mirrored: boolean;
@@ -107,21 +123,30 @@ const FRUIT_RADIUS = 3.5;
 
 export function composeTree(tree: TreeVisualState): TreeComposition {
   const art = stageArt(tree.stage);
+  const species = speciesDefinition(tree.species);
+  const form = species.shape;
   const { seed } = tree;
   const mirrored = pick(seed, 'mirror', [false, true]);
-  const lean = pick(seed, 'lean', LEANS);
+  // The seed's offsets shrink with a narrower or shorter species, so it never leaves its bounds.
+  const sway = { x: Math.min(1, form.width), y: Math.min(1, form.height) };
+  // Small details (blossoms, fruit, traits) shrink with it too: their room inside the bounds does.
+  const detail = Math.min(sway.x, sway.y);
+  const lean = pick(seed, 'lean', LEANS) * sway.x;
   const mirrorX = (x: number) => (mirrored ? TREE_VIEWBOX.width - x : x);
+  /** A point of the signature's art, in this species' silhouette. */
+  const reshape = (point: Point) => reshapePoint(form, point, art.bounds.height);
 
-  /** A canopy slot, nudged by the seed, then mirrored. */
+  /** A canopy slot, reshaped for the species, nudged by the seed, then mirrored. */
   const place = (key: string, shape: ShapeArt, accent = false): Cluster => {
     const [dx, dy] = pick(seed, `nudge:${key}`, NUDGES);
     const rotation = shape.rotation ?? 0;
+    const at = reshape({ x: shape.cx, y: shape.cy });
     return {
       key,
-      cx: mirrorX(shape.cx + lean + dx),
-      cy: shape.cy + dy,
-      rx: shape.rx,
-      ry: shape.ry,
+      cx: mirrorX(at.x + lean + dx * sway.x),
+      cy: at.y + dy * sway.y,
+      rx: shape.rx * form.width * form.cluster.x,
+      ry: shape.ry * form.height * form.cluster.y,
       rotation: mirrored ? -rotation : rotation,
       accent,
     };
@@ -142,29 +167,36 @@ export function composeTree(tree: TreeVisualState): TreeComposition {
       rx: 0,
       ry: 0,
     });
-    return { key: at.key, cx: at.cx, cy: at.cy, r: art.blossomRadius };
+    return { key: at.key, cx: at.cx, cy: at.cy, r: art.blossomRadius * detail };
   });
 
   const fruit =
     richnessTier >= 2
       ? art.fruitSlots.map((slot, i) => {
           const at = place(`fruit-${i}`, { cx: slot.x, cy: slot.y, rx: 0, ry: 0 });
-          return { key: at.key, cx: at.cx, cy: at.cy, r: FRUIT_RADIUS };
+          return { key: at.key, cx: at.cx, cy: at.cy, r: FRUIT_RADIUS * detail };
         })
       : [];
 
+  const shaped = reshapeBounds(art.bounds, reshape);
   const bounds: Rect = {
-    ...art.bounds,
-    x: mirrored ? TREE_VIEWBOX.width - art.bounds.x - art.bounds.width : art.bounds.x,
+    ...shaped,
+    x: mirrored ? TREE_VIEWBOX.width - shaped.x - shaped.width : shaped.x,
   };
+  const pivot = reshape(art.pivot);
 
   return {
     stage: art.stage,
+    species: species.key,
+    bloom: species.bloom,
+    fruitShape: species.fruit,
+    particle: species.particle,
+    effect: species.effect,
     viewBox: TREE_VIEWBOX,
     mirrored,
     tint: pick(seed, 'tint', TINTS),
     bounds,
-    pivot: { x: mirrorX(art.pivot.x), y: art.pivot.y },
+    pivot: { x: mirrorX(pivot.x), y: pivot.y },
     mound: unplaced('mound', art.mound),
     seed: art.seed
       ? {
@@ -173,9 +205,13 @@ export function composeTree(tree: TreeVisualState): TreeComposition {
           rotation: (mirrored ? -1 : 1) * (art.seed.rotation ?? 0),
         }
       : null,
-    roots: art.roots,
-    trunk: art.trunk,
-    branches: filled(art.branches, tree.fullness).map((b, i) => ({ key: `branch-${i}`, ...b })),
+    roots: art.roots ? reshapePath(form, art.roots, art.bounds.height, form.trunk) : null,
+    trunk: art.trunk ? reshapePath(form, art.trunk, art.bounds.height, form.trunk) : null,
+    branches: filled(art.branches, tree.fullness).map((b, i) => ({
+      key: `branch-${i}`,
+      path: reshapePath(form, b.path, art.bounds.height),
+      width: b.width,
+    })),
     foliage: {
       back: placeLayer('back', art.foliage.back),
       main,
@@ -186,7 +222,7 @@ export function composeTree(tree: TreeVisualState): TreeComposition {
     highlights: richnessTier >= 3 ? main.map(highlight) : [],
     blossoms,
     fruit,
-    traits: traitMarks(tree, art.traitSlots, lean, mirrorX),
+    traits: traitMarks(tree, art.traitSlots, lean, mirrorX, reshape, detail),
     glow:
       richnessTier >= 4
         ? {
@@ -240,11 +276,23 @@ function unplaced(key: string, shape: ShapeArt): Ellipse {
   };
 }
 
+/** The stage's bounds in a species' silhouette: its widest at the ground, its height scaled. */
+function reshapeBounds(bounds: Rect, reshape: (point: Point) => Point): Rect {
+  const base = bounds.y + bounds.height;
+  const left = reshape({ x: bounds.x, y: base });
+  const right = reshape({ x: bounds.x + bounds.width, y: base });
+  const top = reshape({ x: bounds.x, y: bounds.y });
+  const bottom = reshape({ x: bounds.x, y: base });
+  return { x: left.x, y: top.y, width: right.x - left.x, height: bottom.y - top.y };
+}
+
 function traitMarks(
   tree: TreeVisualState,
   slots: ReturnType<typeof stageArt>['traitSlots'],
   lean: number,
   mirrorX: (x: number) => number,
+  reshape: (point: Point) => Point,
+  detail: number,
 ): TraitMark[] {
   const marks = new Map<Decoration, TraitMark>();
   for (const trait of tree.traits) {
@@ -255,14 +303,15 @@ function traitMarks(
       existing.traitIds.push(trait.id);
       continue;
     }
-    const slot = slots[look.decoration];
+    const authored = slots[look.decoration];
+    const slot = { ...authored, ...reshape(authored) };
     marks.set(look.decoration, {
       key: `trait-${look.decoration}`,
       decoration: look.decoration,
       traitIds: [trait.id],
       x: mirrorX(slot.x + (slot.anchor === 'canopy' ? lean : 0)),
       y: slot.y,
-      size: TRAIT_SIZE[slot.anchor],
+      size: TRAIT_SIZE[slot.anchor] * detail,
       anchor: slot.anchor,
     });
   }

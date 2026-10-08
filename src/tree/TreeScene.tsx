@@ -23,7 +23,8 @@ import {
   type TreeReaction,
 } from './motion-plan';
 import { ambientFor, sceneColors, sceneLighting, timeOfDayAt, type TimeOfDay } from './scene';
-import { Backdrop, LightOverlay, TreeArt } from './TreeArt';
+import { BASE_ENVIRONMENT, type SceneEnvironment } from './environment';
+import { Backdrop, GardenDecoration, LightOverlay, TreeArt } from './TreeArt';
 import { useAppActive } from './use-app-active';
 import { composeTree } from './composition';
 import type { TreeVisualState } from './visual-state';
@@ -56,6 +57,11 @@ export interface TreeSceneProps {
   active?: boolean;
   /** For the month in the description; the device's locale by default. */
   locale?: string;
+  /**
+   * The equipped garden (M4.2), for the current month's scenes only. Never drawn around an
+   * archived tree, which stays an honest record of its month (docs/03 §11).
+   */
+  environment?: SceneEnvironment;
   testID?: string;
   ref?: Ref<TreeSceneHandle>;
 }
@@ -72,9 +78,11 @@ export function TreeScene({
   motion,
   active = true,
   locale,
+  environment,
   testID,
   ref,
 }: TreeSceneProps) {
+  const garden = tree.lifecycle === 'growing' && environment ? environment : BASE_ENVIRONMENT;
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
   const appActive = useAppActive();
@@ -184,16 +192,17 @@ export function TreeScene({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <Backdrop lighting={lighting} />
+        <Backdrop lighting={lighting} background={garden.background} />
         {outgoing ? (
           <Animated.View testID="tree-outgoing" style={[StyleSheet.absoluteFill, outgoingStyle]}>
-            <TreeArt tree={outgoing} lighting={lighting} />
+            <TreeArt tree={outgoing} lighting={lighting} effects={size === 'hero'} />
           </Animated.View>
         ) : null}
         <Animated.View style={[StyleSheet.absoluteFill, treeStyle]}>
           <TreeArt
             tree={tree}
             lighting={lighting}
+            effects={size === 'hero'}
             motion={{
               canopy: canopyStyle,
               canopyReveal: canopyRevealStyle,
@@ -204,6 +213,7 @@ export function TreeScene({
             }}
           />
         </Animated.View>
+        <GardenDecoration decoration={garden.decoration} lighting={lighting} />
         <LightOverlay color={light.color} opacity={light.opacity} />
       </View>
     </View>

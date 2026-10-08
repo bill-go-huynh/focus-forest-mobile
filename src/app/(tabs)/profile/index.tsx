@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
-import { Avatar } from '../../../components/Avatar';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { ErrorState } from '../../../components/ErrorState';
@@ -11,6 +10,7 @@ import { Skeleton, SkeletonGroup } from '../../../components/Skeleton';
 import { formatJoinDate, initialsOf, useProfile } from '../../../profile';
 import { LifetimeStats } from '../../../profile/LifetimeStats';
 import { ProfileShowcase } from '../../../progression/ProfileShowcase';
+import { FramedAvatar } from '../../../species/FramedAvatar';
 import { useTheme } from '../../../theme';
 
 /**
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
       ) : (
         <Card testID="profile-card">
           <View style={{ gap: theme.space[3] }}>
-            <Avatar initials={initialsOf(profile.displayName)} />
+            <FramedAvatar initials={initialsOf(profile.displayName)} />
             {profile.displayName ? (
               <Text
                 accessibilityRole="header"

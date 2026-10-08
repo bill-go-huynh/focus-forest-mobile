@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 
@@ -5,7 +6,10 @@ import type { CurrentTreeResponse, Topic, TreeStateResponse } from '../api';
 import { ErrorState } from '../components/ErrorState';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
+import { Button } from '../components/Button';
 import { StartFocus } from '../focus/StartFocus';
+import { useGardenEnvironment, useSpecies } from '../species/queries';
+import { choiceOpen, speciesName } from '../species/species-format';
 import { formatFocused } from '../history/history-format';
 import { useTheme } from '../theme';
 import { useTopics } from '../topics/queries';
@@ -33,6 +37,9 @@ export function TreeDetailsScreen() {
   const timeOfDay = useSceneTimeOfDay();
   const treeState: TreeStateResponse | null = current.data?.tree ?? home?.tree ?? null;
   const tree = useMemo(() => (treeState ? toTreeVisualState(treeState) : null), [treeState]);
+  const environment = useGardenEnvironment();
+  const species = useSpecies();
+  const router = useRouter();
 
   if (!tree || !treeState) {
     return (
@@ -60,10 +67,23 @@ export function TreeDetailsScreen() {
 
   return (
     <Screen title={month}>
-      <TreeScene tree={tree} timeOfDay={timeOfDay} />
+      <TreeScene tree={tree} timeOfDay={timeOfDay} environment={environment} />
       <Text style={[theme.type.headline, { color: theme.colors.text.primary }]}>
         {stageHint(treeState.progress.stage, treeState.progress.progressToNextStage)}
       </Text>
+      {/* The month's species (M4.2), and the way to change it while the server says it is open. */}
+      {species.data ? (
+        <View style={{ gap: theme.space[2], alignItems: 'flex-start' }}>
+          <Text style={body}>{`Species: ${speciesName(species.data, tree.speciesId)}`}</Text>
+          {choiceOpen(species.data) ? (
+            <Button
+              variant="tertiary"
+              label="Change species"
+              onPress={() => router.push('/species')}
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       {current.data ? (
         <MonthStats

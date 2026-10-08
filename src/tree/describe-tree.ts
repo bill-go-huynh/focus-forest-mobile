@@ -1,4 +1,5 @@
 import { traitLook } from './signature/trait-decorations';
+import { speciesDefinition } from './species';
 import type { TreeStage, VitalityState } from './tree-contract';
 import type { KnownTrait, TreeVisualState } from './visual-state';
 
@@ -39,7 +40,10 @@ export function describeTree(tree: TreeVisualState, locale?: string): string {
     year: 'numeric',
     timeZone: 'UTC',
   });
-  const parts = [`${month} tree.`, `${STAGE_NAMES[tree.stage]}.`];
+  const parts = [`${month} tree.`];
+  // The species, unless it is the signature tree (M4.2); an id it cannot draw is not named.
+  if (tree.species !== 'signature') parts.push(`${speciesDefinition(tree.species).name}.`);
+  parts.push(`${STAGE_NAMES[tree.stage]}.`);
   if (tree.stage !== 'seed' && tree.stage !== 'sprout')
     parts.push(canopyWords(tree.fullness.ratio));
   if (tree.blossoms.level > 0) {

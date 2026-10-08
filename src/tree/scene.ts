@@ -7,6 +7,7 @@ import {
   type TimeOfDay,
 } from './signature/palette';
 import type { Decoration } from './signature/stages';
+import { speciesDefinition } from './species';
 import { VITALITY_STATES } from './tree-contract';
 import type { Ambience } from './visual-state';
 
@@ -73,7 +74,10 @@ export interface SceneColors {
   fruit: string;
   fruitCap: string;
   glow: { color: string; opacity: number };
+  /** Daytime particles: pollen, or the species' petals. */
   pollen: string;
+  /** A rare variant's effect color. */
+  effect: string;
   firefly: string;
   decorations: Record<Decoration, string>;
   light: { color: string; opacity: number };
@@ -89,27 +93,29 @@ export function sceneColors(
   lighting: LightingPreset,
 ): SceneColors {
   const p = SIGNATURE_PALETTE;
-  const tint = p.tints[composition.tint] ?? p.tints[0];
+  const sp = speciesDefinition(composition.species).palette;
+  const tint = sp.tints[composition.tint] ?? sp.tints[0];
   const shade = (color: string) => mix(color, lighting.shade.color, lighting.shade.amount);
   const leaf = (color: string) => shade(mix(color, p.calm, 1 - ambient.saturation));
   return {
-    bark: shade(p.bark),
-    roots: shade(p.roots),
+    bark: shade(sp.bark),
+    roots: shade(sp.roots),
     soil: shade(p.soil),
-    seed: shade(p.seed),
+    seed: shade(sp.seed),
     foliage: {
       back: leaf(tint.back),
       main: leaf(tint.main),
       front: leaf(tint.front),
-      accent: leaf(p.accent),
-      highlight: leaf(p.highlight),
+      accent: leaf(sp.accent),
+      highlight: leaf(sp.highlight),
     },
-    blossom: shade(p.blossom),
-    blossomCenter: shade(p.blossomCenter),
-    fruit: shade(p.fruit),
-    fruitCap: shade(p.fruitCap),
-    glow: { color: p.glow, opacity: lighting.glowOpacity },
-    pollen: p.pollen,
+    blossom: shade(sp.blossom),
+    blossomCenter: shade(sp.blossomCenter),
+    fruit: shade(sp.fruit),
+    fruitCap: shade(sp.fruitCap),
+    glow: { color: sp.glow, opacity: lighting.glowOpacity },
+    pollen: sp.particle,
+    effect: sp.effect,
     firefly: p.firefly,
     decorations: p.decorations,
     light: {
@@ -121,7 +127,7 @@ export function sceneColors(
 
 export interface Particle {
   key: string;
-  kind: 'pollen' | 'firefly';
+  kind: 'pollen' | 'petal' | 'firefly';
   x: number;
   y: number;
   r: number;
@@ -130,8 +136,9 @@ export interface Particle {
 const FIREFLIES = 5;
 
 /**
- * The one ambient particle layer (docs/03 §8): pollen by day, as many as vitality allows, and
- * fireflies at night on a tree at the top richness tier, whatever its vitality.
+ * The one ambient particle layer (docs/03 §8): pollen (or a species' petals) by day, as many as
+ * vitality allows, and fireflies at night on a tree at the top richness tier, whatever its
+ * vitality.
  */
 export function particlesFor(
   composition: TreeComposition,
@@ -140,9 +147,13 @@ export function particlesFor(
 ): Particle[] {
   const slots = composition.particleSlots;
   if (lighting.daylight) {
-    return slots
-      .slice(0, ambient.pollen)
-      .map((slot, i) => ({ key: `pollen-${i}`, kind: 'pollen', x: slot.x, y: slot.y, r: 1.6 }));
+    return slots.slice(0, ambient.pollen).map((slot, i) => ({
+      key: `${composition.particle}-${i}`,
+      kind: composition.particle,
+      x: slot.x,
+      y: slot.y,
+      r: composition.particle === 'petal' ? 2 : 1.6,
+    }));
   }
   if (lighting.night && composition.fireflies) {
     return slots

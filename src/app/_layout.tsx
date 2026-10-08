@@ -175,6 +175,8 @@ function RootNavigator() {
             <Stack.Screen name="completion/[sessionId]" />
             {/* The current month's Tree Details, opened from the Home tree (docs/05). */}
             <Stack.Screen name="tree" />
+            {/* Species choice (M4.2): this month's tree, from Home or Tree Details. */}
+            <Stack.Screen name="species" options={{ headerShown: true, title: '' }} />
             {/* Onboarding, once after sign-up (M3.3): it leaves by its own buttons. */}
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
             {/* Forest months (M3.4): an archived, resting, or growing month's Tree Details, the
