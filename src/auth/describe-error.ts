@@ -2,7 +2,7 @@ import { HttpError, NetworkError } from '../api';
 
 /**
  * Turns an error from sign-up or sign-in into text for the form. Only messages the API is
- * known to send (A3 and A4, written for users) are shown as they are; anything else becomes
+ * known to send (A3, A4, and A5.3, written for users) are shown as they are; anything else becomes
  * a calm general message, so no internal detail ever reaches the screen.
  */
 export interface AuthErrorDescription {
@@ -14,6 +14,7 @@ export interface AuthErrorDescription {
 const SAFE_API_MESSAGES = new Set([
   'Email or password is incorrect.',
   'This account is suspended.',
+  'This account is banned.',
   'Enter a valid email address.',
   'Use at least 8 characters for your password.',
   'Use at most 128 characters for your password.',

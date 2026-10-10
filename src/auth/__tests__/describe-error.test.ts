@@ -20,6 +20,7 @@ describe('describeAuthError (clear, and never exposes anything sensitive)', () =
   it.each([
     [401, 'Email or password is incorrect.'],
     [403, 'This account is suspended.'],
+    [403, 'This account is banned.'], // A5.3
     [400, 'Enter a valid email address.'],
     [400, 'Use at least 8 characters for your password.'],
   ])('shows the API message it knows is safe (%i: %s)', (status, message) => {
