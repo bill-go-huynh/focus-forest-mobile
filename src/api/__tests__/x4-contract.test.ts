@@ -78,9 +78,10 @@ describe('X4 contract: the captured Progression answers parse with the app’s s
         unread(contract[name], SCHEMAS[name].parse(contract[name])),
       ]),
     );
+    // Known drift until M5.4 reads it: a session's `events` (A5.6).
     expect(
       Object.fromEntries(Object.entries(ignored).filter(([, keys]) => keys.length > 0)),
-    ).toEqual({});
+    ).toEqual({ sessionUnlock: ['.events'], sessionReplay: ['.events'] });
   });
 
   it('reads each refusal by its code, never by its text', () => {
