@@ -209,3 +209,18 @@ export const ENVIRONMENT_PALETTE = {
   frame: '#7A5A3E',
   frameLeaf: '#7FA36B',
 } as const;
+
+/**
+ * Seasonal atmosphere overlays (docs/03 §10, M5.6): drawn around the scene, never on the tree.
+ * Soft, low-opacity marks that keep text contrast (docs/11): overlays never sit over text.
+ */
+export const SEASONAL_PALETTE = {
+  autumn: ['#D98A3C', '#C25E3A', '#E3B04B'],
+  winter: ['#FFFFFF', '#EEF3F6'],
+  sakura: ['#F2B8C6', '#F7D3DC'],
+  rain: ['#8FA7B5'],
+  night: ['#F6E27A'],
+  summer: ['#FFF1C2'],
+  markOpacity: 0.7,
+  rayOpacity: 0.25,
+} as const;

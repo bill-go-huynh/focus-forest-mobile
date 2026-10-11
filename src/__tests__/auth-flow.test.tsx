@@ -82,6 +82,8 @@ const APP_DATA = [`${API}/me/preferences`, `${API}/session-rules`, `${API}/me/ho
 APP_DATA.push(`${API}/me/goals`);
 // Home draws the equipped garden around this month's tree (M4.2).
 APP_DATA.push(`${API}/me/equipment`);
+// Home draws the season's atmosphere around the scene (M5.6).
+APP_DATA.push(`${API}/me/season`);
 const authCalls = () => requests.filter((r) => !APP_DATA.includes(r.url));
 
 const originalFetch = globalThis.fetch;

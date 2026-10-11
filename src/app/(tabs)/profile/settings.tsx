@@ -25,6 +25,7 @@ import {
   useUpdatePreferences,
   visibleNotificationCategories,
 } from '../../../preferences';
+import { SeasonSettings } from '../../../seasons/SeasonSettings';
 import { useTheme, type ThemePreference } from '../../../theme';
 
 const THEMES: { value: ThemePreference; label: string }[] = [
@@ -168,6 +169,7 @@ export default function SettingsScreen() {
               onValueChange={(shareUsageData) => flip('shareUsageData', shareUsageData)}
             />
           </Section>
+          <SeasonSettings />
           <NotificationSettings
             categories={visibleNotificationCategories()}
             preferences={data}

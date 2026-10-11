@@ -5,6 +5,7 @@ import type { CollectionItem, CollectionSection } from '../api';
 import { ErrorState } from '../components/ErrorState';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
+import { SeasonCollection } from '../seasons/SeasonCollection';
 import { useTheme } from '../theme';
 import { CollectionArt, useArtSize } from './CollectionArt';
 import { itemLabel, sectionCount, sectionTitle } from './collection-format';
@@ -45,6 +46,7 @@ export function CollectionScreen() {
 
   return (
     <Screen title={COLLECTION_TITLE}>
+      <SeasonCollection />
       {collection.data.sections.map((section) => (
         <View key={section.kind} style={{ gap: theme.space[3] }}>
           <View style={{ gap: theme.space[1] }}>

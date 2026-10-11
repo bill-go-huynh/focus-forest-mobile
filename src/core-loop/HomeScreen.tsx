@@ -11,6 +11,8 @@ import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { StartFocus } from '../focus/StartFocus';
 import { useCeremonyTrigger } from '../forest/use-ceremony-trigger';
 import { HomeEventCard } from '../events/EventScreens';
+import { useSeason } from '../seasons/queries';
+import { SeasonalOverlay } from '../tree/SeasonalOverlay';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 import type { HomeResponse } from '../api';
@@ -37,6 +39,7 @@ export function HomeScreen() {
   const { height } = useWindowDimensions();
   const focused = useIsFocused();
   const { home, fromDevice, query, restoring } = useHome();
+  const season = useSeason();
   const timeOfDay = useSceneTimeOfDay();
   const sceneRef = useRef<TreeSceneHandle>(null);
   const homeTree = home?.tree ?? null;
@@ -67,6 +70,11 @@ export function HomeScreen() {
         testID="home-hero"
         style={{ minHeight: height * 0.45, justifyContent: 'center', gap: theme.space[3] }}
       >
+        {/* The season's atmosphere, drawn first so it sits behind the tree (M5.6). */}
+        <SeasonalOverlay
+          environmentId={season.data?.theme?.environmentId ?? null}
+          active={focused}
+        />
         {tree ? (
           <TreeScene
             ref={sceneRef}
