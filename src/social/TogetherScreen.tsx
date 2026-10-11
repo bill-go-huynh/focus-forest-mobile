@@ -12,6 +12,7 @@ import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { useProfile } from '../profile';
+import { ChallengesSection } from '../challenges/ChallengesSection';
 import { RoomsSection } from '../rooms/RoomsSection';
 import { useTheme } from '../theme';
 import {
@@ -70,6 +71,7 @@ export function TogetherScreen() {
       </View>
       {list === 'following' ? <Following /> : <Followers />}
       <RoomsSection />
+      <ChallengesSection />
       <Received />
     </Screen>
   );

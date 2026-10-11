@@ -181,3 +181,4 @@ export type { SessionSnapshot, SessionStatus, SessionUser } from './session';
 export { secureTokenStore } from './token-store';
 export * from './social';
 export * from './rooms';
+export * from './challenges';

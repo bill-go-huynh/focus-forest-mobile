@@ -23,6 +23,8 @@ export default function TogetherLayout() {
       <Stack.Screen name="[userId]/index" options={{ title: 'Profile' }} />
       <Stack.Screen name="[userId]/forest" options={{ title: 'Forest' }} />
       <Stack.Screen name="room/[roomId]" options={{ title: 'Room' }} />
+      <Stack.Screen name="challenges/new" options={{ title: 'New challenge' }} />
+      <Stack.Screen name="challenges/[challengeId]" options={{ title: 'Challenge' }} />
     </Stack>
   );
 }
