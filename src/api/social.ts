@@ -206,7 +206,7 @@ export const warningSchema = z.object({
   acknowledgedAt: instant.nullable(),
 });
 export type Warning = z.infer<typeof warningSchema>;
-const warningsSchema = z.object({ items: z.array(warningSchema) });
+export const warningsSchema = z.object({ items: z.array(warningSchema) });
 
 const query = (params: Record<string, string | null | undefined>) => {
   const search = Object.entries(params)

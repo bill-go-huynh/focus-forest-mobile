@@ -45,13 +45,13 @@ export const roomSchema = z.object({
 });
 export type Room = z.infer<typeof roomSchema>;
 
-const roomListSchema = z.object({ items: z.array(roomSchema) });
+export const roomListSchema = z.object({ items: z.array(roomSchema) });
 const currentRoomSchema = z.object({ room: roomSchema.nullable() });
-const completionSchema = z.object({
+export const roomCompletionSchema = z.object({
   room: roomSchema,
   progression: z.object({ newlyEarnedBadges: z.array(earnedBadgeSchema) }),
 });
-export type RoomCompletion = z.infer<typeof completionSchema>;
+export type RoomCompletion = z.infer<typeof roomCompletionSchema>;
 
 export interface NewRoom {
   name: string;
@@ -104,7 +104,7 @@ export function completeRoom(client: ApiClient, roomId: string, sessionId: strin
   return client.request(`/rooms/${roomId}/complete`, {
     method: 'POST',
     body: { sessionId },
-    schema: completionSchema,
+    schema: roomCompletionSchema,
   });
 }
 

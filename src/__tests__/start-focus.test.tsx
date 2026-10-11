@@ -315,7 +315,8 @@ describe('the session rules', () => {
     expect(
       await screen.findByText("Focus durations aren't available with the current settings."),
     ).toBeOnTheScreen();
-    fireEvent.press(screen.getByRole('button', { name: /^Reading\b/ }));
+    // The topic list may land after the message: wait for its row, as the other tests do.
+    fireEvent.press(await topicRow('Reading'));
     expect(screen.queryByText('Duration')).toBeNull();
     expect(await storedTimer()).toBeNull();
   });
