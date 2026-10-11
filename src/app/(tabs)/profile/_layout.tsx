@@ -23,6 +23,8 @@ export default function ProfileLayout() {
       <Stack.Screen name="goals" options={{ title: 'Goals and rest days' }} />
       <Stack.Screen name="topics" options={{ title: 'Topics' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="privacy" options={{ title: 'Privacy' }} />
+      <Stack.Screen name="blocked" options={{ title: 'Blocked people' }} />
     </Stack>
   );
 }

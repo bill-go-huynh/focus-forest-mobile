@@ -55,6 +55,7 @@ beforeEach(() => {
           ? forestPage(forestMonths(1))
           : {
               id: 'user-1',
+              username: null,
               displayName: 'Mai Anh',
               avatarUrl: null,
               bio: null,
@@ -67,10 +68,10 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-describe('four-tab navigation (docs/05 §1)', () => {
-  it('has exactly four tabs, in order: Home, Forest, Insights, Profile', async () => {
+describe('tab navigation (docs/05 §1)', () => {
+  it('has five tabs, in order: Home, Forest, Together, Insights, Profile (Together from M5.1)', async () => {
     await openApp();
-    expect(tabNames()).toEqual(['Home', 'Forest', 'Insights', 'Profile']);
+    expect(tabNames()).toEqual(['Home', 'Forest', 'Together', 'Insights', 'Profile']);
   });
 
   it('has no Focus tab: Focus is an action on Home, not a destination', async () => {

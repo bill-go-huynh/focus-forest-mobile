@@ -39,6 +39,7 @@ const API = 'https://api.example.com';
 const SESSION_KEY = 'focus-forest.session';
 const PROFILE = {
   id: 'user-1',
+  username: null,
   displayName: 'Mai',
   avatarUrl: null,
   bio: null,

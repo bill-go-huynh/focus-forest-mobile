@@ -103,6 +103,7 @@ function apiServer(initial: Topic[] = [TOPIC]) {
         status: 200,
         body: {
           id: ADA.id,
+          username: null,
           displayName: 'Ada',
           avatarUrl: null,
           bio: null,

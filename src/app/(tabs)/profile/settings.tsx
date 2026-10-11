@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
@@ -61,6 +62,7 @@ const SAVE_GENERAL_MESSAGE = "We couldn't save that change. Please try again.";
 export default function SettingsScreen() {
   const theme = useTheme();
   const { auth } = useApi();
+  const router = useRouter();
   const preferences = usePreferences();
   const save = useUpdatePreferences();
   const systemReducedMotion = useSystemReducedMotion();
@@ -153,6 +155,12 @@ export default function SettingsScreen() {
             />
           </Section>
           <Section title="Privacy">
+            <ListRow
+              title="Privacy"
+              subtitle="Who sees each part of your profile"
+              onPress={() => router.push('/profile/privacy')}
+            />
+            <ListRow title="Blocked people" onPress={() => router.push('/profile/blocked')} />
             <SwitchRow
               label="Share usage data"
               description="Helps us see whether Focus Forest is useful: when the app is opened and which screens are used. Your notes and topic names are never shared."

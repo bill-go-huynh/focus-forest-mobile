@@ -178,6 +178,7 @@ function collectionApi() {
         status: 200,
         body: {
           id: 'user-1',
+          username: null,
           displayName: 'Mai Anh',
           avatarUrl: null,
           bio: null,

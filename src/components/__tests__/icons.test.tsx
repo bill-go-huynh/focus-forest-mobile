@@ -9,8 +9,14 @@ const shapes = () =>
   screen.UNSAFE_root.findAll((node) => [Circle, Path, Rect].includes(node.type as never));
 
 describe('tab icons (docs/01 §5: rounded line icons; the active tab is filled)', () => {
-  it('covers the four tabs', () => {
-    expect([...TAB_ICON_NAMES].sort()).toEqual(['forest', 'index', 'insights', 'profile']);
+  it('covers the five tabs (Together from M5.1)', () => {
+    expect([...TAB_ICON_NAMES].sort()).toEqual([
+      'forest',
+      'index',
+      'insights',
+      'profile',
+      'together',
+    ]);
   });
 
   it('is marked provisional until Phase 0 picks the icon family', () => {

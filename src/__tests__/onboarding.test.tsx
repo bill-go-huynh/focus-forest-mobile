@@ -60,6 +60,7 @@ function newAccountApi() {
         status: 200,
         body: {
           id: 'user-1',
+          username: null,
           displayName: 'Mai',
           avatarUrl: null,
           bio: null,

@@ -51,6 +51,7 @@ function contractApi(): (request: FakeRequest) => { status: number; body?: unkno
     '/me/profile/stats': makeLifetime(),
     '/me/profile': {
       id: 'user-1',
+      username: null,
       displayName: 'Mai Anh',
       avatarUrl: null,
       bio: null,

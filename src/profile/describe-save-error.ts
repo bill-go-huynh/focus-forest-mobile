@@ -1,4 +1,4 @@
-import { NetworkError } from '../api';
+import { HttpError, NetworkError } from '../api';
 import { NETWORK_MESSAGE } from '../auth/describe-error';
 
 export const SAVE_GENERAL_MESSAGE = "We couldn't save your profile just now. Please try again.";
@@ -9,5 +9,12 @@ export const SAVE_GENERAL_MESSAGE = "We couldn't save your profile just now. Ple
  * message is shown as it is.
  */
 export function describeSaveError(error: unknown): string {
-  return error instanceof NetworkError ? NETWORK_MESSAGE : SAVE_GENERAL_MESSAGE;
+  if (error instanceof NetworkError) return NETWORK_MESSAGE;
+  if (error instanceof HttpError) {
+    // A5.1 username refusals, by code.
+    if (error.code === 'username_taken') return 'That username is taken. Try another one.';
+    if (error.code === 'username_reserved') return 'That username is reserved. Try another one.';
+    if (error.code === 'username_invalid') return 'Use 3 to 20 letters, numbers, or underscores.';
+  }
+  return SAVE_GENERAL_MESSAGE;
 }

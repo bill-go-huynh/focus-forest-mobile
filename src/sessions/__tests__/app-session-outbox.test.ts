@@ -10,6 +10,7 @@ const GRACE = '22222222-2222-4222-8222-222222222222';
 
 const profile = (timezone: string | null) => ({
   id: ADA,
+  username: null,
   displayName: 'Ada',
   avatarUrl: null,
   bio: null,

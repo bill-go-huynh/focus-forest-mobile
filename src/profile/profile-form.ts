@@ -6,6 +6,9 @@ import { isIanaTimeZone } from '../auth/device-time-zone';
 /** A4 limits (PATCH /me/profile). */
 export const DISPLAY_NAME_MAX = 50;
 export const BIO_MAX = 160;
+/** A5.1: 3–20 letters, numbers, or underscores; stored lowercase. */
+export const USERNAME_MAX = 20;
+export const USERNAME_RULE_MESSAGE = 'Use 3 to 20 letters, numbers, or underscores.';
 
 /** Up to two initials from the display name, for the avatar fallback. */
 export function initialsOf(displayName: string | null): string | null {
@@ -44,6 +47,11 @@ export function profileFormSchema({ hasName }: { hasName: boolean }) {
   return z.object({
     displayName: hasName ? name.min(1, 'Add the name you would like to be called.') : name,
     bio: z.string().trim().max(BIO_MAX, 'Keep your bio to 160 characters or fewer.'),
+    // Blank leaves it as it is: a username can be changed, never removed (A5.1).
+    username: z
+      .string()
+      .trim()
+      .refine((value) => value === '' || /^[A-Za-z0-9_]{3,20}$/.test(value), USERNAME_RULE_MESSAGE),
   });
 }
 
@@ -51,7 +59,7 @@ export type ProfileFormValues = z.infer<ReturnType<typeof profileFormSchema>>;
 
 /** Only the fields that changed. A blank bio clears it (null); a blank name is never sent. */
 export function profileChanges(
-  current: Pick<Profile, 'displayName' | 'bio'>,
+  current: Pick<Profile, 'displayName' | 'bio' | 'username'>,
   values: ProfileFormValues,
 ): ProfileChanges {
   const changes: ProfileChanges = {};
@@ -59,5 +67,7 @@ export function profileChanges(
   if (name !== '' && name !== current.displayName) changes.displayName = name;
   const bio = values.bio.trim() || null;
   if (bio !== current.bio) changes.bio = bio;
+  const username = values.username.trim().toLowerCase();
+  if (username !== '' && username !== current.username) changes.username = username;
   return changes;
 }

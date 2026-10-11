@@ -46,12 +46,12 @@ function depthFromTab(file: string): number {
 }
 
 describe('route structure', () => {
-  it('has exactly the four Phase 1 tabs', () => {
+  it('has the four Phase 1 tabs and Together, the community hub from Phase 11 (M5.1)', () => {
     const tabs = readdirSync(TABS)
       .filter((entry) => !entry.startsWith('_'))
       .map((entry) => entry.replace(/\.tsx?$/, ''))
       .sort();
-    expect(tabs).toEqual(['forest', 'index', 'insights', 'profile']);
+    expect(tabs).toEqual(['forest', 'index', 'insights', 'profile', 'together']);
   });
 
   it('keeps every screen within three levels of its tab', () => {

@@ -6,6 +6,13 @@ import TabsLayout from '../app/(tabs)/_layout';
 import ForestScreen from '../app/(tabs)/forest';
 import HomeScreen from '../app/(tabs)/index';
 import InsightsScreen from '../app/(tabs)/insights';
+import TogetherLayout from '../app/(tabs)/together/_layout';
+import TogetherScreen from '../app/(tabs)/together/index';
+import SearchRoute from '../app/(tabs)/together/search';
+import PersonRoute from '../app/(tabs)/together/[userId]/index';
+import VisitedForestRoute from '../app/(tabs)/together/[userId]/forest';
+import PrivacyRoute from '../app/(tabs)/profile/privacy';
+import BlockedRoute from '../app/(tabs)/profile/blocked';
 import ProfileLayout from '../app/(tabs)/profile/_layout';
 import AchievementsRoute from '../app/(tabs)/profile/achievements';
 import EditProfileScreen from '../app/(tabs)/profile/edit';
@@ -33,6 +40,11 @@ export const appRoutes = {
   '(tabs)/_layout': TabsLayout,
   '(tabs)/index': HomeScreen,
   '(tabs)/forest': ForestScreen,
+  '(tabs)/together/_layout': TogetherLayout,
+  '(tabs)/together/index': TogetherScreen,
+  '(tabs)/together/search': SearchRoute,
+  '(tabs)/together/[userId]/index': PersonRoute,
+  '(tabs)/together/[userId]/forest': VisitedForestRoute,
   '(tabs)/insights': InsightsScreen,
   '(tabs)/profile/_layout': ProfileLayout,
   '(tabs)/profile/index': ProfileScreen,
@@ -41,6 +53,8 @@ export const appRoutes = {
   '(tabs)/profile/goals': GoalsRoute,
   '(tabs)/profile/topics': TopicsRoute,
   '(tabs)/profile/settings': SettingsScreen,
+  '(tabs)/profile/privacy': PrivacyRoute,
+  '(tabs)/profile/blocked': BlockedRoute,
   focus: FocusRoute,
   'completion/[sessionId]': CompletionRoute,
   species: SpeciesRoute,

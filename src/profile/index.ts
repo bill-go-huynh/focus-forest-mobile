@@ -2,6 +2,7 @@ export { describeSaveError } from './describe-save-error';
 export {
   BIO_MAX,
   DISPLAY_NAME_MAX,
+  USERNAME_MAX,
   formatJoinDate,
   formatJoinMonth,
   initialsOf,

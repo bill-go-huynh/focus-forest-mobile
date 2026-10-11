@@ -15,6 +15,7 @@ import { Skeleton, SkeletonGroup } from '../../../components/Skeleton';
 import {
   BIO_MAX,
   DISPLAY_NAME_MAX,
+  USERNAME_MAX,
   describeSaveError,
   formatJoinMonth,
   profileChanges,
@@ -25,7 +26,10 @@ import {
 } from '../../../profile';
 import { useTheme } from '../../../theme';
 
-/** Edit profile: display name and bio (A4). The join date is shown, never edited. */
+/**
+ * Edit profile: display name and bio (A4), and the username people find you by (A5.1). The join
+ * date is shown, never edited.
+ */
 export default function EditProfileScreen() {
   const theme = useTheme();
   const { data: profile, isPending, isError, refetch } = useProfile();
@@ -58,7 +62,11 @@ function EditProfileForm({ profile }: { profile: Profile }) {
   const hasName = profile.displayName !== null;
   const { control, handleSubmit } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema({ hasName })),
-    defaultValues: { displayName: profile.displayName ?? '', bio: profile.bio ?? '' },
+    defaultValues: {
+      displayName: profile.displayName ?? '',
+      bio: profile.bio ?? '',
+      username: profile.username ?? '',
+    },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
   });
@@ -104,6 +112,28 @@ function EditProfileForm({ profile }: { profile: Profile }) {
               returnKeyType="next"
               submitBehavior="submit"
               onSubmitEditing={() => bioRef.current?.focus()}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="username"
+          render={({ field, fieldState }) => (
+            <Input
+              ref={field.ref}
+              label="Username"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              helper={
+                profile.username
+                  ? 'Friends find you by this name.'
+                  : 'Choose a username so friends can find you.'
+              }
+              maxLength={USERNAME_MAX}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
           )}
         />

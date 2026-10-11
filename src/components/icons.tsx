@@ -10,7 +10,7 @@ import { useTheme } from '../theme';
  * PLACEHOLDER: Phase 0 has not chosen the icon family. These four are drawn in the
  * documented line style so the tab bar can ship; replace them with the chosen family.
  */
-export const TAB_ICON_NAMES = ['index', 'forest', 'insights', 'profile'] as const;
+export const TAB_ICON_NAMES = ['index', 'forest', 'together', 'insights', 'profile'] as const;
 export type TabIconName = (typeof TAB_ICON_NAMES)[number];
 export const tabIconStatus = 'placeholder' as const;
 
@@ -32,6 +32,16 @@ function shapes(name: TabIconName, paint: { fill: string; stroke: string; stroke
         <>
           <Circle cx={12} cy={9} r={6} {...line} />
           <Path d="M12 15 V21" {...line} fill="none" />
+        </>
+      );
+    case 'together':
+      // Two people side by side.
+      return (
+        <>
+          <Circle cx={8.5} cy={8.5} r={3} {...line} />
+          <Circle cx={15.5} cy={8.5} r={3} {...line} />
+          <Path d="M3 19 C3 15.5 5.5 14 8.5 14 C11.5 14 14 15.5 14 19 Z" {...line} />
+          <Path d="M10 19 C10 15.5 12.5 14 15.5 14 C18.5 14 21 15.5 21 19 Z" {...line} />
         </>
       );
     case 'insights':

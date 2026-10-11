@@ -52,63 +52,108 @@ describe('profile form validation (A4: PATCH /me/profile)', () => {
   const unnamed = profileFormSchema({ hasName: false });
 
   it('accepts a name and a bio, trimmed', () => {
-    expect(named.parse({ displayName: '  Mai ', bio: '  Reading at dawn. ' })).toEqual({
+    expect(
+      named.parse({ displayName: '  Mai ', bio: '  Reading at dawn. ', username: ' mai ' }),
+    ).toEqual({
       displayName: 'Mai',
       bio: 'Reading at dawn.',
+      username: 'mai',
     });
   });
 
   it('keeps a name once it has one: A4 cannot clear it', () => {
-    expect(errorsOf(named.safeParse({ displayName: '  ', bio: '' }))).toEqual({
+    expect(errorsOf(named.safeParse({ displayName: '  ', bio: '', username: '' }))).toEqual({
       displayName: 'Add the name you would like to be called.',
     });
   });
 
   it('lets someone without a name leave it empty for now', () => {
-    expect(unnamed.safeParse({ displayName: '', bio: 'Hello' }).success).toBe(true);
+    expect(unnamed.safeParse({ displayName: '', bio: 'Hello', username: '' }).success).toBe(true);
   });
 
   it('keeps the name within 50 characters and on one line', () => {
-    expect(errorsOf(named.safeParse({ displayName: 'x'.repeat(51), bio: '' }))).toEqual({
+    expect(
+      errorsOf(named.safeParse({ displayName: 'x'.repeat(51), bio: '', username: '' })),
+    ).toEqual({
       displayName: 'Keep your name to 50 characters or fewer.',
     });
-    expect(errorsOf(named.safeParse({ displayName: 'Mai\tAnh', bio: '' }))).toEqual({
+    expect(errorsOf(named.safeParse({ displayName: 'Mai\tAnh', bio: '', username: '' }))).toEqual({
       displayName: 'Keep your name on one line.',
     });
   });
 
   it('keeps the bio within 160 characters after trimming, and allows line breaks', () => {
-    expect(named.safeParse({ displayName: 'Mai', bio: ` ${'x'.repeat(160)} ` }).success).toBe(true);
-    expect(errorsOf(named.safeParse({ displayName: 'Mai', bio: 'x'.repeat(161) }))).toEqual({
+    expect(
+      named.safeParse({ displayName: 'Mai', bio: ` ${'x'.repeat(160)} `, username: '' }).success,
+    ).toBe(true);
+    expect(
+      errorsOf(named.safeParse({ displayName: 'Mai', bio: 'x'.repeat(161), username: '' })),
+    ).toEqual({
       bio: 'Keep your bio to 160 characters or fewer.',
     });
-    expect(named.safeParse({ displayName: 'Mai', bio: 'Line one\nLine two' }).success).toBe(true);
+    expect(
+      named.safeParse({ displayName: 'Mai', bio: 'Line one\nLine two', username: '' }).success,
+    ).toBe(true);
+  });
+});
+
+describe('usernames (A5.1)', () => {
+  const schema = profileFormSchema({ hasName: true });
+  const values = (username: string) => ({ displayName: 'Mai', bio: '', username });
+
+  it('accepts 3 to 20 letters, numbers, or underscores, and blank (unchanged)', () => {
+    for (const username of ['mai', 'Mai_Anh', 'a'.repeat(20), '']) {
+      expect(schema.safeParse(values(username)).success).toBe(true);
+    }
+    for (const username of ['ma', 'a'.repeat(21), 'mai anh', 'mai!']) {
+      expect(schema.safeParse(values(username)).error?.issues[0]?.message).toBe(
+        'Use 3 to 20 letters, numbers, or underscores.',
+      );
+    }
+  });
+
+  it('sends a new username lowercase, and never a blank or unchanged one', () => {
+    const current = { displayName: 'Mai', bio: null, username: 'mai' };
+    expect(profileChanges(current, values('Mai_Anh'))).toEqual({ username: 'mai_anh' });
+    expect(profileChanges(current, values('MAI'))).toEqual({});
+    expect(profileChanges(current, values(''))).toEqual({});
   });
 });
 
 describe('profileChanges (only what changed is sent)', () => {
-  const profile = { displayName: 'Mai', bio: 'Reading at dawn.' };
+  const profile = { displayName: 'Mai', bio: 'Reading at dawn.', username: null };
 
   it('sends nothing when nothing changed', () => {
-    expect(profileChanges(profile, { displayName: 'Mai', bio: 'Reading at dawn.' })).toEqual({});
+    expect(
+      profileChanges(profile, { displayName: 'Mai', bio: 'Reading at dawn.', username: '' }),
+    ).toEqual({});
   });
 
   it('sends only the changed field', () => {
-    expect(profileChanges(profile, { displayName: 'Mai Anh', bio: 'Reading at dawn.' })).toEqual({
+    expect(
+      profileChanges(profile, { displayName: 'Mai Anh', bio: 'Reading at dawn.', username: '' }),
+    ).toEqual({
       displayName: 'Mai Anh',
     });
-    expect(profileChanges(profile, { displayName: 'Mai', bio: 'Tea and code.' })).toEqual({
+    expect(
+      profileChanges(profile, { displayName: 'Mai', bio: 'Tea and code.', username: '' }),
+    ).toEqual({
       bio: 'Tea and code.',
     });
   });
 
   it('clears the bio with null', () => {
-    expect(profileChanges(profile, { displayName: 'Mai', bio: '' })).toEqual({ bio: null });
+    expect(profileChanges(profile, { displayName: 'Mai', bio: '', username: '' })).toEqual({
+      bio: null,
+    });
   });
 
   it('does not send an empty name for someone who has none yet', () => {
     expect(
-      profileChanges({ displayName: null, bio: null }, { displayName: '', bio: 'Hi' }),
+      profileChanges(
+        { displayName: null, bio: null, username: null },
+        { displayName: '', bio: 'Hi', username: '' },
+      ),
     ).toEqual({
       bio: 'Hi',
     });
@@ -116,7 +161,10 @@ describe('profileChanges (only what changed is sent)', () => {
 
   it('adds a name for someone who had none', () => {
     expect(
-      profileChanges({ displayName: null, bio: null }, { displayName: 'Mai', bio: '' }),
+      profileChanges(
+        { displayName: null, bio: null, username: null },
+        { displayName: 'Mai', bio: '', username: '' },
+      ),
     ).toEqual({
       displayName: 'Mai',
     });

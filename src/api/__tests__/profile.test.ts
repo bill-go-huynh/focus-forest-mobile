@@ -5,6 +5,7 @@ import { getProfile, updateProfile } from '../profile';
 
 const PROFILE = {
   id: 'user-1',
+  username: null,
   displayName: 'Mai',
   avatarUrl: null,
   bio: null,

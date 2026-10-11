@@ -22,6 +22,7 @@ const API = 'https://api.example.com';
 const PROFILE_URL = `${API}/me/profile`;
 const PROFILE = {
   id: 'user-1',
+  username: null,
   displayName: 'Mai Anh',
   avatarUrl: null,
   bio: 'Reading at dawn.',

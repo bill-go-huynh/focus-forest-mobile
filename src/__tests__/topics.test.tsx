@@ -33,6 +33,7 @@ const API = 'https://api.example.com';
 const USER = 'user-1';
 const PROFILE = {
   id: USER,
+  username: null,
   displayName: 'Mai Anh',
   avatarUrl: null,
   bio: null,
