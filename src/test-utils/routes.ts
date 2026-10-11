@@ -14,6 +14,8 @@ import VisitedForestRoute from '../app/(tabs)/together/[userId]/forest';
 import RoomRoute from '../app/(tabs)/together/room/[roomId]';
 import NewChallengeRoute from '../app/(tabs)/together/challenges/new';
 import ChallengeRoute from '../app/(tabs)/together/challenges/[challengeId]';
+import EventRoute from '../app/(tabs)/together/events/[eventId]';
+import CommunityRoute from '../app/(tabs)/together/community/[eventId]';
 import PrivacyRoute from '../app/(tabs)/profile/privacy';
 import BlockedRoute from '../app/(tabs)/profile/blocked';
 import ProfileLayout from '../app/(tabs)/profile/_layout';
@@ -51,6 +53,8 @@ export const appRoutes = {
   '(tabs)/together/room/[roomId]': RoomRoute,
   '(tabs)/together/challenges/new': NewChallengeRoute,
   '(tabs)/together/challenges/[challengeId]': ChallengeRoute,
+  '(tabs)/together/events/[eventId]': EventRoute,
+  '(tabs)/together/community/[eventId]': CommunityRoute,
   '(tabs)/insights': InsightsScreen,
   '(tabs)/profile/_layout': ProfileLayout,
   '(tabs)/profile/index': ProfileScreen,

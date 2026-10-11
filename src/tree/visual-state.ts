@@ -23,7 +23,8 @@ export interface VisualLevel {
   ratio: number;
 }
 
-export const TRAIT_FAMILIES = ['streak-days', 'monthly-focus-hours'] as const;
+/** `event`: an event's keepsake (A5.6 `event:<event id>`), whatever the event. */
+export const TRAIT_FAMILIES = ['streak-days', 'monthly-focus-hours', 'event'] as const;
 export type TraitFamily = (typeof TRAIT_FAMILIES)[number];
 
 /** A milestone trait the renderer knows how to draw ("<family>:<value>"). */
@@ -120,9 +121,11 @@ function readSeed(value: unknown): number {
 }
 
 const TRAIT_PATTERN = /^([a-z-]+):(\d+)$/;
+const EVENT_TRAIT_PATTERN = /^event:[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /** A trait id of a family the renderer knows ("<family>:<value>"), or null. */
 export function knownTrait(id: string): KnownTrait | null {
+  if (EVENT_TRAIT_PATTERN.test(id)) return { id, family: 'event', value: 0 };
   const match = TRAIT_PATTERN.exec(id);
   const family = TRAIT_FAMILIES.find((known) => known === match?.[1]);
   return match && family ? { id, family, value: Number(match[2]) } : null;

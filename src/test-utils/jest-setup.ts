@@ -51,7 +51,9 @@ beforeEach(() => {
   jest.mocked(sharing.shareAsync).mockReset().mockResolvedValue(undefined);
 });
 
-configure({ asyncUtilTimeout: 5_000 });
+// 10 s: Phase 5 added suites that open the whole app, and with four workers a first render
+// sometimes passed 5 s under load (a different test each run, every one green alone).
+configure({ asyncUtilTimeout: 10_000 });
 notifyManager.setNotifyFunction((notify) => {
   act(notify);
 });

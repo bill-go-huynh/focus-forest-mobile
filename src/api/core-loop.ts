@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { ApiClient } from './client';
+import { eventCardSchema } from './event-card';
 import { topicSchema } from './topics';
 
 /**
@@ -170,6 +171,11 @@ export const homeSchema = z.object({
     sessionCount: count,
     activeDays: count,
   }),
+  /**
+   * A5.6: at most one quiet event card (docs/05 Home). Absent from a Home saved on the device
+   * before M5.4: no card, never invented.
+   */
+  event: eventCardSchema.nullable().optional(),
 });
 export type HomeResponse = z.infer<typeof homeSchema>;
 

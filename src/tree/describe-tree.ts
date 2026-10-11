@@ -80,7 +80,9 @@ function traitWords(tree: TreeVisualState): string | null {
     );
   const named = drawn
     .slice(0, NAMED_TRAITS)
-    .map(({ trait, name }) => `${name} from ${milestoneWords(trait)}`);
+    .map(({ trait, name }) =>
+      trait.family === 'event' ? name : `${name} from ${milestoneWords(trait)}`,
+    );
   // Unknown traits and ones below every authored milestone are counted, never dropped.
   const more = tree.traitIds.length - named.length;
   const items = more > 0 ? [...named, detailCount(more, named.length > 0)] : named;

@@ -63,6 +63,7 @@ export const DECORATIONS = [
   'seedpod',
   'heartwood-ring',
   'golden-leaf',
+  'event-ribbon',
 ] as const;
 
 export type Decoration = (typeof DECORATIONS)[number];
@@ -130,6 +131,7 @@ function groundDecorations(): Record<Decoration, DecorationSlot> {
     seedpod: slot(100, 254, 'ground'),
     'heartwood-ring': slot(140, 254, 'ground'),
     'golden-leaf': slot(120, 256, 'ground'),
+    'event-ribbon': slot(94, 262, 'ground'),
   };
 }
 
@@ -247,6 +249,7 @@ const youngTree: StageArt = {
     seedpod: slot(104, 176, 'canopy'),
     'heartwood-ring': slot(120, 238, 'trunk'),
     'golden-leaf': slot(120, 108, 'canopy'),
+    'event-ribbon': slot(94, 114, 'canopy'),
   },
   particleSlots: [
     point(80, 120),
@@ -327,6 +330,7 @@ const growingTree: StageArt = {
     seedpod: slot(96, 176, 'canopy'),
     'heartwood-ring': slot(120, 232, 'trunk'),
     'golden-leaf': slot(120, 88, 'canopy'),
+    'event-ribbon': slot(94, 94, 'canopy'),
   },
   particleSlots: [
     point(64, 120),
@@ -421,6 +425,7 @@ const matureTree: StageArt = {
     seedpod: slot(88, 178, 'canopy'),
     'heartwood-ring': slot(120, 226, 'trunk'),
     'golden-leaf': slot(120, 72, 'canopy'),
+    'event-ribbon': slot(94, 78, 'canopy'),
   },
   particleSlots: [
     point(56, 104),
@@ -518,6 +523,7 @@ const bloomingTree: StageArt = {
     seedpod: slot(86, 178, 'canopy'),
     'heartwood-ring': slot(120, 224, 'trunk'),
     'golden-leaf': slot(120, 66, 'canopy'),
+    'event-ribbon': slot(94, 72, 'canopy'),
   },
   particleSlots: [
     point(50, 100),
@@ -643,6 +649,7 @@ const finalForm: StageArt = {
     seedpod: slot(82, 174, 'canopy'),
     'heartwood-ring': slot(120, 222, 'trunk'),
     'golden-leaf': slot(120, 52, 'canopy'),
+    'event-ribbon': slot(94, 58, 'canopy'),
   },
   particleSlots: [
     point(38, 100),

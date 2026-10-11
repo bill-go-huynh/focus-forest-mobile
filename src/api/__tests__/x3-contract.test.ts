@@ -82,18 +82,10 @@ describe('X3 contract: the captured API answers parse with the app’s schemas',
     );
     // Every field the server sends is read (X3.G: `noteHighlighted` drives the note's highlight;
     // M4.1: `progression` drives unlocks, and recap badges are typed; M5.1: the profile's
-    // `username`). Known drift until M5.4 reads them: a session's `events` and Home's `event`
-    // card (A5.6).
+    // `username`; M5.4: a session's `events` and Home's `event` card).
     expect(
       Object.fromEntries(Object.entries(ignored).filter(([, keys]) => keys.length > 0)),
-    ).toEqual({
-      sessionFirst: ['.events'],
-      sessionDiscarded: ['.events'],
-      sessionOctober: ['.events'],
-      sessionLate: ['.events'],
-      homeGrowing: ['.event'],
-      homeAfterClose: ['.event'],
-    });
+    ).toEqual({});
   });
 
   it('reads what each session caused in progression, and the month’s badges (M4.1)', () => {

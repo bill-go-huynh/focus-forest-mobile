@@ -182,3 +182,4 @@ export { secureTokenStore } from './token-store';
 export * from './social';
 export * from './rooms';
 export * from './challenges';
+export * from './events';

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { ApiClient } from './client';
 import { growthResultSchema } from './core-loop';
 import { HttpError } from './errors';
+import { sessionEventResultSchema } from './events';
 import { progressionResultSchema } from './progression';
 
 // The API sends ids in lowercase (Postgres canonical form), in any UUID version.
@@ -50,6 +51,11 @@ export const sessionFields = z.object({
    * other answers and from receipts saved before M4.1: unknown, never invented.
    */
   progression: progressionResultSchema.nullable().optional(),
+  /**
+   * A5.6–A5.7: what the session did for the joined events whose window holds its start, in the
+   * PUT answer only (null for a session stored before A5.6). Absent elsewhere: unknown.
+   */
+  events: z.array(sessionEventResultSchema).nullable().optional(),
 });
 
 /** Holds for every session answer: `counted` follows the status. */

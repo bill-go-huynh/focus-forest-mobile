@@ -13,6 +13,7 @@ import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { useProfile } from '../profile';
 import { ChallengesSection } from '../challenges/ChallengesSection';
+import { EventsSection } from '../events/EventScreens';
 import { RoomsSection } from '../rooms/RoomsSection';
 import { useTheme } from '../theme';
 import {
@@ -72,6 +73,7 @@ export function TogetherScreen() {
       {list === 'following' ? <Following /> : <Followers />}
       <RoomsSection />
       <ChallengesSection />
+      <EventsSection />
       <Received />
     </Screen>
   );

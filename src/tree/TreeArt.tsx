@@ -574,5 +574,30 @@ function Decoration({ mark, colors }: { mark: TraitMark; colors: SceneColors }) 
           origin={`${x}, ${y}`}
         />
       );
+    case 'event-ribbon':
+      // A small tied ribbon: two loops and a knot.
+      return (
+        <>
+          <SvgEllipse
+            cx={x - s * 0.45}
+            cy={y}
+            rx={s * 0.5}
+            ry={s * 0.3}
+            fill={color}
+            rotation={20}
+            origin={`${x}, ${y}`}
+          />
+          <SvgEllipse
+            cx={x + s * 0.45}
+            cy={y}
+            rx={s * 0.5}
+            ry={s * 0.3}
+            fill={color}
+            rotation={-20}
+            origin={`${x}, ${y}`}
+          />
+          <Circle cx={x} cy={y} r={s * 0.2} fill={color} />
+        </>
+      );
   }
 }
