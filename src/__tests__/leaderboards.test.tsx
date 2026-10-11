@@ -230,6 +230,13 @@ describe("a board (a plain list; fair scores; the user's own row highlighted)", 
     await shows('Nobody is on this board yet. Each week starts fresh.');
   });
 
+  it('says a fresh month is empty in its own words', async () => {
+    server.state.boards['friends/monthly'] = makeBoard({ kind: 'monthly', rows: [], you: null });
+    await openBoard();
+    fireEvent.press(await screen.findByRole('button', { name: 'This month' }));
+    await shows('Nobody is on this board yet. Each month starts fresh.');
+  });
+
   it('lets someone who has not opted in read it, and says how to appear', async () => {
     server.state.fallback = makeBoard({ optedIn: false, rows: [row(1, LINH, 607)], you: null });
     const router = await openBoard();

@@ -401,6 +401,22 @@ describe('focusing together (a shared session is a focus session first)', () => 
     });
   });
 
+  it('starts nothing once the start is more than ten minutes past (the room would not count it)', async () => {
+    await AsyncStorage.setItem(
+      roomLinkKey(ME_ID),
+      JSON.stringify({ version: 1, roomId: ROOM_ID, topicId: TOPIC.id, sessionId: null }),
+    );
+    server.set({
+      phase: 'focusing',
+      startsAt: new Date(Date.now() - 11 * 60_000).toISOString(),
+      you: { host: true, state: 'focusing' },
+    });
+    const router = await openRoom();
+    await shows("This room started more than ten minutes ago, so this session can't join it.");
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 300)));
+    expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
+  });
+
   it('starts nothing for someone who was not in the session', async () => {
     await AsyncStorage.setItem(
       roomLinkKey(ME_ID),

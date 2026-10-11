@@ -27,6 +27,9 @@ import {
 import { clearRoomLink, saveRoomLink, type RoomLink } from './room-links';
 import { useRoomLive } from './room-live';
 
+/** The server's completion window after the start (A5.4 `COMPLETION_LATE_MS`). */
+const LATE_START_MS = 10 * 60_000;
+
 const STATE_LABEL = {
   waiting: 'Not ready yet',
   ready: 'Ready',
@@ -34,16 +37,15 @@ const STATE_LABEL = {
   completed: 'Done',
 } as const;
 
-/** A shared start the server decided: the countdown runs to it on every device. */
-function useSecondsUntil(startsAt: string | null): number | null {
+/** The device clock in state, ticking every second while `ticking` (never read during render). */
+function useNow(ticking: boolean): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!startsAt) return undefined;
+    if (!ticking) return undefined;
     const timer = setInterval(() => setNow(Date.now()), 1_000);
     return () => clearInterval(timer);
-  }, [startsAt]);
-  if (!startsAt) return null;
-  return Math.max(0, Math.ceil((Date.parse(startsAt) - now) / 1_000));
+  }, [ticking]);
+  return now;
 }
 
 /**
@@ -108,9 +110,17 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
   const [badges, setBadges] = useState<EarnedBadge[] | null>(null);
   const [waitingForSave, setWaitingForSave] = useState(false);
   const starting = useRef(false);
+
   const completing = useRef(false);
   const lastAttempt = useRef<string | null>(null);
-  const seconds = useSecondsUntil(room.phase === 'countdown' ? room.startsAt : null);
+  const now = useNow(room.startsAt !== null && room.phase !== 'ended' && room.phase !== 'closed');
+  // The countdown to the server's shared start, on this device's clock.
+  const seconds =
+    room.phase === 'countdown' && room.startsAt
+      ? Math.max(0, Math.ceil((Date.parse(room.startsAt) - now) / 1_000))
+      : null;
+  // Started more than ten minutes ago: a session begun now could not complete the room (A5.4).
+  const tooLate = room.startsAt !== null && now - Date.parse(room.startsAt) > LATE_START_MS;
 
   const ownLink: RoomLink | null = link.data?.roomId === room.id ? link.data : null;
   const [topicId, setTopicId] = useState<string | null>(null);
@@ -133,6 +143,7 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
     if (timerStatus !== 'ready' || timer !== null || rules.status !== 'ready' || starting.current) {
       return;
     }
+    if (tooLate) return;
     starting.current = true;
     void (async () => {
       const result = await timers.start({
@@ -192,8 +203,11 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
       },
     });
 
-  const status =
-    room.you?.state === 'completed' || badges
+  const lateForSession =
+    tooLate && started && room.you?.state === 'focusing' && ownLink?.sessionId === null;
+  const status = lateForSession
+    ? "This room started more than ten minutes ago, so this session can't join it."
+    : room.you?.state === 'completed' || badges
       ? 'You focused together.'
       : waitingForSave
         ? "We're saving your session; the room completes once it's saved."

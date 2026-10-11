@@ -117,7 +117,7 @@ function BoardView({ board }: { board: Leaderboard }) {
       ) : null}
 
       {board.rows.length === 0 ? (
-        <Muted>Nobody is on this board yet. Each week starts fresh.</Muted>
+        <Muted>{emptyText(board.period.kind)}</Muted>
       ) : (
         <View testID="leaderboard-rows" style={{ gap: theme.space[1] }}>
           {board.rows.map((row) => (
@@ -141,6 +141,13 @@ function BoardView({ board }: { board: Leaderboard }) {
       ) : null}
     </>
   );
+}
+
+/** An empty board, framed as a fresh start (docs/02: resets are fresh starts). */
+function emptyText(kind: string): string {
+  if (kind === 'weekly') return 'Nobody is on this board yet. Each week starts fresh.';
+  if (kind === 'monthly') return 'Nobody is on this board yet. Each month starts fresh.';
+  return 'Nobody is on this board yet.';
 }
 
 /** One row, read as one sentence. The user's own row stands out by weight and a soft fill. */
