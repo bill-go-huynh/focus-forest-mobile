@@ -12,6 +12,7 @@ import { ListRow } from '../components/ListRow';
 import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { useProfile } from '../profile';
+import { RoomsSection } from '../rooms/RoomsSection';
 import { useTheme } from '../theme';
 import {
   useAcknowledgeWarning,
@@ -68,6 +69,7 @@ export function TogetherScreen() {
         />
       </View>
       {list === 'following' ? <Following /> : <Followers />}
+      <RoomsSection />
       <Received />
     </Screen>
   );

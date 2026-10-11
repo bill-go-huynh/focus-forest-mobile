@@ -11,6 +11,7 @@ import TogetherScreen from '../app/(tabs)/together/index';
 import SearchRoute from '../app/(tabs)/together/search';
 import PersonRoute from '../app/(tabs)/together/[userId]/index';
 import VisitedForestRoute from '../app/(tabs)/together/[userId]/forest';
+import RoomRoute from '../app/(tabs)/together/room/[roomId]';
 import PrivacyRoute from '../app/(tabs)/profile/privacy';
 import BlockedRoute from '../app/(tabs)/profile/blocked';
 import ProfileLayout from '../app/(tabs)/profile/_layout';
@@ -45,6 +46,7 @@ export const appRoutes = {
   '(tabs)/together/search': SearchRoute,
   '(tabs)/together/[userId]/index': PersonRoute,
   '(tabs)/together/[userId]/forest': VisitedForestRoute,
+  '(tabs)/together/room/[roomId]': RoomRoute,
   '(tabs)/insights': InsightsScreen,
   '(tabs)/profile/_layout': ProfileLayout,
   '(tabs)/profile/index': ProfileScreen,

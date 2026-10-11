@@ -17,6 +17,7 @@ import {
 import type { HandoffResult } from '../sessions/session-handoff';
 import { useTheme } from '../theme';
 import type { TimerOperationResult } from '../timer/active-timer-store';
+import { RoomPresence } from '../rooms/RoomPresence';
 import { useActiveTimer, useActiveTimerStore } from '../timer/ActiveTimerProvider';
 import { derive, type TimerState } from '../timer/timer-engine';
 import { useTopicIdentity } from '../topics/topic-create-sync';
@@ -138,6 +139,7 @@ function RunningFocus({ timer }: { timer: TimerState }) {
           <Text style={[theme.type.caption, { color: theme.colors.text.secondary }]}>
             {`${formatMinutes(timer.plannedMinutes)} session`}
           </Text>
+          <RoomPresence sessionId={timer.id} />
         </View>
       </View>
 
