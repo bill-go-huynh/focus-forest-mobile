@@ -74,6 +74,11 @@ export function TogetherScreen() {
       <RoomsSection />
       <ChallengesSection />
       <EventsSection />
+      <ListRow
+        title="Leaderboards"
+        subtitle="Friends first, fair scores, opt-in"
+        onPress={() => router.push('/together/leaderboards')}
+      />
       <Received />
     </Screen>
   );

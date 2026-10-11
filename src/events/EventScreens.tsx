@@ -22,6 +22,7 @@ import {
   stageName,
   windowLine,
 } from './event-format';
+import { useLeaderboard } from '../leaderboards/queries';
 import { useEvent, useEvents, useJoinEvent } from './queries';
 
 /**
@@ -123,6 +124,8 @@ function EventView({ event }: { event: EventInfo }) {
   const theme = useTheme();
   const router = useRouter();
   const join = useJoinEvent(event.id);
+  // An event's board, when it has one (A5.8: 404 otherwise).
+  const board = useLeaderboard('event', 'weekly', event.id);
   return (
     <Screen title={event.name} safeTop={false}>
       <Body>{event.description}</Body>
@@ -161,6 +164,18 @@ function EventView({ event }: { event: EventInfo }) {
         })}
       </View>
 
+      {board.data ? (
+        <ListRow
+          title="Leaderboard"
+          subtitle={board.data.teams ? 'People and teams' : 'People'}
+          onPress={() =>
+            router.push({
+              pathname: '/together/leaderboards',
+              params: { scope: 'event', eventId: event.id },
+            })
+          }
+        />
+      ) : null}
       {event.communityTree ? (
         <ListRow
           title="Community Tree"

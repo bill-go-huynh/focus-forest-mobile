@@ -183,3 +183,4 @@ export * from './social';
 export * from './rooms';
 export * from './challenges';
 export * from './events';
+export * from './leaderboards';
