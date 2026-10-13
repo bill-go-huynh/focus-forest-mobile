@@ -28,6 +28,7 @@ import GoalsRoute from '../app/(tabs)/profile/goals';
 import ProfileScreen from '../app/(tabs)/profile/index';
 import SettingsScreen from '../app/(tabs)/profile/settings';
 import TopicsRoute from '../app/(tabs)/profile/topics';
+import DeleteAccountRoute from '../app/(tabs)/profile/delete-account';
 import CompletionRoute from '../app/completion/[sessionId]';
 import FocusRoute from '../app/focus';
 import CeremonyRoute from '../app/ceremony/[year]/[month]';
@@ -70,6 +71,7 @@ export const appRoutes = {
   '(tabs)/profile/settings': SettingsScreen,
   '(tabs)/profile/privacy': PrivacyRoute,
   '(tabs)/profile/blocked': BlockedRoute,
+  '(tabs)/profile/delete-account': DeleteAccountRoute,
   focus: FocusRoute,
   'completion/[sessionId]': CompletionRoute,
   species: SpeciesRoute,

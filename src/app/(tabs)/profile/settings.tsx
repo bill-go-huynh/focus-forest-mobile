@@ -1,17 +1,19 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { Share, Text, View } from 'react-native';
 
 import { useSystemReducedMotion } from '../../../accessibility';
 import {
+  exportMyData,
   NetworkError,
+  useApi,
   type NotificationCategory,
   type PreferenceChanges,
   type Preferences,
 } from '../../../api';
 import { FormMessage } from '../../../auth';
-import { Button } from '../../../components/Button';
+import { Button, DestructiveButton } from '../../../components/Button';
 import { Chip } from '../../../components/Chip';
 import { ErrorState } from '../../../components/ErrorState';
 import { ListRow } from '../../../components/ListRow';
@@ -59,7 +61,7 @@ const SAVE_GENERAL_MESSAGE = "We couldn't save that change. Please try again.";
 /**
  * Settings, under Profile (docs/05 §4): theme, sound, haptics, reduced motion, the
  * notification categories with the reminders' times (M6.1), usage data sharing (CR.6), and sign
- * out. Each change saves on its own (A5: PATCH /me/preferences). Turning a notification on asks
+ * out, a copy of your data, and deleting the account (M7.1). Each change saves on its own (A5: PATCH /me/preferences). Turning a notification on asks
  * for the permission the first time (docs/02: in context, never at launch) and registers this
  * device; sign-out unregisters it first.
  */
@@ -68,6 +70,25 @@ export default function SettingsScreen() {
   const router = useRouter();
   const push = usePushRegistration();
   const signOut = useSignOut();
+  const { client } = useApi();
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  /** A copy of everything stored about the person, through the share sheet (M7.1). */
+  const download = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const data = await exportMyData(client);
+      await Share.share({ title: 'Focus Forest data', message: JSON.stringify(data, null, 2) });
+    } catch (error) {
+      setExportError(
+        error instanceof NetworkError
+          ? "We couldn't prepare your data. Check your connection and try again."
+          : "We couldn't prepare your data. Please try again.",
+      );
+    }
+    setExporting(false);
+  };
   // The phone's settings refuse notifications: said once something is on, or turned on.
   const [systemDenied, setSystemDenied] = useState(false);
   const preferences = usePreferences();
@@ -220,7 +241,19 @@ export default function SettingsScreen() {
         </>
       )}
       <Section title="Account">
+        {/* Your data (M7.1): a copy to keep, and deletion. */}
+        <Button
+          variant="secondary"
+          label="Download my data"
+          disabled={exporting}
+          onPress={() => void download()}
+        />
+        {exportError ? <FormMessage message={exportError} /> : null}
         <Button variant="secondary" label="Sign out" onPress={() => void signOut()} />
+        <DestructiveButton
+          label="Delete account"
+          onRequestConfirm={() => router.push('/profile/delete-account')}
+        />
       </Section>
       {version ? (
         <Section title="About">
