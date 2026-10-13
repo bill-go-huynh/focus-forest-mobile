@@ -207,6 +207,8 @@ const writes = () =>
     .filter((r) => r.method !== 'GET')
     .filter((r) => !r.url.endsWith('/me/preferences'))
     .filter((r) => !r.url.endsWith(ANALYTICS))
+    // The focus lease (M6.1) follows the timer on its own; it is not part of the session's sync.
+    .filter((r) => !r.url.endsWith('/me/focus/active'))
     .map((r) => `${r.method} ${new URL(r.url).pathname}`);
 const shows = (text: string | RegExp) => until(() => screen.queryByText(text) !== null);
 /** Waits inside act for an element while background sync runs, then returns it. */

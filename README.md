@@ -15,6 +15,8 @@ npm start          # Expo dev server (i = iOS simulator, a = Android emulator)
 
 Add packages with `npx expo install <pkg>` so versions match the Expo SDK.
 
+Push notifications need an EAS project: set `expo.extra.eas.projectId` (as `eas init` does) and a development build. Without it, turning a notification on still asks for the permission, but no device is registered and nothing arrives; Settings still saves every choice. Push does not work in Expo Go on Android.
+
 ## Scripts
 
 | Script | Purpose |

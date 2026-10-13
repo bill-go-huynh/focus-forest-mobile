@@ -26,6 +26,8 @@ const implementations = {
     pending.delete(identifier);
   },
   setNotificationChannelAsync: async () => null,
+  // M6.1: the Expo push token of this device (an EAS project id is needed in the app).
+  getExpoPushTokenAsync: async () => ({ type: 'expo', data: 'ExponentPushToken[test-device]' }),
   setNotificationHandler: () => undefined,
   addNotificationResponseReceivedListener: (listener: (response: unknown) => void) => {
     tapListeners.add(listener);
@@ -49,6 +51,7 @@ export const notificationsMock = {
   scheduleNotificationAsync: jest.fn(implementations.scheduleNotificationAsync),
   cancelScheduledNotificationAsync: jest.fn(implementations.cancelScheduledNotificationAsync),
   setNotificationChannelAsync: jest.fn(implementations.setNotificationChannelAsync),
+  getExpoPushTokenAsync: jest.fn(implementations.getExpoPushTokenAsync),
   setNotificationHandler: jest.fn(implementations.setNotificationHandler),
   addNotificationResponseReceivedListener: jest.fn(
     implementations.addNotificationResponseReceivedListener,

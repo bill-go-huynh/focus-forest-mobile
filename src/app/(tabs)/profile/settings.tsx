@@ -1,12 +1,11 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
 import { useSystemReducedMotion } from '../../../accessibility';
 import {
   NetworkError,
-  useApi,
   type NotificationCategory,
   type PreferenceChanges,
   type Preferences,
@@ -19,12 +18,14 @@ import { ListRow } from '../../../components/ListRow';
 import { Screen } from '../../../components/Screen';
 import { Skeleton, SkeletonGroup } from '../../../components/Skeleton';
 import { SwitchRow } from '../../../components/SwitchRow';
+import { usePushRegistration, useSignOut } from '../../../notifications';
 import {
   NotificationSettings,
   usePreferences,
   useUpdatePreferences,
   visibleNotificationCategories,
 } from '../../../preferences';
+import { SUGGESTED_TIMES, type ReminderCategory } from '../../../preferences/reminder-times';
 import { SeasonSettings } from '../../../seasons/SeasonSettings';
 import { useTheme, type ThemePreference } from '../../../theme';
 
@@ -38,6 +39,7 @@ type DisplaySwitch = 'sound' | 'haptics' | 'reducedMotion' | 'shareUsageData';
 type SwitchKey = DisplaySwitch | NotificationCategory;
 const isDisplaySwitch = (key: SwitchKey): key is DisplaySwitch =>
   key === 'sound' || key === 'haptics' || key === 'reducedMotion' || key === 'shareUsageData';
+const isReminder = (key: SwitchKey): key is ReminderCategory => key in SUGGESTED_TIMES;
 type Flipped = Partial<Record<SwitchKey, boolean>>;
 
 /** The saved preferences with the switches that are still saving shown as flipped. */
@@ -56,14 +58,18 @@ const SAVE_GENERAL_MESSAGE = "We couldn't save that change. Please try again.";
 
 /**
  * Settings, under Profile (docs/05 §4): theme, sound, haptics, reduced motion, the
- * notification categories that exist so far, usage data sharing (CR.6), and sign out. Each change saves on its own
- * (A5: PATCH /me/preferences). Sound and haptics are stored now; their behavior comes with
- * the timer in Phase 2.
+ * notification categories with the reminders' times (M6.1), usage data sharing (CR.6), and sign
+ * out. Each change saves on its own (A5: PATCH /me/preferences). Turning a notification on asks
+ * for the permission the first time (docs/02: in context, never at launch) and registers this
+ * device; sign-out unregisters it first.
  */
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { auth } = useApi();
   const router = useRouter();
+  const push = usePushRegistration();
+  const signOut = useSignOut();
+  // The phone's settings refuse notifications: said once something is on, or turned on.
+  const [systemDenied, setSystemDenied] = useState(false);
   const preferences = usePreferences();
   const save = useUpdatePreferences();
   const systemReducedMotion = useSystemReducedMotion();
@@ -84,7 +90,7 @@ export default function SettingsScreen() {
       onSettled,
     });
   };
-  const flip = (key: SwitchKey, value: boolean) => {
+  const flip = (key: SwitchKey, value: boolean, time?: string) => {
     setFlipped((current) => ({ ...current, [key]: value }));
     // Clear only this flip: a later flip of the same switch keeps its own entry.
     const settled = () =>
@@ -94,12 +100,46 @@ export default function SettingsScreen() {
         return rest;
       });
     change(
-      isDisplaySwitch(key) ? { [key]: value } : { notifications: { [key]: { enabled: value } } },
+      isDisplaySwitch(key)
+        ? { [key]: value }
+        : {
+            notifications: {
+              [key]: time === undefined ? { enabled: value } : { enabled: value, time },
+            },
+          },
       settled,
     );
   };
 
   const data = preferences.data ? withFlipped(preferences.data, flipped) : undefined;
+
+  useEffect(() => {
+    let current = true;
+    void push.permission().then((status) => {
+      if (current) setSystemDenied(status === 'denied');
+    });
+    return () => {
+      current = false;
+    };
+  }, [push]);
+
+  /** A notification switch: on asks (first time only) and registers; a reminder gets a time. */
+  const flipNotification = (category: NotificationCategory, enabled: boolean) => {
+    if (!enabled) {
+      flip(category, false);
+      return;
+    }
+    const stored = preferences.data?.notifications;
+    const time =
+      isReminder(category) && stored && stored[category].time === null
+        ? SUGGESTED_TIMES[category]
+        : undefined;
+    flip(category, true, time);
+    void push.enable().then((status) => setSystemDenied(status === 'denied'));
+  };
+  const anyNotificationOn = data
+    ? Object.values(data.notifications).some((setting) => setting.enabled)
+    : false;
 
   return (
     <Screen title="Settings" safeTop={false}>
@@ -173,12 +213,14 @@ export default function SettingsScreen() {
           <NotificationSettings
             categories={visibleNotificationCategories()}
             preferences={data}
-            onChange={(category: NotificationCategory, enabled: boolean) => flip(category, enabled)}
+            onChange={flipNotification}
+            onTimeChange={(category, time) => change({ notifications: { [category]: { time } } })}
+            blockedBySystem={systemDenied && anyNotificationOn}
           />
         </>
       )}
       <Section title="Account">
-        <Button variant="secondary" label="Sign out" onPress={() => void auth.signOut()} />
+        <Button variant="secondary" label="Sign out" onPress={() => void signOut()} />
       </Section>
       {version ? (
         <Section title="About">

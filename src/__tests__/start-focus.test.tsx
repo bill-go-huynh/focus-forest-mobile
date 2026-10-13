@@ -201,6 +201,19 @@ describe('Start Focus from Home', () => {
     expect(screen.queryByText('Duration')).toBeNull();
   });
 
+  it('holds notifications while focusing: the focus lease ends at the completion (M6.1)', async () => {
+    fireEvent.press(await openHome());
+    fireEvent.press(await topicRow('Reading'));
+    await expectFocusScreen();
+    const timer = await storedTimer();
+    await waitFor(() =>
+      expect(requests.find((r) => r.url === `${API}/me/focus/active`)).toMatchObject({
+        method: 'PUT',
+        body: { endsAt: new Date(timer!.startedAt + 25 * 60_000).toISOString() },
+      }),
+    );
+  });
+
   it('starts a remembered custom duration the same way', async () => {
     await openPicker();
     fireEvent.press(await topicRow('Piano'));

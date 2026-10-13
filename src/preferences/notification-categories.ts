@@ -3,11 +3,12 @@ import type { NotificationCategory } from '../api';
 /**
  * Which notification categories Settings offers. A5 stores all ten (spec §18), but a
  * category is shown only once its feature exists: docs/12 says Phase 1 builds the
- * preference structure and every later phase adds its categories. Delivery is Phase 18.
+ * preference structure and every later phase adds its categories. Delivery is Phase 18
+ * (macro Phase 6, M6.1), which shows all ten.
  * Phase numbers are the legacy plan's (docs/12); the Core Loop (macro Phase 3) spans legacy
  * 3–7, and Notifications (legacy 18) is macro Phase 6.
  */
-export const CURRENT_PHASE = 1;
+export const CURRENT_PHASE = 18;
 
 export const NOTIFICATION_CATEGORIES = [
   'dailyGoalReminder',

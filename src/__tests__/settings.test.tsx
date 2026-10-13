@@ -356,19 +356,17 @@ describe('reduced motion (M2: system OR app setting)', () => {
   });
 });
 
-describe('notifications (docs/12: Phase 1 builds the structure; each phase adds its categories)', () => {
-  it('shows no notification category in Phase 1, because none of their features exist yet', async () => {
+describe('notifications (docs/12: each phase adds its categories; M6.1 delivers all ten)', () => {
+  it('shows the Notifications section (details in notification-settings.test.tsx)', async () => {
     await openSettings();
-    expect(screen.queryByRole('header', { name: 'Notifications' })).toBeNull();
+    expect(screen.getByRole('header', { name: 'Notifications' })).toBeOnTheScreen();
     expect(
-      screen.queryByText(/reminder|invite|badge|recap|event|challenge|streak/i, {
-        includeHiddenElements: true,
-      }),
-    ).toBeNull();
+      screen.getAllByRole('switch', { name: /reminder|invite|badge|recap|event|challenge/i }),
+    ).toHaveLength(10);
   });
 
-  it('never asks for notification permission and never sends one', async () => {
-    // Only a running focus timer uses notifications (M2.10); Settings never does.
+  it('never asks for notification permission on opening, and never sends one', async () => {
+    // Asked only when a category is turned on (M6.1, docs/02); a timer asks for its own (M2.10).
     const os = jest.requireMock('expo-notifications') as {
       requestPermissionsAsync: jest.Mock;
       scheduleNotificationAsync: jest.Mock;

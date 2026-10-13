@@ -42,8 +42,12 @@ describe('notification categories shown in Settings (docs/12: each phase adds it
   });
 
   it('shows no category in Phase 1: none of their features exist yet', () => {
-    expect(CURRENT_PHASE).toBe(1);
-    expect(visibleNotificationCategories()).toEqual([]);
+    expect(visibleNotificationCategories(1)).toEqual([]);
+  });
+
+  it('shows all ten now that Notifications (legacy 18, macro Phase 6) delivers them (M6.1)', () => {
+    expect(CURRENT_PHASE).toBe(18);
+    expect(visibleNotificationCategories()).toEqual(NOTIFICATION_CATEGORIES);
   });
 
   it('never offers the scheduled focus reminder in Phase 2, nor before Phase 18', () => {

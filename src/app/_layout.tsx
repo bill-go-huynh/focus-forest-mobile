@@ -19,7 +19,9 @@ import { createAppCelebrationStore } from '../celebrations/celebration-store';
 import { CelebrationsProvider } from '../celebrations/CelebrationsProvider';
 import { CompletionIntents, CompletionIntentsProvider, CompletionNavigator } from '../completion';
 import {
+  createAppNotificationDelivery,
   createAppTimerNotifications,
+  NotificationDeliveryProvider,
   onTimerNotificationTap,
   TimerNotificationSync,
 } from '../notifications';
@@ -56,6 +58,7 @@ export default function RootLayout() {
   );
   const [timers] = useState(createAppTimerStore);
   const [timerNotifications] = useState(() => createAppTimerNotifications(timers));
+  const [delivery] = useState(() => createAppNotificationDelivery(api.client, timers));
   const [topics] = useState(createAppTopicStore);
   const [topicCreates] = useState(() =>
     createAppTopicCreateQueue({ client: api.client, queryClient, snapshots: topics }),
@@ -84,6 +87,7 @@ export default function RootLayout() {
   // line, and what waits for the server is tried again (sessions first, then their notes).
   const [onForeground] = useState(() => () => {
     timerNotifications.reconcileLater();
+    void delivery.lease.reconcile();
     void sessions.flush().then(() => notes.flush());
   });
 
@@ -91,53 +95,56 @@ export default function RootLayout() {
     <ApiProvider api={api} queryClient={queryClient}>
       {/* Product analytics for the Core Loop Checkpoint (CR.6): the user's own, if shared. */}
       <AnalyticsProvider queue={analytics}>
-        {/* The signed-in user's timer is restored (and settled) as soon as they are known. */}
-        <ActiveTimerProvider store={timers} onForeground={onForeground}>
-          {/* The OS announces the session's end in the background, planned from the timer. */}
-          <TimerNotificationSync coordinator={timerNotifications} />
-          {/* The signed-in user's last known topics are shown even when a launch is offline. */}
-          <TopicCacheProvider store={topics}>
-            {/* Topics created offline are kept and sent when the server can be reached. */}
-            <TopicCreateQueueProvider queue={topicCreates}>
-              {/* The server's answers for recent sessions, kept so a tap opens them after a restart. */}
-              {/* The history last loaded, so History and its sessions still show offline. */}
-              <HistoryCacheProvider store={history}>
-                <CompletionReceiptsProvider receipts={receipts}>
-                  {/* Server-confirmed tree growth still to be shown, kept across kills (M3.2). */}
-                  <CelebrationsProvider store={celebrations}>
-                    {/* The last Home the server answered, so Home still shows offline. */}
-                    <HomeCacheProvider store={homeSnapshots}>
-                      {/* A finished timer's session is queued on the device, then sent when it can be. */}
-                      <SessionOutboxProvider outbox={sessions}>
-                        {/* Notes wait on the device until their session is on the server. */}
-                        <SessionNotesProvider notes={notes}>
-                          {/* Which Session Completion to open: a session ended here, or a tap. */}
-                          <CompletionIntentsProvider
-                            intents={completions}
-                            listenForTaps={onTimerNotificationTap}
-                          >
-                            {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
-                            <AppearanceProviders>
-                              <SafeAreaProvider>
-                                {/* A new account's onboarding, kept across kills (M3.3). */}
-                                <OnboardingProvider store={onboarding}>
-                                  <AuthFlowProvider>
-                                    <RootNavigator />
-                                  </AuthFlowProvider>
-                                </OnboardingProvider>
-                                <ThemedStatusBar />
-                              </SafeAreaProvider>
-                            </AppearanceProviders>
-                          </CompletionIntentsProvider>
-                        </SessionNotesProvider>
-                      </SessionOutboxProvider>
-                    </HomeCacheProvider>
-                  </CelebrationsProvider>
-                </CompletionReceiptsProvider>
-              </HistoryCacheProvider>
-            </TopicCreateQueueProvider>
-          </TopicCacheProvider>
-        </ActiveTimerProvider>
+        {/* Push (M6.1): this device registered when allowed, the focus lease with the timer. */}
+        <NotificationDeliveryProvider push={delivery.push} lease={delivery.lease}>
+          {/* The signed-in user's timer is restored (and settled) as soon as they are known. */}
+          <ActiveTimerProvider store={timers} onForeground={onForeground}>
+            {/* The OS announces the session's end in the background, planned from the timer. */}
+            <TimerNotificationSync coordinator={timerNotifications} />
+            {/* The signed-in user's last known topics are shown even when a launch is offline. */}
+            <TopicCacheProvider store={topics}>
+              {/* Topics created offline are kept and sent when the server can be reached. */}
+              <TopicCreateQueueProvider queue={topicCreates}>
+                {/* The server's answers for recent sessions, kept so a tap opens them after a restart. */}
+                {/* The history last loaded, so History and its sessions still show offline. */}
+                <HistoryCacheProvider store={history}>
+                  <CompletionReceiptsProvider receipts={receipts}>
+                    {/* Server-confirmed tree growth still to be shown, kept across kills (M3.2). */}
+                    <CelebrationsProvider store={celebrations}>
+                      {/* The last Home the server answered, so Home still shows offline. */}
+                      <HomeCacheProvider store={homeSnapshots}>
+                        {/* A finished timer's session is queued on the device, then sent when it can be. */}
+                        <SessionOutboxProvider outbox={sessions}>
+                          {/* Notes wait on the device until their session is on the server. */}
+                          <SessionNotesProvider notes={notes}>
+                            {/* Which Session Completion to open: a session ended here, or a tap. */}
+                            <CompletionIntentsProvider
+                              intents={completions}
+                              listenForTaps={onTimerNotificationTap}
+                            >
+                              {/* Theme and reduced motion follow the user's preferences (A5), app-wide. */}
+                              <AppearanceProviders>
+                                <SafeAreaProvider>
+                                  {/* A new account's onboarding, kept across kills (M3.3). */}
+                                  <OnboardingProvider store={onboarding}>
+                                    <AuthFlowProvider>
+                                      <RootNavigator />
+                                    </AuthFlowProvider>
+                                  </OnboardingProvider>
+                                  <ThemedStatusBar />
+                                </SafeAreaProvider>
+                              </AppearanceProviders>
+                            </CompletionIntentsProvider>
+                          </SessionNotesProvider>
+                        </SessionOutboxProvider>
+                      </HomeCacheProvider>
+                    </CelebrationsProvider>
+                  </CompletionReceiptsProvider>
+                </HistoryCacheProvider>
+              </TopicCreateQueueProvider>
+            </TopicCacheProvider>
+          </ActiveTimerProvider>
+        </NotificationDeliveryProvider>
       </AnalyticsProvider>
     </ApiProvider>
   );

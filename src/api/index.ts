@@ -28,6 +28,7 @@ export {
   type PreferenceChanges,
   type Preferences,
 } from './preferences';
+export { clearFocusLease, registerDevice, setFocusLease, unregisterDevice } from './notifications';
 export {
   acceptRecovery,
   cancelRestDay,
