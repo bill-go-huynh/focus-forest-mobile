@@ -180,6 +180,29 @@ X4 và CR.X đã kiểm tra tự động contract, logic và màn hình. Các m�
 - [ ] Mở app, vào Forest, Recap, Insights, bắt đầu một focus: admin → Checkpoint thấy ngày active tăng.
 - [ ] Offline vài phút rồi online lại: event được gửi sau, không mất.
 
+## Phase 6: Notifications (HOÃN, ghi lại ở X6)
+
+Cần development build, một EAS project (`expo.extra.eas.projectId`), và API chạy với `PUSH_PROVIDER=expo`. Thiếu EAS project thì app vẫn hỏi quyền nhưng không đăng ký thiết bị, nên không có push nào đến.
+
+### P6.1 Quyền và cài đặt
+- [ ] Cài mới, mở app lần đầu: không có hộp thoại xin quyền notification.
+- [ ] Settings → Notifications: đủ 10 mục, mỗi mục có một dòng nói rõ sẽ gửi gì.
+- [ ] Bật một mục lần đầu: hệ điều hành hỏi quyền đúng lúc đó. Tắt một mục thì không hỏi.
+- [ ] Từ chối quyền: Settings hiện ghi chú bình tĩnh và nút "Open phone settings" mở đúng trang cài đặt của app.
+- [ ] Bật nhắc mục tiêu ngày: hiện "Reminder at 19:00"; Earlier/Later đổi theo 15 phút; tắt rồi mở lại app vẫn giữ giờ đã chọn.
+
+### P6.2 Push thật
+- [ ] Đặt nhắc mục tiêu ngày sớm hơn hiện tại 15 phút: nhận đúng giờ địa phương; chữ không gây áp lực.
+- [ ] Đang focus (solo hoặc trong room): không nhận push nào; kết thúc focus thì push bị giữ đến ngay (hoặc bị bỏ nếu đã hết hạn).
+- [ ] Mở app trong lúc focus: push đến không hiện banner; khi không focus thì có banner.
+- [ ] Đăng xuất: không còn nhận push của tài khoản đó trên máy này.
+
+### P6.3 Bấm vào notification
+- [ ] App đang chạy: bấm lời mời vào room mở đúng room; nút back về Together.
+- [ ] App đã bị kill: bấm notification mở app rồi vào đúng màn sau khi đăng nhập xong.
+- [ ] Link lạ (`focusforest://abc`) mở Home.
+- [ ] Mời bạn từ lobby của room; bạn thấy lời mời ở Together, Open rồi Join room được, Decline thì lời mời biến mất.
+
 ## Khi gặp lỗi, ghi lại
 
 - Bước đang làm, hành vi mong đợi và hành vi thực tế.

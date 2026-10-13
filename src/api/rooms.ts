@@ -116,7 +116,7 @@ export const roomInviteSchema = z.object({
   invitedAt: instant,
 });
 export type RoomInvite = z.infer<typeof roomInviteSchema>;
-const roomInviteListSchema = z.object({ items: z.array(roomInviteSchema) });
+export const roomInviteListSchema = z.object({ items: z.array(roomInviteSchema) });
 
 /** Invites friends (mutual follows) to the room while it gathers; answers the room. */
 export function inviteToRoom(client: ApiClient, roomId: string, userIds: readonly string[]) {
