@@ -11,6 +11,7 @@ import { ListRow } from '../components/ListRow';
 import { Sheet } from '../components/Sheet';
 import { useTheme } from '../theme';
 import { useCreateRoom, useCurrentRoom, useJoinRoom, useLobbies } from './queries';
+import { RoomInvitesList } from './RoomInvites';
 
 const DURATIONS = [15, 25, 50, 90] as const;
 const SIZES = [2, 4, 6, 10] as const;
@@ -56,6 +57,8 @@ export function RoomsSection() {
       >
         Focus rooms
       </Text>
+      {/* Invitations from friends to rooms still gathering (M6.2). */}
+      <RoomInvitesList />
       {mine ? (
         <ListRow
           title={`You're in ${mine.name}`}

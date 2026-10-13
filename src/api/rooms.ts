@@ -109,6 +109,33 @@ export function completeRoom(client: ApiClient, roomId: string, sessionId: strin
 }
 
 /** The stable code of a refused room request (`room_full`, `session_not_found`, …). */
+/** M6.2: an invitation to a room still gathering (A6.3 `GET /me/room-invites`), newest first. */
+export const roomInviteSchema = z.object({
+  room: roomSchema,
+  from: roomPersonSchema,
+  invitedAt: instant,
+});
+export type RoomInvite = z.infer<typeof roomInviteSchema>;
+const roomInviteListSchema = z.object({ items: z.array(roomInviteSchema) });
+
+/** Invites friends (mutual follows) to the room while it gathers; answers the room. */
+export function inviteToRoom(client: ApiClient, roomId: string, userIds: readonly string[]) {
+  return client.request(`/rooms/${roomId}/invites`, {
+    method: 'POST',
+    body: { userIds },
+    schema: roomSchema,
+  });
+}
+
+export function getRoomInvites(client: ApiClient) {
+  return client.request('/me/room-invites', { schema: roomInviteListSchema });
+}
+
+/** Declines an invitation (idempotent). */
+export async function declineRoomInvite(client: ApiClient, roomId: string): Promise<void> {
+  await client.request(`/me/room-invites/${roomId}`, { method: 'DELETE' });
+}
+
 export function roomErrorCode(error: unknown): string | null {
   return error instanceof HttpError ? error.code : null;
 }

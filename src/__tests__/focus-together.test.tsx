@@ -1,17 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, screen, within } from 'expo-router/testing-library';
+import { router as expoRouter } from 'expo-router';
+import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { NetworkError, type HomeResponse } from '../api';
 import { roomLinkKey } from '../rooms/room-links';
-import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
+import { fakeFetch, makeSession, nestError, type FakeRequest } from '../test-utils/api';
 import { makeCurrentTree, makeHome } from '../test-utils/core-loop';
 import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
-import { KAI, makeRoom, ME_ID, ROOM_ID, type RoomFixture } from '../test-utils/rooms';
+import { launchFromNotification, tapNotification } from '../test-utils/notifications-mock';
+import { KAI, makeRoom, ME_ID, person, ROOM_ID, type RoomFixture } from '../test-utils/rooms';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
 import { settleSheetTransitions, until } from '../test-utils/sheets';
 import { makeTopic } from '../test-utils/topics';
+import { LINH_ID } from '../test-utils/social';
 import { treeDto } from '../test-utils/trees';
 
 jest.mock(
@@ -71,6 +74,9 @@ function roomsApi() {
     startAnswer: null as Reply | null,
     completeAnswer: null as Reply | null,
     created: [] as unknown[],
+    // M6.2: who the user follows, and their room invitations.
+    following: [] as unknown[],
+    invites: [] as unknown[],
   };
   const set = (fixture: RoomFixture) => {
     state.room = makeRoom(fixture);
@@ -79,6 +85,15 @@ function roomsApi() {
   const handler = ({ url, method, body }: FakeRequest): Reply | Promise<Reply> => {
     const { pathname } = new URL(url);
     if (pathname === '/me/preferences') return { status: 200, body: makePreferences() };
+    if (pathname === '/auth/sign-in')
+      return {
+        status: 200,
+        body: makeSession({
+          accessTokenExpiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+          refreshTokenExpiresAt: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+          user: { id: ME_ID, email: 'mai@example.com' },
+        }),
+      };
     if (pathname === '/session-rules')
       return { status: 200, body: { version: 1, minValidMinutes: 5, maxPauseMinutes: 30 } };
     if (pathname === '/me/topics') return { status: 200, body: [TOPIC] };
@@ -100,8 +115,16 @@ function roomsApi() {
           timezone: 'Europe/Zurich',
         },
       };
-    if (pathname === '/me/following' || pathname === '/me/followers')
-      return { status: 200, body: { items: [], nextCursor: null } };
+    if (pathname === '/me/following')
+      return { status: 200, body: { items: state.following, nextCursor: null } };
+    if (pathname === '/me/followers') return { status: 200, body: { items: [], nextCursor: null } };
+    if (pathname === '/me/room-invites') return { status: 200, body: { items: state.invites } };
+    if (pathname === `/me/room-invites/${ROOM_ID}` && method === 'DELETE') {
+      state.invites = [];
+      return { status: 204 };
+    }
+    if (pathname === `/rooms/${ROOM_ID}/invites` && method === 'POST')
+      return { status: 200, body: state.room };
     if (pathname === '/me/warnings') return { status: 200, body: { items: [] } };
     if (pathname === '/me/reactions') return { status: 200, body: { items: [], nextCursor: null } };
     if (pathname === '/rooms' && method === 'GET')
@@ -508,5 +531,135 @@ describe('focusing together (a shared session is a focus session first)', () => 
     expect(
       within(screen.getByTestId('room-status')).getByText(/saving your session/i),
     ).toBeOnTheScreen();
+  });
+});
+
+const KAI_FRIEND = {
+  ...person(KAI.id, 'Kai', 'kai'),
+  relationship: { following: true, followedBy: true, friends: true },
+};
+const INVITE = {
+  room: makeRoom({
+    you: null,
+    others: [{ ...KAI, host: true, state: 'ready' }],
+    visibility: 'private',
+  }),
+  from: person(KAI.id, 'Kai', 'kai'),
+  invitedAt: '2026-10-13T09:00:00.000Z',
+};
+
+describe('room invitations (M6.2; A6.3)', () => {
+  it('invites friends from the lobby', async () => {
+    // Linh is a friend too, but already in the room: only Kai is offered.
+    server.state.following = [
+      KAI_FRIEND,
+      { ...person(LINH_ID, 'Linh', 'linh'), relationship: KAI_FRIEND.relationship },
+    ];
+    await openRoom();
+    fireEvent.press(screen.getByRole('button', { name: 'Invite friends' }));
+    await settleSheetTransitions();
+    fireEvent.press(await screen.findByRole('button', { name: 'Kai' }));
+    expect(screen.queryByRole('button', { name: 'Linh' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Send invitations' }));
+    await shows('Invitations sent.');
+    expect(posts(`/rooms/${ROOM_ID}/invites`)).toEqual([['POST', { userIds: [KAI.id] }]]);
+  });
+
+  it('offers no invitations once the room has started', async () => {
+    server.set({
+      phase: 'focusing',
+      startsAt: new Date(Date.now() - 60_000).toISOString(),
+      you: { host: true, state: 'focusing' },
+    });
+    await openRoom();
+    expect(screen.queryByRole('button', { name: 'Invite friends' })).toBeNull();
+  });
+
+  it('shows invitations in Together, and declines one', async () => {
+    server.state.invites = [INVITE];
+    renderApp(appRoutes, { initialUrl: '/together' });
+    const row = await screen.findByText('Kai invited you to Morning study');
+    expect(row).toBeOnTheScreen();
+    fireEvent.press(
+      screen.getByRole('button', { name: 'Decline the invitation to Morning study' }),
+    );
+    await until(() => screen.queryByText('Kai invited you to Morning study') === null);
+    expect(posts(`/me/room-invites/${ROOM_ID}`)).toEqual([['DELETE', undefined]]);
+  });
+
+  it('opens an invited room, which can be joined there', async () => {
+    server.state.invites = [INVITE];
+    server.state.room = INVITE.room;
+    const router = renderApp(appRoutes, { initialUrl: '/together' });
+    fireEvent.press(await screen.findByRole('button', { name: 'Open Morning study' }));
+    await screen.findByRole('header', { name: 'Morning study' });
+    expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
+    fireEvent.press(screen.getByRole('button', { name: 'Join room' }));
+    await waitFor(() => expect(posts(`/rooms/${ROOM_ID}/join`)).toEqual([['POST', undefined]]));
+    expect(await screen.findByRole('button', { name: "I'm ready" })).toBeOnTheScreen();
+  });
+});
+
+describe('notification taps and links (M6.2; docs/05 §4)', () => {
+  it('opens what a tapped notification links to', async () => {
+    const router = renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('button', { name: 'Start Focus' });
+    await act(async () =>
+      tapNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' }),
+    );
+    await screen.findByRole('header', { name: 'Morning study' });
+    expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
+  });
+
+  it('opens the link of the notification that launched the app, with a way back', async () => {
+    launchFromNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' });
+    const router = renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('header', { name: 'Morning study' });
+    expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
+    act(() => expoRouter.back());
+    await shows('Focus rooms');
+    expect(router.getPathname()).toBe('/together');
+  });
+
+  it('waits for sign-in before opening a link tapped while signed out', async () => {
+    const secureStore = jest.requireMock('expo-secure-store') as {
+      deleteItemAsync: (key: string) => Promise<void>;
+    };
+    await secureStore.deleteItemAsync('focus-forest.session');
+    launchFromNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' });
+    const router = renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('header', { name: 'Create your account' });
+    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    await screen.findByRole('header', { name: 'Welcome back' });
+    fireEvent.changeText(screen.getByLabelText('Email'), 'mai@example.com');
+    fireEvent.changeText(screen.getByLabelText('Password'), 'correct horse');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    await screen.findByRole('header', { name: 'Morning study' });
+    expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
+  });
+
+  it('opens Home for a link it does not know', async () => {
+    const router = renderApp(appRoutes, { initialUrl: '/together' });
+    await shows('Focus rooms');
+    await act(async () => tapNotification({ link: '/settings/danger', category: 'badgeUnlocked' }));
+    await screen.findByRole('button', { name: 'Start Focus' });
+    expect(router.getPathname()).toBe('/');
+  });
+
+  it('opens Home for an app link to nowhere', async () => {
+    const router = renderApp(appRoutes, { initialUrl: '/no/such/place' });
+    await screen.findByRole('button', { name: 'Start Focus' });
+    expect(router.getPathname()).toBe('/');
+  });
+
+  it('leaves the timer’s own notifications to the timer', async () => {
+    const router = renderApp(appRoutes, { initialUrl: '/together' });
+    await shows('Focus rooms');
+    await act(async () =>
+      // Another account's timer: the completion ignores it too (M2.12), so nothing moves.
+      tapNotification({ kind: 'focus-timer', userId: 'someone-else', sessionId: 'x', link: '/' }),
+    );
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 200)));
+    expect(router.getPathname()).toBe('/together');
   });
 });

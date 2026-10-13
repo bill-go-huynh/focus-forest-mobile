@@ -135,6 +135,8 @@ describe('route structure', () => {
       // (docs/05: Forest → Collection Book), on the root stack like the forest months.
       join(APP, 'collection', 'index.tsx'),
       join(APP, 'collection', '[kind]', '[id].tsx'),
+      // A link to nowhere redirects Home (M6.2): it is never shown.
+      join(APP, '+not-found.tsx'),
     ];
     const outside = routeFiles(APP).filter(
       (file) => !file.startsWith(TABS) && !file.startsWith(AUTH) && !takeovers.includes(file),

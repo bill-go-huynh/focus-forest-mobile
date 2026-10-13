@@ -40,3 +40,12 @@ export function showOsNotificationsWhileOpen(
 /** This device's platform, as the API names it. */
 export const devicePlatform = (): 'ios' | 'android' =>
   Platform.OS === 'android' ? 'android' : 'ios';
+
+/** `onPushTap`, where supported; none in Expo Go on Android. Returns the unsubscribe. */
+export function onOsPushTap(
+  listener: (link: string) => void,
+  environment?: NotificationEnvironment,
+): () => void {
+  if (!osNotificationsSupported(environment)) return () => undefined;
+  return loadExpo().onPushTap(listener);
+}

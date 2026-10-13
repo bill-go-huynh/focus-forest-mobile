@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   completeRoom,
   createRoom,
+  declineRoomInvite,
   getCurrentRoom,
   getRoom,
+  getRoomInvites,
+  inviteToRoom,
   joinRoom,
   joinRoomByCode,
   leaveRoom,
@@ -24,6 +27,7 @@ export const roomKeys = {
   current: ['rooms', 'current'] as const,
   room: (roomId: string) => ['rooms', 'room', roomId] as const,
   link: (userId: string | null) => ['rooms', 'link', userId] as const,
+  invites: ['rooms', 'invites'] as const,
 };
 
 /** How often a room is read again while it is open: the live channel usually comes first. */
@@ -60,7 +64,7 @@ export function useRoomLink() {
   });
 }
 
-/** Every room change answers the room: it replaces the cached one, and the lists are read again. */
+/** Every room change answers the room: it replaces the cached one, and the lists (lobbies, invitations) are read again. */
 function useRoomChange<T>(change: (variables: T) => Promise<Room>) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -69,6 +73,8 @@ function useRoomChange<T>(change: (variables: T) => Promise<Room>) {
       queryClient.setQueryData(roomKeys.room(room.id), room);
       void queryClient.invalidateQueries({ queryKey: roomKeys.current }).catch(() => undefined);
       void queryClient.invalidateQueries({ queryKey: roomKeys.lobbies }).catch(() => undefined);
+      // Joining removes the invitation to that room (A6.3, M6.2).
+      void queryClient.invalidateQueries({ queryKey: roomKeys.invites }).catch(() => undefined);
     },
   });
 }
@@ -83,6 +89,28 @@ export function useJoinRoom() {
   return useRoomChange(({ roomId, code }: { roomId?: string; code?: string }) =>
     code !== undefined ? joinRoomByCode(client, code) : joinRoom(client, roomId!),
   );
+}
+
+/** M6.2: invitations to rooms still gathering (A6.3). */
+export function useRoomInvites() {
+  const { client } = useApi();
+  return useQuery({ queryKey: roomKeys.invites, queryFn: () => getRoomInvites(client) });
+}
+
+/** Invites friends to the room the user is in while it gathers. */
+export function useInviteToRoom(roomId: string) {
+  const { client } = useApi();
+  return useRoomChange((userIds: readonly string[]) => inviteToRoom(client, roomId, userIds));
+}
+
+export function useDeclineRoomInvite() {
+  const { client } = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (roomId: string) => declineRoomInvite(client, roomId),
+    onSettled: () =>
+      void queryClient.invalidateQueries({ queryKey: roomKeys.invites }).catch(() => undefined),
+  });
 }
 
 export function useRoomReady(roomId: string) {

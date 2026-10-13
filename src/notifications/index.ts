@@ -7,6 +7,7 @@ export {
   usePushRegistration,
   useSignOut,
 } from './NotificationDeliveryProvider';
+export { NotificationLinkNavigator } from './NotificationLinkNavigator';
 export { onTimerNotificationTap, osNotificationsSupported } from './os-timer-notifications';
 export { PushRegistration } from './push-registration';
 export * from './timer-notifications';

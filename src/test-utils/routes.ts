@@ -6,7 +6,9 @@ import TabsLayout from '../app/(tabs)/_layout';
 import ForestScreen from '../app/(tabs)/forest';
 import HomeScreen from '../app/(tabs)/index';
 import InsightsScreen from '../app/(tabs)/insights';
-import TogetherLayout from '../app/(tabs)/together/_layout';
+import TogetherLayout, {
+  unstable_settings as togetherSettings,
+} from '../app/(tabs)/together/_layout';
 import TogetherScreen from '../app/(tabs)/together/index';
 import SearchRoute from '../app/(tabs)/together/search';
 import PersonRoute from '../app/(tabs)/together/[userId]/index';
@@ -19,7 +21,7 @@ import CommunityRoute from '../app/(tabs)/together/community/[eventId]';
 import LeaderboardsRoute from '../app/(tabs)/together/leaderboards';
 import PrivacyRoute from '../app/(tabs)/profile/privacy';
 import BlockedRoute from '../app/(tabs)/profile/blocked';
-import ProfileLayout from '../app/(tabs)/profile/_layout';
+import ProfileLayout, { unstable_settings as profileSettings } from '../app/(tabs)/profile/_layout';
 import AchievementsRoute from '../app/(tabs)/profile/achievements';
 import EditProfileScreen from '../app/(tabs)/profile/edit';
 import GoalsRoute from '../app/(tabs)/profile/goals';
@@ -36,6 +38,7 @@ import OnboardingRoute from '../app/onboarding';
 import RecapRoute from '../app/recap/[year]/[month]';
 import SpeciesRoute from '../app/species';
 import TreeRoute from '../app/tree';
+import NotFoundRoute from '../app/+not-found';
 
 /** The app's real routes, for renderRouter from expo-router/testing-library. */
 export const appRoutes = {
@@ -46,7 +49,7 @@ export const appRoutes = {
   '(tabs)/_layout': TabsLayout,
   '(tabs)/index': HomeScreen,
   '(tabs)/forest': ForestScreen,
-  '(tabs)/together/_layout': TogetherLayout,
+  '(tabs)/together/_layout': { default: TogetherLayout, unstable_settings: togetherSettings },
   '(tabs)/together/index': TogetherScreen,
   '(tabs)/together/search': SearchRoute,
   '(tabs)/together/[userId]/index': PersonRoute,
@@ -58,7 +61,7 @@ export const appRoutes = {
   '(tabs)/together/community/[eventId]': CommunityRoute,
   '(tabs)/together/leaderboards': LeaderboardsRoute,
   '(tabs)/insights': InsightsScreen,
-  '(tabs)/profile/_layout': ProfileLayout,
+  '(tabs)/profile/_layout': { default: ProfileLayout, unstable_settings: profileSettings },
   '(tabs)/profile/index': ProfileScreen,
   '(tabs)/profile/edit': EditProfileScreen,
   '(tabs)/profile/achievements': AchievementsRoute,
@@ -77,4 +80,5 @@ export const appRoutes = {
   'ceremony/[year]/[month]': CeremonyRoute,
   'collection/index': CollectionRoute,
   'collection/[kind]/[id]': CollectionItemRoute,
+  '+not-found': NotFoundRoute,
 };

@@ -48,3 +48,32 @@ export function showWhileOpen(focusing: () => boolean): void {
       foregroundPresentation(notification.request.content.data, focusing()),
   });
 }
+
+/** The link a tap on a push carries (A6.1 `data.link`); null for the timer's own or no link. */
+function linkOf(response: Notifications.NotificationResponse): string | null {
+  if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return null;
+  const data = response.notification.request.content.data as Record<string, unknown> | null;
+  if (!data || data.kind === 'focus-timer') return null;
+  return typeof data.link === 'string' ? data.link : null;
+}
+
+/**
+ * Calls `listener` with the link of each tapped push: while the app runs, and once for the tap
+ * that launched it (read, then cleared). The timer's own taps are left to the timer (M2.12).
+ * Returns the unsubscribe.
+ */
+export function onPushTap(listener: (link: string) => void): () => void {
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const link = linkOf(response);
+    if (link !== null) listener(link);
+  });
+  void Notifications.getLastNotificationResponseAsync()
+    .then((response) => {
+      const link = response ? linkOf(response) : null;
+      if (link === null) return;
+      listener(link);
+      return Notifications.clearLastNotificationResponseAsync();
+    })
+    .catch(() => undefined);
+  return () => subscription.remove();
+}

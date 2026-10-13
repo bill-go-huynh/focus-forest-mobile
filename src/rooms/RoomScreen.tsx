@@ -18,6 +18,7 @@ import { useRecentTopics } from '../topics/queries';
 import {
   roomKeys,
   useCompleteRoom,
+  useJoinRoom,
   useLeaveRoom,
   useRoom,
   useRoomLink,
@@ -26,6 +27,8 @@ import {
 } from './queries';
 import { clearRoomLink, saveRoomLink, type RoomLink } from './room-links';
 import { useRoomLive } from './room-live';
+import { describeJoinError } from './RoomsSection';
+import { InviteFriends } from './RoomInvites';
 
 /** The server's completion window after the start (A5.4 `COMPLETION_LATE_MS`). */
 const LATE_START_MS = 10 * 60_000;
@@ -106,6 +109,7 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
   const ready = useRoomReady(room.id);
   const start = useStartRoom(room.id);
   const leave = useLeaveRoom(room.id);
+  const join = useJoinRoom();
   const complete = useCompleteRoom(room.id);
   const [badges, setBadges] = useState<EarnedBadge[] | null>(null);
   const [waitingForSave, setWaitingForSave] = useState(false);
@@ -272,6 +276,7 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
               onPress={() => ready.mutate(false)}
             />
           )}
+          <InviteFriends roomId={room.id} present={room.participants.map((p) => p.user.id)} />
           {room.you.host ? (
             <Button
               variant="secondary"
@@ -289,6 +294,19 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
               }
             />
           ) : null}
+        </View>
+      ) : null}
+
+      {room.phase === 'lobby' && !room.you ? (
+        // Someone invited, or who opened a gathering room's link (M6.2): they may join here.
+        <View style={{ gap: theme.space[2] }}>
+          <Button
+            variant="primary"
+            label="Join room"
+            disabled={join.isPending}
+            onPress={() => join.mutate({ roomId: room.id })}
+          />
+          {join.isError ? <FormMessage message={describeJoinError(join.error)} /> : null}
         </View>
       ) : null}
 

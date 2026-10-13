@@ -22,6 +22,7 @@ import {
   createAppNotificationDelivery,
   createAppTimerNotifications,
   NotificationDeliveryProvider,
+  NotificationLinkNavigator,
   onTimerNotificationTap,
   TimerNotificationSync,
 } from '../notifications';
@@ -209,6 +210,8 @@ function RootNavigator() {
         </Stack>
       </View>
       {signedIn ? <CompletionNavigator /> : null}
+      {/* A tapped notification opens its link once signed in (M6.2). */}
+      <NotificationLinkNavigator />
       {signedIn ? <OnboardingNavigator /> : null}
       {waitingForPreferences ? <LaunchScreen overlay /> : null}
     </View>

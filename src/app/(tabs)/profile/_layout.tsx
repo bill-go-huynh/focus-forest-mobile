@@ -6,6 +6,9 @@ import { useTheme } from '../../../theme';
  * Profile and the screens under it: Edit profile, Achievements, Goals and rest days, Topics,
  * and Settings (docs/05 §2, §4).
  */
+/** A link straight to a screen inside Profile (M6.2) keeps Profile's own screen beneath it. */
+export const unstable_settings = { initialRouteName: 'index' };
+
 export default function ProfileLayout() {
   const theme = useTheme();
   return (

@@ -6,6 +6,9 @@ import { useTheme } from '../../../theme';
  * Together and the screens under it (docs/05 §2): finding people, a person's profile, and a visit
  * to their forest. Each screen names itself in its own heading, so the stack header stays quiet.
  */
+/** A link straight to a screen inside Together (M6.2) keeps Together's own screen beneath it. */
+export const unstable_settings = { initialRouteName: 'index' };
+
 export default function TogetherLayout() {
   const theme = useTheme();
   return (
