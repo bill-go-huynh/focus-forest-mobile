@@ -35,7 +35,7 @@ export default function EditProfileScreen() {
   const { data: profile, isPending, isError, refetch } = useProfile();
 
   return (
-    <Screen safeTop={false}>
+    <Screen title="Edit profile" safeTop={false}>
       {isPending ? (
         <SkeletonGroup label="Loading your profile">
           <Skeleton variant="text" lines={4} />

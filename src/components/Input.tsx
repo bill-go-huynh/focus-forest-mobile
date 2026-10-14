@@ -97,6 +97,10 @@ export function Input({
     <View style={{ gap: space[2] }}>
       <Text
         nativeID={labelId}
+        // A tap on the label focuses the field; screen readers reach the field itself, which
+        // the label names, so the label is not a second stop (M7.3).
+        accessible={false}
+        importantForAccessibility="no"
         onPress={() => inputRef.current?.focus()}
         style={[type.label, { color: colors.text.primary }]}
       >
