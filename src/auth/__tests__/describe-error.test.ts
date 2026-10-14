@@ -27,6 +27,18 @@ describe('describeAuthError (clear, and never exposes anything sensitive)', () =
     expect(describeAuthError(new HttpError(status, nest(message)))).toEqual({ message });
   });
 
+  it('asks to wait a little when there were too many attempts (A7.2)', () => {
+    expect(
+      describeAuthError(
+        new HttpError(429, {
+          ...nest('Too many attempts.'),
+          code: 'rate_limited',
+          retryAfterSeconds: 600,
+        }),
+      ),
+    ).toEqual({ message: 'Too many attempts for now. Please wait a few minutes and try again.' });
+  });
+
   it('puts an already-registered email on the email field', () => {
     expect(
       describeAuthError(new HttpError(409, nest('An account with this email already exists.'))),

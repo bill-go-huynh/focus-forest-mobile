@@ -300,6 +300,17 @@ describe('Focus rooms in Together (docs/05: Together → Focus rooms)', () => {
     };
     fireEvent.press(screen.getByRole('button', { name: 'Join room' }));
     await shows('That room is full.');
+    // A7.2: too many codes tried.
+    server.state.joinAnswer = {
+      status: 429,
+      body: {
+        ...nestError(429, 'Too many attempts.'),
+        code: 'rate_limited',
+        retryAfterSeconds: 600,
+      },
+    };
+    fireEvent.press(screen.getByRole('button', { name: 'Join room' }));
+    await shows('Too many codes tried for now. Please wait a few minutes and try again.');
     server.state.joinAnswer = null;
     fireEvent.changeText(screen.getByLabelText('Room code'), 'abc234');
     fireEvent.press(screen.getByRole('button', { name: 'Join room' }));

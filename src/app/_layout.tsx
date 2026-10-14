@@ -26,6 +26,8 @@ import {
   onTimerNotificationTap,
   TimerNotificationSync,
 } from '../notifications';
+import { createAppErrorReporter } from '../monitoring/app-error-reporter';
+import { ErrorReportingProvider } from '../monitoring/ErrorReportingProvider';
 import { createAppHomeSnapshotStore } from '../core-loop/home-snapshot-store';
 import { HomeCacheProvider } from '../core-loop/HomeCacheProvider';
 import { createAppHistorySnapshotStore, HistoryCacheProvider } from '../history';
@@ -84,6 +86,7 @@ export default function RootLayout() {
   );
   const [completions] = useState(() => new CompletionIntents());
   const [analytics] = useState(() => createAppAnalyticsQueue(api.client));
+  const [errors] = useState(() => createAppErrorReporter(api.client));
   // Back in the foreground, after the timer is settled: the OS notifications are brought in
   // line, and what waits for the server is tried again (sessions first, then their notes).
   const [onForeground] = useState(() => () => {
@@ -129,7 +132,10 @@ export default function RootLayout() {
                                   {/* A new account's onboarding, kept across kills (M3.3). */}
                                   <OnboardingProvider store={onboarding}>
                                     <AuthFlowProvider>
-                                      <RootNavigator />
+                                      {/* A calm fallback for a failing screen, and crash reports (M7.2). */}
+                                      <ErrorReportingProvider reporter={errors}>
+                                        <RootNavigator />
+                                      </ErrorReportingProvider>
                                     </AuthFlowProvider>
                                   </OnboardingProvider>
                                   <ThemedStatusBar />

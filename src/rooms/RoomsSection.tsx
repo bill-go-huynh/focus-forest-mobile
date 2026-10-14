@@ -21,6 +21,8 @@ const NAME_MAX = 50;
 export function describeJoinError(error: unknown): string {
   if (error instanceof NetworkError) return "We couldn't reach the room. Check your connection.";
   switch (roomErrorCode(error)) {
+    case 'rate_limited':
+      return 'Too many codes tried for now. Please wait a few minutes and try again.';
     case 'room_not_found':
       return 'No open room has that code.';
     case 'room_full':

@@ -1,4 +1,5 @@
 export { deleteAccount, exportMyData } from './account';
+export { sendClientErrors } from './client-errors';
 export { analyticsBatchSchema, sendAnalyticsEvents } from './analytics';
 export { createApi, type Api } from './api';
 export { ApiProvider, useApi, useSession } from './ApiProvider';

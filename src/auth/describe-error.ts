@@ -24,9 +24,13 @@ const EMAIL_TAKEN = 'An account with this email already exists.';
 export const NETWORK_MESSAGE =
   "We couldn't reach Focus Forest. Check your connection and try again.";
 export const GENERAL_MESSAGE = "We couldn't finish that just now. Please try again.";
+/** A7.2: too many attempts in a short time; calm, and says what to do. */
+export const RATE_LIMITED_MESSAGE =
+  'Too many attempts for now. Please wait a few minutes and try again.';
 
 export function describeAuthError(error: unknown): AuthErrorDescription {
   if (error instanceof NetworkError) return { message: NETWORK_MESSAGE };
+  if (error instanceof HttpError && error.status === 429) return { message: RATE_LIMITED_MESSAGE };
   if (error instanceof HttpError && error.status < 500) {
     const known = error.messages.find(
       (message) => SAFE_API_MESSAGES.has(message) || message === EMAIL_TAKEN,
