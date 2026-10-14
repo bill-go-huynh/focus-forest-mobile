@@ -6,6 +6,7 @@ import x4 from '../test-utils/x4/progression-contract.json';
 import x5 from '../test-utils/x5/community-contract.json';
 import x6 from '../test-utils/x6/notifications-contract.json';
 import { accessibilityProblems } from '../test-utils/a11y-audit';
+import { avoidedWordProblems, renderedCopy } from '../test-utils/avoided-words';
 import { fakeFetch, type FakeRequest } from '../test-utils/api';
 import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
@@ -17,6 +18,8 @@ import { signInForTest } from '../test-utils/secure-store-mock';
  * for every screen). Every route is rendered on answers captured from the real API (the X3–X6
  * contracts) and audited: every control has a role and a name, every text field a label, and the
  * screen a heading. A route the fake server cannot answer shows its calm error state, audited too.
+ * Final review FR.8: everything each screen shows is also checked against the docs/02 "Words we
+ * use / avoid" table.
  */
 
 jest.mock(
@@ -149,6 +152,7 @@ describe('accessibility of every screen (M7.3)', () => {
     await settle();
     await settle();
     expect(accessibilityProblems(screen.toJSON())).toEqual([]);
+    expect(renderedCopy(screen.toJSON()).flatMap(avoidedWordProblems)).toEqual([]);
   });
 
   it.each(['/sign-in', '/sign-up'])('%s (signed out)', async (route) => {
@@ -159,5 +163,6 @@ describe('accessibility of every screen (M7.3)', () => {
     renderApp(appRoutes, { initialUrl: route });
     await settle();
     expect(accessibilityProblems(screen.toJSON())).toEqual([]);
+    expect(renderedCopy(screen.toJSON()).flatMap(avoidedWordProblems)).toEqual([]);
   });
 });
