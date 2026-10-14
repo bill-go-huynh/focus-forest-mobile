@@ -180,6 +180,24 @@ X4 và CR.X đã kiểm tra tự động contract, logic và màn hình. Các m�
 - [ ] Mở app, vào Forest, Recap, Insights, bắt đầu một focus: admin → Checkpoint thấy ngày active tăng.
 - [ ] Offline vài phút rồi online lại: event được gửi sau, không mất.
 
+## Phase 5: Together (HOÃN, ghi lại ở Phase 5 REVIEW, bổ sung ở X7)
+
+Cần hai máy (hoặc một máy và một simulator) với hai tài khoản, cùng trỏ vào một API.
+
+### P5.1 Room và kênh live
+- [ ] Tạo room, máy kia vào bằng mã: cả hai thấy nhau trong lobby gần như ngay lập tức.
+- [ ] Chủ room bắt đầu: máy kia tự bắt đầu focus cùng giờ; rời room giữa chừng thì người còn lại thấy thay đổi, focus của mình không bị ảnh hưởng.
+- [ ] Tắt mạng một máy vài giây rồi bật lại: room tự nối lại, không nhân đôi người.
+
+### P5.2 Bạn bè và reaction
+- [ ] Follow, xem Forest của bạn; reaction bay lên nhẹ nhàng, Reduce Motion thì chỉ fade.
+- [ ] Block một người: họ biến khỏi lobby, bảng xếp hạng và danh sách theo dõi.
+
+### P5.3 Event, Community Tree, season
+- [ ] Overlay theo mùa và ribbon kỷ niệm của event nhìn hợp lý (art vẫn là placeholder).
+- [ ] Community Tree lớn dần khi focus trong event; số phút khớp với admin.
+- [ ] Bảng xếp hạng chỉ hiện người đã bật; tắt trong Privacy thì mình biến khỏi bảng.
+
 ## Phase 6: Notifications (HOÃN, ghi lại ở X6)
 
 Cần development build, một EAS project (`expo.extra.eas.projectId`), và API chạy với `PUSH_PROVIDER=expo`. Thiếu EAS project thì app vẫn hỏi quyền nhưng không đăng ký thiết bị, nên không có push nào đến.
@@ -202,6 +220,24 @@ Cần development build, một EAS project (`expo.extra.eas.projectId`), và API
 - [ ] App đã bị kill: bấm notification mở app rồi vào đúng màn sau khi đăng nhập xong.
 - [ ] Link lạ (`focusforest://abc`) mở Home.
 - [ ] Mời bạn từ lobby của room; bạn thấy lời mời ở Together, Open rồi Join room được, Decline thì lời mời biến mất.
+
+## Phase 7: Release hardening (HOÃN, ghi lại ở M7.4 và X7)
+
+### P7.1 Hiệu năng trên máy tầm trung
+- [ ] Mở app lạnh tới Home dưới 2,5 giây.
+- [ ] Cây ở Home không giật (khung hình dưới 16 ms) khi chuyển tab qua lại.
+- [ ] Forest 12 tháng cuộn mượt 60 fps; có trang trí và theme theo mùa.
+
+### P7.2 Trợ năng trên máy thật
+- [ ] VoiceOver và TalkBack: mỗi ô nhập chỉ đọc một lần (tên ô), không đọc nhãn thừa.
+- [ ] Chữ 200%: không mất nội dung ở Home, Focus, Settings, xoá tài khoản.
+
+### P7.3 Dữ liệu của bạn
+- [ ] Settings → Download my data mở share sheet với JSON đầy đủ.
+- [ ] Xoá tài khoản: cần mật khẩu và gõ DELETE; sau đó về màn bắt đầu, đăng nhập lại báo sai.
+
+### P7.4 Lỗi
+- [ ] Màn lỗi bình tĩnh hiện thay vì màn trắng; "Try again" và "Go to Home" hoạt động.
 
 ## Khi gặp lỗi, ghi lại
 
