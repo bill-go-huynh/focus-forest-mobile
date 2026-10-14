@@ -139,10 +139,12 @@ export function weekLine(week: HomeResponse['week']): string {
 
 /** The current streak, or today's rest day (rest days keep the streak). */
 export function streakLine(home: Pick<HomeResponse, 'streak' | 'rest'>): string {
-  const { current } = home.streak;
+  const { current, longest } = home.streak;
   if (home.rest.today || home.streak.today === 'rest') {
     return current > 0 ? `Rest day today · your ${current}-day streak is kept` : 'Rest day today';
   }
+  // A first day below the longest streak is a return after a break: welcome it (docs/02 Streak).
+  if (current === 1 && longest > 1) return 'Day 1 — welcome back';
   return current > 0 ? `${current}-day streak` : 'Focus today to start a streak';
 }
 

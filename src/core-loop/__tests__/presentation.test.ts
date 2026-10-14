@@ -134,7 +134,13 @@ describe('Home lines', () => {
   it('shows the streak, or a rest day', () => {
     const home = makeHome();
     expect(streakLine(home)).toBe('4-day streak');
-    expect(streakLine({ ...home, streak: { ...home.streak, current: 1 } })).toBe('1-day streak');
+    expect(streakLine({ ...home, streak: { ...home.streak, current: 1, longest: 1 } })).toBe(
+      '1-day streak',
+    );
+    // A new streak after a break starts warmly (docs/02 Streak: "Day 1 — welcome back").
+    expect(streakLine({ ...home, streak: { ...home.streak, current: 1, longest: 9 } })).toBe(
+      'Day 1 — welcome back',
+    );
     expect(streakLine({ ...home, rest: { ...home.rest, today: true } })).toBe(
       'Rest day today · your 4-day streak is kept',
     );
@@ -143,6 +149,7 @@ describe('Home lines', () => {
     );
     for (const text of [
       streakLine(home),
+      streakLine({ ...home, streak: { ...home.streak, current: 1, longest: 9 } }),
       streakLine({ ...home, rest: { ...home.rest, today: true } }),
     ]) {
       assertCalmCopy(text, 'Home');
