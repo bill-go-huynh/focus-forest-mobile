@@ -28,3 +28,4 @@ Push notifications need an EAS project: set `expo.extra.eas.projectId` (as `eas 
 | `npm test` | Jest (`jest-expo`) |
 | `npm run doctor` | `expo-doctor` project health check |
 | `npm run check` | Typecheck, lint, format check, and tests |
+| `npm run release:audit` | Fails while any placeholder art remains (the public-release gate) |
