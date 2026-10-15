@@ -90,6 +90,8 @@ export function progressText(
       return `${current} / ${target} ${plural(target, 'session')}`;
     case 'days':
       return `${current} / ${target} ${plural(target, 'day')}`;
+    case 'weekends':
+      return `${current} / ${target} ${plural(target, 'weekend')}`;
     default:
       return `${current} / ${target}`;
   }

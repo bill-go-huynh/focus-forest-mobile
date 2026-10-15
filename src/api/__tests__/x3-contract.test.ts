@@ -95,9 +95,16 @@ describe('X3 contract: the captured API answers parse with the app’s schemas',
     ]);
     expect(first.progression?.newlyUnlockedSpecies.map((species) => species.id)).toEqual(['oak']);
     const nothing = { newlyEarnedBadges: [], newlyUnlockedSpecies: [], newlyUnlockedCosmetics: [] };
-    for (const name of ['sessionDiscarded', 'sessionOctober', 'sessionLate'] as const) {
+    for (const name of ['sessionDiscarded', 'sessionOctober'] as const) {
       expect(submittedSessionSchema.parse(contract[name]).progression).toEqual(nothing);
     }
+    // The late session is the tenth started before 07:00: a lifetime badge, earned now, while
+    // the archived month stays as it was (owner decision 2026-10-15, Early Bird).
+    expect(
+      submittedSessionSchema
+        .parse(contract.sessionLate)
+        .progression?.newlyEarnedBadges.map((badge) => badge.id),
+    ).toEqual(['early-bird']);
     // The recap and the archived month carry the same frozen badges, with display fields.
     const recap = recapSchema.parse(contract.recap);
     expect(recap.badges.map((badge) => badge.id)).toEqual([

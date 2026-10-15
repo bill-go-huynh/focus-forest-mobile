@@ -112,6 +112,15 @@ describe('achievement progress, quietly (docs/01: "32 / 50 h")', () => {
     ).toBe('0 / 1 session');
   });
 
+  it('shows weekends for Weekend Warrior (owner decision 2026-10-15)', () => {
+    expect(
+      progressText(makeAchievement(STREAK_7, { unit: 'weekends', current: 2, target: 4 })),
+    ).toBe('2 / 4 weekends');
+    expect(
+      progressText(makeAchievement(STREAK_7, { unit: 'weekends', current: 0, target: 1 })),
+    ).toBe('0 / 1 weekend');
+  });
+
   it('shows bare numbers for a unit it does not know, and nothing when progress is hidden', () => {
     expect(
       progressText(makeAchievement(STREAK_7, { unit: 'weekdays', current: 2, target: 5 })),

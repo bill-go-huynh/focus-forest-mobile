@@ -139,7 +139,12 @@ describe('X3 celebrations from the captured growth results', () => {
     for (const name of ['sessionDiscarded', 'sessionLate'] as const) {
       await expect(store.record(USER, session(name))).resolves.toBe(true);
     }
-    expect(pendingIds(store)).toEqual([]);
+    // The late session grows nothing (its month is closed), but it earned a lifetime badge now
+    // (Early Bird, owner decision 2026-10-15): that unlock is kept to show, without growth.
+    expect(store.getSnapshot().pending.map((intent) => [intent.sessionId, intent.growth])).toEqual([
+      [contract.sessionLate.id, null],
+    ]);
+    await store.consume(USER, [contract.sessionLate.id]);
     await store.record(USER, session('sessionFirst'));
     expect(store.getSnapshot().pending[0]!.growth).toEqual(contract.sessionFirst.growth);
   });
