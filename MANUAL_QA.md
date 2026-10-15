@@ -164,6 +164,11 @@ X4 và CR.X đã kiểm tra tự động contract, logic và màn hình. Các m�
 - [ ] Session vượt mốc (ví dụ first session): cây phản ứng trước, rồi tới badge, một badge nổi bật, phần còn lại gói trong một dòng "Also unlocked"; không có gì hiện trong lúc đang focus.
 - [ ] Có ceremony cuối tháng cùng lúc: unlock đọc xong mới tới ceremony, không chồng lên nhau.
 - [ ] Reduce Motion: badge chỉ fade, vẫn đọc được tên.
+- [ ] Badge mới (FR.Q1–Q2, 2026-10-15). Để khỏi chờ 10 phiên, hạ target trong admin (Content → Achievements) xuống 1–2 rồi trả lại sau:
+  - Early Bird: phiên bắt đầu trước 07:00 giờ máy; 07:00 đúng thì không tính.
+  - Night Owl: phiên bắt đầu từ 22:00.
+  - Weekend Warrior: Collection Book hiện tiến độ "x / 4 weekends"; chỉ tăng khi có focus cả thứ Bảy lẫn Chủ nhật.
+  - Community Contributor: tham gia event đang chạy, focus một phiên đủ tính, badge hiện ngay sau phiên đó (một lần duy nhất).
 
 ### P4.2 Loài và garden
 - [ ] Chọn loài khi cây còn là Seed (Home → "Choose this month's tree"): preview Seed và Final Form của mỗi loài nhìn hợp lý (art vẫn là placeholder).
