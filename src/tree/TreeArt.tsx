@@ -1,6 +1,6 @@
 import { memo, useId, useMemo, type ComponentProps, type ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -43,10 +43,23 @@ type AnimatedViewStyle = ComponentProps<typeof Animated.View>['style'];
 export interface TreeArtMotion {
   canopy?: AnimatedViewStyle;
   canopyReveal?: AnimatedViewStyle;
+  /** Each foliage layer's own sway (docs/04 §5); blossoms and canopy traits follow the main. */
+  back?: AnimatedViewStyle;
+  main?: AnimatedViewStyle;
+  mainBlossoms?: AnimatedViewStyle;
+  mainTraits?: AnimatedViewStyle;
   front?: AnimatedViewStyle;
   blossoms?: AnimatedViewStyle;
   traits?: AnimatedViewStyle;
-  particles?: AnimatedViewStyle;
+  /** Particles drift and fireflies glow on clocks from 0 to 1, each particle on its own phase. */
+  drift?: ParticleDrift;
+}
+
+export interface ParticleDrift {
+  clock: SharedValue<number>;
+  twinkle: SharedValue<number>;
+  /** In view-box units; 0 keeps particles still. */
+  distance: number;
 }
 
 const { width: W, height: H } = TREE_VIEWBOX;
@@ -208,11 +221,6 @@ export const TreeArt = memo(function TreeArt({
       <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.canopy]}>
         <Animated.View style={[StyleSheet.absoluteFill, motion.canopyReveal]}>
           <Layer>
-            <Defs>
-              <LeafLight id={leafId.back} color={colors.foliage.back} />
-              <LeafLight id={leafId.main} color={colors.foliage.main} />
-              <LeafLight id={leafId.accent} color={colors.foliage.accent} />
-            </Defs>
             <G transform={c.mirrored ? MIRROR : undefined}>
               {c.branches.map((branch) => (
                 <Path
@@ -225,35 +233,54 @@ export const TreeArt = memo(function TreeArt({
                 />
               ))}
             </G>
-            {c.foliage.back.map((shape) => (
-              <Cluster key={shape.key} shape={shape} fill={url(leafId.back)} />
-            ))}
-            {c.foliage.main.map((shape) => (
-              <Cluster key={shape.key} shape={shape} fill={leaf(shape.accent)} />
-            ))}
-            {c.foliage.richness.map((shape) => (
-              <Cluster key={shape.key} shape={shape} fill={url(leafId.main)} />
-            ))}
-            {c.highlights.map((shape) => (
-              <Cluster
-                key={shape.key}
-                shape={shape}
-                fill={colors.foliage.highlight}
-                opacity={SIGNATURE_PALETTE.opacity.highlight}
-              />
-            ))}
-            {c.fruit.map((dot) => (
-              <Fruit key={dot.key} dot={dot} shape={c.fruitShape} colors={colors} />
-            ))}
           </Layer>
+          {/* Each foliage layer sways a little on its own, back least (docs/04 §5). */}
+          <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.back]}>
+            <Layer>
+              <Defs>
+                <LeafLight id={leafId.back} color={colors.foliage.back} />
+              </Defs>
+              {c.foliage.back.map((shape) => (
+                <Cluster key={shape.key} shape={shape} fill={url(leafId.back)} />
+              ))}
+            </Layer>
+          </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.main]}>
+            <Layer>
+              <Defs>
+                <LeafLight id={leafId.main} color={colors.foliage.main} />
+                <LeafLight id={leafId.accent} color={colors.foliage.accent} />
+              </Defs>
+              {c.foliage.main.map((shape) => (
+                <Cluster key={shape.key} shape={shape} fill={leaf(shape.accent)} />
+              ))}
+              {c.foliage.richness.map((shape) => (
+                <Cluster key={shape.key} shape={shape} fill={url(leafId.main)} />
+              ))}
+              {c.highlights.map((shape) => (
+                <Cluster
+                  key={shape.key}
+                  shape={shape}
+                  fill={colors.foliage.highlight}
+                  opacity={SIGNATURE_PALETTE.opacity.highlight}
+                />
+              ))}
+              {c.fruit.map((dot) => (
+                <Fruit key={dot.key} dot={dot} shape={c.fruitShape} colors={colors} />
+              ))}
+            </Layer>
+          </Animated.View>
         </Animated.View>
 
-        <Animated.View style={[StyleSheet.absoluteFill, motion.blossoms]}>
-          <Layer>
-            {c.blossoms.map((dot) => (
-              <Bloom key={dot.key} dot={dot} bloom={c.bloom} colors={colors} />
-            ))}
-          </Layer>
+        {/* Blossoms sit on the main foliage, so they sway with it. */}
+        <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.mainBlossoms]}>
+          <Animated.View style={[StyleSheet.absoluteFill, motion.blossoms]}>
+            <Layer>
+              {c.blossoms.map((dot) => (
+                <Bloom key={dot.key} dot={dot} bloom={c.bloom} colors={colors} />
+              ))}
+            </Layer>
+          </Animated.View>
         </Animated.View>
 
         <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.front]}>
@@ -267,41 +294,81 @@ export const TreeArt = memo(function TreeArt({
           </Layer>
         </Animated.View>
 
-        <Animated.View style={[StyleSheet.absoluteFill, motion.traits]}>
-          <Layer>
-            {canopyTraits.map((mark) => (
-              <Decoration key={mark.key} mark={mark} colors={colors} />
-            ))}
-          </Layer>
-        </Animated.View>
-
-        {effects && c.effect ? (
-          <View testID={`tree-effect-${c.effect}`} style={StyleSheet.absoluteFill}>
+        {/* Traits and a rare variant's glints hang in the main foliage and sway with it. */}
+        <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.mainTraits]}>
+          <Animated.View style={[StyleSheet.absoluteFill, motion.traits]}>
             <Layer>
-              <SpeciesEffectArt composition={c} colors={colors} night={lighting.night} />
+              {canopyTraits.map((mark) => (
+                <Decoration key={mark.key} mark={mark} colors={colors} />
+              ))}
             </Layer>
-          </View>
-        ) : null}
+          </Animated.View>
+          {effects && c.effect ? (
+            <View testID={`tree-effect-${c.effect}`} style={StyleSheet.absoluteFill}>
+              <Layer>
+                <SpeciesEffectArt composition={c} colors={colors} night={lighting.night} />
+              </Layer>
+            </View>
+          ) : null}
+        </Animated.View>
       </Animated.View>
 
-      {particles.length > 0 ? (
-        <Animated.View style={[StyleSheet.absoluteFill, motion.particles]}>
-          <Layer>
-            {particles.map((particle) => (
-              <Circle
-                key={particle.key}
-                cx={particle.x}
-                cy={particle.y}
-                r={particle.r}
-                fill={particle.kind === 'firefly' ? colors.firefly : colors.pollen}
-              />
-            ))}
-          </Layer>
-        </Animated.View>
-      ) : null}
+      {particles.map((particle, index) => (
+        <Particle
+          key={particle.key}
+          particle={particle}
+          index={index}
+          color={particle.kind === 'firefly' ? colors.firefly : colors.pollen}
+          drift={motion.drift}
+        />
+      ))}
     </>
   );
 });
+
+/** How far apart particles' phases sit, so no two drift together. */
+const PHASE_STEP = 0.37;
+const TAU = Math.PI * 2;
+
+/**
+ * One particle: pollen or a petal drifts on a slow loop of its own phase; a firefly also glows
+ * and softens (docs/04 §5). Still without a drift clock.
+ */
+function Particle({
+  particle,
+  index,
+  color,
+  drift,
+}: {
+  particle: { x: number; y: number; r: number; kind: string };
+  index: number;
+  color: string;
+  drift: ParticleDrift | undefined;
+}) {
+  const phase = index * PHASE_STEP;
+  const firefly = particle.kind === 'firefly';
+  const distance = drift?.distance ?? 0;
+  const clock = drift?.clock;
+  const twinkle = drift?.twinkle;
+  const style = useAnimatedStyle(() => {
+    const t = clock ? clock.value : 0;
+    const glow = twinkle ? twinkle.value : 0;
+    return {
+      transform: [
+        { translateX: Math.cos((t + phase * 1.7) * TAU) * distance * 0.4 },
+        { translateY: Math.sin((t + phase) * TAU) * distance },
+      ],
+      opacity: firefly && distance > 0 ? 0.55 + 0.45 * Math.sin((glow + phase) * TAU) : 1,
+    };
+  });
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, style]}>
+      <Layer>
+        <Circle cx={particle.x} cy={particle.y} r={particle.r} fill={color} />
+      </Layer>
+    </Animated.View>
+  );
+}
 
 /**
  * Sky, sun or moon, far hills, and ground: the scene's base environment (docs/10 §2), which the

@@ -137,6 +137,39 @@ describe('TreeScene', () => {
     expect(style.width).toBe(lightTheme.treeScene.thumbnail);
   });
 
+  describe('occasional gusts (ART.7, docs/04 §5: every ~15–40 s)', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('sends a gentle gust that settles with a spring, then another', () => {
+      renderWithProviders(<TreeScene tree={visual({ vitality: 'healthy' })} timeOfDay="day" />);
+      withSpring.mockClear();
+      act(() => jest.advanceTimersByTime(14_999));
+      expect(withSpring).not.toHaveBeenCalled();
+      act(() => jest.advanceTimersByTime(25_001));
+      expect(withSpring).toHaveBeenCalledTimes(1);
+      // The next comes 15–40 s later: at most one gust per 15 s.
+      act(() => jest.advanceTimersByTime(40_000));
+      expect(withSpring.mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect(withSpring.mock.calls.length).toBeLessThanOrEqual(1 + Math.floor(40_000 / 15_000));
+    });
+
+    it('never gusts under reduced motion, for a quiet tree, or once it is gone', () => {
+      renderWithProviders(<TreeScene tree={visual()} timeOfDay="day" />, { reducedMotion: true });
+      act(() => jest.advanceTimersByTime(120_000));
+      expect(withSpring).not.toHaveBeenCalled();
+      screen.unmount();
+      renderWithProviders(<TreeScene tree={visual({ vitality: 'quiet' })} timeOfDay="day" />);
+      act(() => jest.advanceTimersByTime(120_000));
+      expect(withSpring).not.toHaveBeenCalled();
+      screen.unmount();
+      renderWithProviders(<TreeScene tree={visual({ vitality: 'healthy' })} timeOfDay="day" />);
+      screen.unmount();
+      act(() => jest.advanceTimersByTime(120_000));
+      expect(withSpring).not.toHaveBeenCalled();
+    });
+  });
+
   it('suspends the idle animation while it is not visible', () => {
     const tree = visual();
     renderWithProviders(<TreeScene tree={tree} timeOfDay="day" active={false} />);

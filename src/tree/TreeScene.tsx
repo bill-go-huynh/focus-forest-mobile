@@ -97,8 +97,16 @@ export function TreeScene({
   const sceneMotion = motion ?? (size === 'thumbnail' ? 'calm' : 'full');
 
   const plan = useMemo(
-    () => idlePlan({ motion: sceneMotion, reducedMotion, running, ambient, tokens: theme.motion }),
-    [sceneMotion, reducedMotion, running, ambient, theme.motion],
+    () =>
+      idlePlan({
+        motion: sceneMotion,
+        reducedMotion,
+        running,
+        ambient,
+        tokens: theme.motion,
+        seed: tree.seed,
+      }),
+    [sceneMotion, reducedMotion, running, ambient, theme.motion, tree.seed],
   );
   const light = useMemo(
     () => sceneColors(composeTree(tree), ambient, lighting).light,
@@ -106,8 +114,12 @@ export function TreeScene({
   );
 
   const canopy = useSharedValue(0);
+  const back = useSharedValue(0);
+  const main = useSharedValue(0);
   const front = useSharedValue(0);
-  const drift = useSharedValue(0);
+  const clock = useSharedValue(0);
+  const twinkle = useSharedValue(0);
+  const lightClock = useSharedValue(0);
   const gust = useSharedValue(0);
   const reveal = {
     canopy: useSharedValue(1),
@@ -116,7 +128,8 @@ export function TreeScene({
     traits: useSharedValue(1),
   };
   const outgoingOpacity = useSharedValue(0);
-  useIdleMotion(plan, canopy, front, drift);
+  useIdleMotion(plan, { canopy, back, main, front }, { clock, twinkle, light: lightClock });
+  useGusts(plan, gust, theme);
 
   const [outgoing, setOutgoing] = useState<TreeVisualState | null>(null);
   const outgoingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -166,8 +179,19 @@ export function TreeScene({
   const canopyStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${canopy.value + gust.value}deg` }],
   }));
+  const backStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${back.value}deg` }] }));
+  const mainStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${main.value}deg` }] }));
+  // Blossoms and canopy traits ride on the main foliage (one style per view).
+  const mainBlossomStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${main.value}deg` }],
+  }));
+  const mainTraitStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${main.value}deg` }] }));
   const frontStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${front.value}deg` }] }));
-  const particleStyle = useAnimatedStyle(() => ({ transform: [{ translateY: drift.value }] }));
+  const lightAmount = plan?.light?.amount ?? 0;
+  // The scene's warmth drifts very slowly between (1 - amount) and its full light.
+  const lightStyle = useAnimatedStyle(() => ({
+    opacity: 1 - lightAmount * (0.5 + 0.5 * Math.cos(lightClock.value * Math.PI * 2)),
+  }));
   const canopyRevealStyle = useAnimatedStyle(() => ({ opacity: reveal.canopy.value }));
   const treeStyle = useAnimatedStyle(() => ({ opacity: reveal.tree.value }));
   const blossomStyle = useAnimatedStyle(() => ({ opacity: reveal.blossoms.value }));
@@ -210,15 +234,21 @@ export function TreeScene({
             motion={{
               canopy: canopyStyle,
               canopyReveal: canopyRevealStyle,
+              back: backStyle,
+              main: mainStyle,
+              mainBlossoms: mainBlossomStyle,
+              mainTraits: mainTraitStyle,
               front: frontStyle,
               blossoms: blossomStyle,
               traits: traitStyle,
-              particles: particleStyle,
+              drift: { clock, twinkle, distance: plan?.driftDistance ?? 0 },
             }}
           />
         </Animated.View>
         <GardenDecoration decoration={garden.decoration} lighting={lighting} />
-        <LightOverlay color={light.color} opacity={light.opacity} />
+        <Animated.View style={[StyleSheet.absoluteFill, lightStyle]}>
+          <LightOverlay color={light.color} opacity={light.opacity} />
+        </Animated.View>
         {/* Texture is lost at forest-thumbnail size, so only a hero scene draws it. */}
         {size === 'hero' ? (
           <Image
@@ -233,15 +263,16 @@ export function TreeScene({
   );
 }
 
-/** Slow, independent sways and drift while the plan allows; still otherwise. */
+/** Slow, independent sways, particle and light clocks while the plan allows; still otherwise. */
 function useIdleMotion(
   plan: IdlePlan | null,
-  canopy: SharedValue<number>,
-  front: SharedValue<number>,
-  drift: SharedValue<number>,
+  sways: Record<'canopy' | 'back' | 'main' | 'front', SharedValue<number>>,
+  clocks: Record<'clock' | 'twinkle' | 'light', SharedValue<number>>,
 ) {
+  const { canopy, back, main, front } = sways;
+  const { clock, twinkle, light } = clocks;
   useEffect(() => {
-    const values = [canopy, front, drift];
+    const values = [canopy, back, main, front, clock, twinkle, light];
     if (!plan) {
       for (const value of values) {
         cancelAnimation(value);
@@ -257,11 +288,57 @@ function useIdleMotion(
         withRepeat(withTiming(amplitude, { duration: cycleMs / 2, easing }), -1, true),
       );
     };
+    // A clock runs from 0 to 1 and starts again: each particle reads it at its own phase.
+    const loop = (value: SharedValue<number>, cycleMs: number) => {
+      value.value = 0;
+      value.value = withRepeat(withTiming(1, { duration: cycleMs, easing: Easing.linear }), -1);
+    };
     sway(canopy, plan.canopyDegrees, plan.canopyCycleMs);
+    sway(back, plan.backDegrees, plan.backCycleMs);
+    sway(main, plan.mainDegrees, plan.mainCycleMs);
     sway(front, plan.frontDegrees, plan.foliageCycleMs);
-    sway(drift, plan.driftDistance, plan.driftCycleMs);
+    if (plan.driftDistance > 0) {
+      loop(clock, plan.driftCycleMs);
+      loop(twinkle, plan.twinkleCycleMs);
+    }
+    if (plan.light) loop(light, plan.light.cycleMs);
     return () => {
       for (const value of values) cancelAnimation(value);
     };
-  }, [plan, canopy, front, drift]);
+  }, [plan, canopy, back, main, front, clock, twinkle, light]);
+}
+
+/**
+ * An occasional gentle gust through the canopy (docs/04 §5: every ~15–40 s), on the tree's own
+ * rhythm from the plan; it settles with the same well-damped spring as a growth gust.
+ */
+function useGusts(
+  plan: IdlePlan | null,
+  gust: SharedValue<number>,
+  theme: ReturnType<typeof useTheme>,
+) {
+  const gusts = plan?.gusts ?? null;
+  useEffect(() => {
+    if (!gusts) return;
+    let next = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timer = setTimeout(
+        () => {
+          gust.value = withSequence(
+            withTiming(gusts.degrees, {
+              duration: theme.motion.base * 3,
+              easing: Easing.bezier(...theme.easing.standard),
+            }),
+            withSpring(0, theme.spring.gentle),
+          );
+          next += 1;
+          schedule();
+        },
+        gusts.intervalsMs[next % gusts.intervalsMs.length],
+      );
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, [gusts, gust, theme]);
 }
