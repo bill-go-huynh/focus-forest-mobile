@@ -422,7 +422,7 @@ describe('editing a topic the server has', () => {
     return screen.findByLabelText('Name');
   }
 
-  it('sends only the changed name, description, and color, never the icon', async () => {
+  it('sends only the changed name, description, and color, and the icon only when chosen', async () => {
     await openEdit('Reading');
     fireEvent.changeText(screen.getByLabelText('Name'), 'Books');
     fireEvent.changeText(screen.getByLabelText('Description'), '');
@@ -438,6 +438,25 @@ describe('editing a topic the server has', () => {
     });
     expect(await findRow('Books')).toBeOnTheScreen();
     expect(server.topics.find((t) => t.id === reading.id)?.icon).toBe('book');
+  });
+
+  it('offers the curated icons by name, the current one selected, and saves a new one (ART.9)', async () => {
+    await openEdit('Reading');
+    expect(screen.getByRole('header', { name: 'Icon' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Book' }).props.accessibilityState).toMatchObject({
+      selected: true,
+    });
+    fireEvent.press(screen.getByRole('button', { name: 'Music note' }));
+    expect(
+      screen.getByRole('button', { name: 'Music note' }).props.accessibilityState,
+    ).toMatchObject({ selected: true });
+    expect(screen.getByRole('button', { name: 'Book' }).props.accessibilityState).toMatchObject({
+      selected: false,
+    });
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    await until(closed('Name'));
+    await waitFor(() => expect(topicWrites('PATCH')).toHaveLength(1));
+    expect(topicWrites('PATCH')[0]?.body).toEqual({ icon: 'music-note' });
   });
 
   it('shows the twelve colors by label, with the current one selected', async () => {

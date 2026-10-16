@@ -21,9 +21,12 @@ import {
   type ElevationTokens,
 } from './tokens';
 
-/** Which values are still waiting for Phase 0 decisions. Nothing here is final yet. */
+/**
+ * Which values are decided. Colors are final (decided 2026-10-17, ART.9: the contrast-tested
+ * palette of the art direction canvas). Type sizes and easing curves wait for the device review.
+ */
 export const themeValueStatus = {
-  colors: 'provisional',
+  colors: 'final',
   typography: 'provisional',
   easing: 'provisional',
 } as const;

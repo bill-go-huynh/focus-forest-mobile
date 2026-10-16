@@ -244,6 +244,43 @@ Cần development build, một EAS project (`expo.extra.eas.projectId`), và API
 ### P7.4 Lỗi
 - [ ] Màn lỗi bình tĩnh hiện thay vì màn trắng; "Try again" và "Go to Home" hoạt động.
 
+## Art pass: hướng B, font, animation (ART.1–ART.9, 2026-10-16/17)
+
+Xem trước không cần chạy app: `../art-preview/art-pass.html`. Các mục dưới cần máy thật.
+
+### A1. Cây và cảnh (quality gate, docs/10 §4)
+- [ ] Home: cây đẹp ở cả 7 stage, cả ngày, hoàng hôn, đêm (đổi giờ máy để thấy dawn/day/golden/dusk/night).
+- [ ] Forest: thumbnail 96px vẫn đọc được hình cây; không có grain ở thumbnail.
+- [ ] Grain giấy nhìn tinh tế, không bẩn; cụm lá không có cạnh răng cưa lạ.
+- [ ] Đặt cạnh app cùng loại: cây không thua về chất lượng (quyết định của chủ dự án).
+
+### A2. Animation (docs/04 §5, §7)
+- [ ] Lá sau, lá chính, lá trước đung đưa lệch nhịp; thân không bao giờ cong.
+- [ ] Thỉnh thoảng có gió nhẹ (15–40 s); cây Quiet thì không.
+- [ ] Phấn hoa trôi; ban đêm cây giàu nhất có đom đóm lập lòe nhẹ.
+- [ ] Bật Reduce Motion: cây đứng yên hoàn toàn.
+- [ ] Máy tầm trung: Home không giật khung hình; pin không tụt rõ trong một phiên focus dài.
+
+### A3. Font (Fraunces + Inter)
+- [ ] Tiêu đề tháng và recap dùng Fraunces; còn lại Inter; timer số không nhảy (tabular).
+- [ ] Mở app lần đầu không thấy chữ đổi font giữa chừng.
+- [ ] Cỡ chữ hệ thống 200%: không cắt chữ.
+- [ ] Expo Go và development build đều có font.
+
+### A4. Badge, icon, hình minh hoạ, Collection
+- [ ] Badge đọc được ở 48px; độ hiếm (mờ, vàng, vàng có hào quang) phân biệt được, không lòe loẹt.
+- [ ] Icon tab: tab đang chọn tô đặc; tab Forest là hai cây.
+- [ ] Hình minh hoạ ở empty/error state đẹp ở cả chế độ sáng và tối.
+- [ ] Collection Book: vignette cosmetic và khung avatar nhìn hợp lý.
+
+### A5. Chọn icon chủ đề (ART.9)
+- [ ] Profile → Topics → một chủ đề → mục "Icon": 50 icon có tên, icon hiện tại được chọn.
+- [ ] Đổi icon, Save: icon mới hiện ở danh sách chủ đề, chip chọn chủ đề, màn focus và history.
+- [ ] VoiceOver/TalkBack đọc tên icon và trạng thái đã chọn.
+
+### A6. Community Tree hồng (Shared Blossom)
+- [ ] Màn Community Tree: cây dáng sakura, hoa hồng dày dần theo mốc, cánh hoa bay; lá vẫn xanh.
+
 ## Khi gặp lỗi, ghi lại
 
 - Bước đang làm, hành vi mong đợi và hành vi thực tế.

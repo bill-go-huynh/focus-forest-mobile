@@ -1,10 +1,10 @@
 /**
  * Semantic color tokens (docs/01_DESIGN_SYSTEM.md §2).
  *
- * PROVISIONAL: Phase 0 has not set the palette yet. These values follow the documented
- * intent ("quiet garden at golden hour" by day, "night garden" by night) and are
- * contrast-tested (src/theme/__tests__/tokens.test.ts), but they are not final.
- * Replace them when Phase 0 confirms the palette; the token names stay the same.
+ * Final (decided 2026-10-17, ART.9; the owner left the choice to Claude): the values follow
+ * the documented intent ("quiet garden at golden hour" by day, "night garden" by night), are
+ * the palette shown on the art direction canvas, and are contrast-tested
+ * (src/theme/__tests__/tokens.test.ts). Tree and scene art keep their own palettes.
  */
 
 type TopicColors = Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, string>;

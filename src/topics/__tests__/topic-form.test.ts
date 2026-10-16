@@ -54,13 +54,19 @@ describe('topicDescriptionError', () => {
   });
 });
 
-describe('topicChanges (only what changed; never the icon)', () => {
+describe('topicChanges (only what changed)', () => {
   const topic = makeTopic({ name: 'Reading', description: 'Novels', color: 'topic.1' });
 
   it('sends nothing when nothing changed, whatever the spacing', () => {
     expect(
       topicChanges(topic, { name: ' Reading ', description: 'Novels ', color: 'topic.1' }),
     ).toEqual({});
+  });
+
+  it('sends a new icon from the curated set, and nothing for the same icon (ART.9)', () => {
+    const values = { name: 'Reading', description: 'Novels', color: 'topic.1' };
+    expect(topicChanges(topic, { ...values, icon: 'music-note' })).toEqual({ icon: 'music-note' });
+    expect(topicChanges(topic, { ...values, icon: topic.icon })).toEqual({});
   });
 
   it('sends a new name, trimmed and composed', () => {

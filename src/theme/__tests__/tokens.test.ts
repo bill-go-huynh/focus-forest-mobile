@@ -18,9 +18,9 @@ const AA_TEXT = 4.5;
 const AA_UI = 3;
 
 describe('design tokens', () => {
-  it('marks the values that Phase 0 has not confirmed as provisional', () => {
+  it('marks the values not yet confirmed as provisional (colors decided 2026-10-17)', () => {
     expect(themeValueStatus).toEqual({
-      colors: 'provisional',
+      colors: 'final',
       typography: 'provisional',
       easing: 'provisional',
     });

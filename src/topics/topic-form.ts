@@ -46,9 +46,11 @@ export interface TopicEditValues {
   name: string;
   description: string;
   color: string;
+  /** From the curated set (ART.9); left out, the icon is never sent. */
+  icon?: string;
 }
 
-/** Only the fields that changed; a blank description clears it (null). Never the icon. */
+/** Only the fields that changed; a blank description clears it (null). */
 export function topicChanges(topic: Topic, values: TopicEditValues): TopicChanges {
   const changes: TopicChanges = {};
   const name = canonical(values.name);
@@ -56,6 +58,7 @@ export function topicChanges(topic: Topic, values: TopicEditValues): TopicChange
   const description = canonical(values.description) || null;
   if (description !== topic.description) changes.description = description;
   if (values.color !== topic.color) changes.color = values.color;
+  if (values.icon !== undefined && values.icon !== topic.icon) changes.icon = values.icon;
   return changes;
 }
 

@@ -37,10 +37,10 @@ const theme: AssetStatus = Object.values(themeValueStatus).every((s) => s === ('
 export const RELEASE_ASSETS: readonly ReleaseAsset[] = [
   {
     id: 'theme',
-    what: 'Palette, typography, and easing values',
+    what: 'Type sizes and easing values (the palette is final)',
     status: theme,
     doc: 'docs/01 (Phase 0 decisions)',
-    files: ['src/theme/colors.ts', 'src/theme/tokens.ts'],
+    files: ['src/theme/tokens.ts'],
   },
   {
     id: 'tab-icons',

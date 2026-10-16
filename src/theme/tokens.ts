@@ -35,7 +35,7 @@ export const control = { minHeight: 52, borderWidth: 2 } as const;
 
 /**
  * Progress ring geometry (docs/01 §8 → Progress indicators: a soft ring, rounded caps).
- * PROVISIONAL starting values, like the palette.
+ * PROVISIONAL starting values, like the type sizes.
  */
 export const progressRing = { size: 72, strokeWidth: 8 } as const;
 

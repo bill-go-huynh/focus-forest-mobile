@@ -7,7 +7,8 @@ import { Chip } from '../components/Chip';
 import { InlineStatus } from '../components/InlineStatus';
 import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
-import { topicColorKey } from '../components/TopicMark';
+import { topicColorKey, TopicMark } from '../components/TopicMark';
+import { TOPIC_ICONS } from '../components/topic-icons';
 import { useTheme } from '../theme';
 import { useUpdateTopic } from './queries';
 import type { QueuedTopicCreate } from './topic-create-queue';
@@ -168,8 +169,9 @@ function PendingTopicContent({ item, onClose }: { item: QueuedTopicCreate; onClo
 }
 
 /**
- * Edit a topic the server has: name, description, and color. Online only: the change shows
- * once the server has answered. The icon is never sent (no icon set to choose from yet).
+ * Edit a topic the server has: name, description, color, and icon. Online only: the change
+ * shows once the server has answered. The icon comes from the curated set (docs/01 §5; ART.9):
+ * creating a topic needs only a name, and its icon can be changed here anytime (docs/02).
  */
 export function EditTopicSheet({
   topic,
@@ -204,6 +206,7 @@ function EditTopicContent({
   const [name, setName] = useState(topic.name);
   const [description, setDescription] = useState(topic.description ?? '');
   const [color, setColor] = useState(topic.color);
+  const [icon, setIcon] = useState(topic.icon);
   const [nameError, setNameError] = useState<string | null>(null);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [notSaved, setNotSaved] = useState(false);
@@ -214,7 +217,7 @@ function EditTopicContent({
     setNameError(errors[0]);
     setDescriptionError(errors[1]);
     if (errors[0] || errors[1]) return;
-    const changes = topicChanges(topic, { name, description, color });
+    const changes = topicChanges(topic, { name, description, color, icon });
     if (Object.keys(changes).length === 0) {
       onClose();
       return;
@@ -267,6 +270,26 @@ function EditTopicContent({
               topicColor={topicColorKey(option) ?? undefined}
               selected={option === color}
               onPress={() => setColor(option)}
+            />
+          ))}
+        </View>
+      </View>
+      <View style={{ gap: theme.space[2] }}>
+        <Text
+          accessibilityRole="header"
+          style={[theme.type.label, { color: theme.colors.text.primary }]}
+        >
+          Icon
+        </Text>
+        {/* Each icon is named; the selected one shows by outline, in the topic's color. */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+          {TOPIC_ICONS.map((option) => (
+            <Chip
+              key={option.id}
+              label={option.label}
+              icon={() => <TopicMark color={color} icon={option.id} size="sm" />}
+              selected={option.id === icon}
+              onPress={() => setIcon(option.id)}
             />
           ))}
         </View>
