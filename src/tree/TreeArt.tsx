@@ -22,6 +22,7 @@ import {
 } from './composition';
 import { KNOWN_BACKGROUNDS, KNOWN_DECORATIONS } from './environment';
 import { ambientFor, mix, particlesFor, sceneColors, type SceneColors } from './scene';
+import { barkVolume, clusterOutline, KEY_LIGHT, volume } from './signature/brush';
 import { SIGNATURE_PALETTE, type LightingPreset } from './signature/palette';
 import { GROUND_Y, TREE_VIEWBOX } from './signature/stages';
 import { ENVIRONMENT_PALETTE } from './species/palette';
@@ -31,6 +32,9 @@ import type { TreeVisualState } from './visual-state';
  * The drawn layers of one tree (docs/03 §7), back to front, each a full-size SVG in the scene's
  * view box. Layers that move are wrapped in their own animated views, so motion runs on the UI
  * thread and the trunk never moves. Nothing here is accessible: the scene is one image.
+ *
+ * Painted in direction B, painterly-flat (ART.1): foliage clusters are organic outlines inside
+ * their authored ellipses, each lit from the upper left by a volume gradient (`signature/brush`).
  */
 
 type AnimatedViewStyle = ComponentProps<typeof Animated.View>['style'];
@@ -72,6 +76,23 @@ function Shape({ shape, fill, opacity }: { shape: Ellipse; fill: string; opacity
   );
 }
 
+/** A lit leaf color: pale on the upper left, shaded on the lower right. */
+function LeafLight({ id, color }: { id: string; color: string }) {
+  const v = volume(color);
+  return (
+    <RadialGradient id={id} cx={KEY_LIGHT.cx} cy={KEY_LIGHT.cy} r={KEY_LIGHT.r}>
+      <Stop offset="0" stopColor={v.light} />
+      <Stop offset="0.55" stopColor={color} />
+      <Stop offset="1" stopColor={v.dark} />
+    </RadialGradient>
+  );
+}
+
+/** One leaf cluster: an organic outline inside its authored ellipse. */
+function Cluster({ shape, fill, opacity }: { shape: Ellipse; fill: string; opacity?: number }) {
+  return <Path d={clusterOutline(shape, shape.key)} fill={fill} opacity={opacity} />;
+}
+
 export const TreeArt = memo(function TreeArt({
   tree,
   lighting,
@@ -94,12 +115,24 @@ export const TreeArt = memo(function TreeArt({
     () => particlesFor(composition, ambient, lighting),
     [composition, ambient, lighting],
   );
-  const glowId = `glow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const glowId = `glow-${uid}`;
+  const poolId = `pool-${uid}`;
+  const barkId = `bark-${uid}`;
+  const moundId = `mound-${uid}`;
+  const leafId = {
+    back: `leaf-${uid}-back`,
+    main: `leaf-${uid}-main`,
+    accent: `leaf-${uid}-accent`,
+    front: `leaf-${uid}-front`,
+  };
+  const url = (id: string) => `url(#${id})`;
+  const bark = barkVolume(colors.bark);
   const c = composition;
   const pivot: ViewStyle = {
     transformOrigin: `${(c.pivot.x / W) * 100}% ${(c.pivot.y / H) * 100}%`,
   };
-  const leaf = (accent: boolean) => (accent ? colors.foliage.accent : colors.foliage.main);
+  const leaf = (accent: boolean) => url(accent ? leafId.accent : leafId.main);
   const fixedTraits = c.traits.filter((mark) => mark.anchor !== 'canopy');
   const canopyTraits = c.traits.filter((mark) => mark.anchor === 'canopy');
 
@@ -119,15 +152,41 @@ export const TreeArt = memo(function TreeArt({
 
       {/* Ground shadow, mound, roots, trunk, and the details that sit on them: never moving. */}
       <Layer>
+        <Defs>
+          <RadialGradient id={poolId} cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={lighting.pool.color} stopOpacity={1} />
+            <Stop offset="1" stopColor={lighting.pool.color} stopOpacity={0} />
+          </RadialGradient>
+          {/* The soil mound fades into the ground at its edge, lit from the upper left. */}
+          <RadialGradient id={moundId} cx="44%" cy="30%" r="62%">
+            <Stop offset="0" stopColor={barkVolume(colors.soil).light} />
+            <Stop offset="0.5" stopColor={colors.soil} />
+            <Stop offset="1" stopColor={lighting.ground} />
+          </RadialGradient>
+          <LinearGradient id={barkId} x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={bark.light} />
+            <Stop offset="0.45" stopColor={colors.bark} />
+            <Stop offset="1" stopColor={bark.dark} />
+          </LinearGradient>
+        </Defs>
+        {/* Warm light gathered on the ground under the tree (layer 4). */}
         <SvgEllipse
-          cx={W / 2}
+          cx={W / 2 - 4}
+          cy={c.mound.cy - 1}
+          rx={Math.max(36, c.bounds.width * 0.62)}
+          ry={11}
+          fill={url(poolId)}
+          opacity={lighting.pool.opacity}
+        />
+        <SvgEllipse
+          cx={W / 2 + 6}
           cy={c.mound.cy - 2}
           rx={c.bounds.width * 0.42}
           ry={7}
           fill={SIGNATURE_PALETTE.shadow}
           opacity={SIGNATURE_PALETTE.opacity.shadow}
         />
-        <Shape shape={c.mound} fill={colors.soil} />
+        <Shape shape={c.mound} fill={url(moundId)} />
         <G transform={c.mirrored ? MIRROR : undefined}>
           {c.roots ? (
             <Path
@@ -138,7 +197,7 @@ export const TreeArt = memo(function TreeArt({
               fill="none"
             />
           ) : null}
-          {c.trunk ? <Path d={c.trunk} fill={colors.bark} /> : null}
+          {c.trunk ? <Path d={c.trunk} fill={url(barkId)} /> : null}
         </G>
         {c.seed ? <Shape shape={c.seed} fill={colors.seed} /> : null}
         {fixedTraits.map((mark) => (
@@ -149,12 +208,17 @@ export const TreeArt = memo(function TreeArt({
       <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.canopy]}>
         <Animated.View style={[StyleSheet.absoluteFill, motion.canopyReveal]}>
           <Layer>
+            <Defs>
+              <LeafLight id={leafId.back} color={colors.foliage.back} />
+              <LeafLight id={leafId.main} color={colors.foliage.main} />
+              <LeafLight id={leafId.accent} color={colors.foliage.accent} />
+            </Defs>
             <G transform={c.mirrored ? MIRROR : undefined}>
               {c.branches.map((branch) => (
                 <Path
                   key={branch.key}
                   d={branch.path}
-                  stroke={colors.bark}
+                  stroke={mix(colors.bark, bark.dark, 0.5)}
                   strokeWidth={branch.width}
                   strokeLinecap="round"
                   fill="none"
@@ -162,16 +226,16 @@ export const TreeArt = memo(function TreeArt({
               ))}
             </G>
             {c.foliage.back.map((shape) => (
-              <Shape key={shape.key} shape={shape} fill={colors.foliage.back} />
+              <Cluster key={shape.key} shape={shape} fill={url(leafId.back)} />
             ))}
             {c.foliage.main.map((shape) => (
-              <Shape key={shape.key} shape={shape} fill={leaf(shape.accent)} />
+              <Cluster key={shape.key} shape={shape} fill={leaf(shape.accent)} />
             ))}
             {c.foliage.richness.map((shape) => (
-              <Shape key={shape.key} shape={shape} fill={colors.foliage.main} />
+              <Cluster key={shape.key} shape={shape} fill={url(leafId.main)} />
             ))}
             {c.highlights.map((shape) => (
-              <Shape
+              <Cluster
                 key={shape.key}
                 shape={shape}
                 fill={colors.foliage.highlight}
@@ -194,8 +258,11 @@ export const TreeArt = memo(function TreeArt({
 
         <Animated.View style={[StyleSheet.absoluteFill, pivot, motion.front]}>
           <Layer>
+            <Defs>
+              <LeafLight id={leafId.front} color={colors.foliage.front} />
+            </Defs>
             {c.foliage.front.map((shape) => (
-              <Shape key={shape.key} shape={shape} fill={colors.foliage.front} />
+              <Cluster key={shape.key} shape={shape} fill={url(leafId.front)} />
             ))}
           </Layer>
         </Animated.View>
@@ -248,8 +315,11 @@ export const Backdrop = memo(function Backdrop({
   lighting: LightingPreset;
   background?: string | null;
 }) {
-  const skyId = `sky-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const { celestial } = lighting;
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const skyId = `sky-${uid}`;
+  const haloId = `halo-${uid}`;
+  const mistId = `mist-${uid}`;
+  const { celestial, mist } = lighting;
   const known = KNOWN_BACKGROUNDS.find((id) => id === background) ?? null;
   const e = ENVIRONMENT_PALETTE;
   const shade = (color: string) => mix(color, lighting.shade.color, lighting.shade.amount);
@@ -259,10 +329,20 @@ export const Backdrop = memo(function Backdrop({
         <Defs>
           <LinearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={lighting.sky[0]} />
-            <Stop offset="1" stopColor={lighting.sky[1]} />
+            <Stop offset="0.78" stopColor={lighting.sky[1]} />
+          </LinearGradient>
+          <RadialGradient id={haloId} cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={celestial.color} stopOpacity={0.55} />
+            <Stop offset="1" stopColor={celestial.color} stopOpacity={0} />
+          </RadialGradient>
+          <LinearGradient id={mistId} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={mist.color} stopOpacity={0} />
+            <Stop offset="0.55" stopColor={mist.color} stopOpacity={mist.opacity} />
+            <Stop offset="1" stopColor={mist.color} stopOpacity={0} />
           </LinearGradient>
         </Defs>
         <Rect x={0} y={0} width={W} height={H} fill={`url(#${skyId})`} />
+        <Circle cx={celestial.x} cy={celestial.y} r={celestial.r * 2.8} fill={`url(#${haloId})`} />
         <Circle cx={celestial.x} cy={celestial.y} r={celestial.r} fill={celestial.color} />
         {/* Far hills in mist sit behind the near hills (layer 2). */}
         {known === 'misty-hills' ? (
@@ -279,6 +359,8 @@ export const Backdrop = memo(function Backdrop({
           fill={lighting.hills}
           opacity={SIGNATURE_PALETTE.opacity.hills}
         />
+        {/* Haze at the horizon: the far land recedes so the tree reads first. */}
+        <Rect x={0} y={190} width={W} height={56} fill={`url(#${mistId})`} />
         <Path d={`M0 246 Q120 238 ${W} 246 L${W} ${H} L0 ${H} Z`} fill={lighting.ground} />
       </Layer>
     </View>

@@ -2,7 +2,7 @@ import { act, screen } from '@testing-library/react-native';
 import { createRef } from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import * as Reanimated from 'react-native-reanimated';
-import { Ellipse } from 'react-native-svg';
+import { Ellipse, Path } from 'react-native-svg';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import { mockAppState } from '../../test-utils/app-state';
@@ -33,7 +33,17 @@ const hidden = { includeHiddenElements: true } as const;
 
 const visual = (options: TreeFixtureOptions = {}) => toTreeVisualState(treeDto(options));
 
-const ellipses = () => screen.UNSAFE_root.findAll((node) => node.type === Ellipse);
+/** Every drawn shape: ellipses (mound, seed, details) and paths (clusters, trunk, branches). */
+const shapes = () =>
+  screen.UNSAFE_root.findAll((node) => node.type === Ellipse || node.type === Path);
+/** Foliage clusters: organic outlines filled with a volume gradient (ART.1, direction B). */
+const litClusters = () =>
+  screen.UNSAFE_root.findAll(
+    (node) =>
+      node.type === Path &&
+      typeof node.props.fill === 'string' &&
+      node.props.fill.startsWith('url(#leaf-'),
+  );
 
 /** Host elements a screen reader could land on inside the scene. */
 function accessibleDescendants(root: ReactTestInstance): ReactTestInstance[] {
@@ -73,7 +83,22 @@ describe('TreeScene', () => {
     const art = screen.getByTestId('tree-scene-art', { includeHiddenElements: true });
     expect(art.props.accessibilityElementsHidden).toBe(true);
     expect(art.props.importantForAccessibility).toBe('no-hide-descendants');
-    expect(ellipses().length).toBeGreaterThan(10);
+    expect(shapes().length).toBeGreaterThan(10);
+  });
+
+  it('draws foliage as lit, organic clusters (ART.1, direction B)', () => {
+    renderWithProviders(
+      <TreeScene tree={visual({ stage: 'mature_tree', fullness: 5 })} timeOfDay="day" />,
+    );
+    expect(litClusters().length).toBeGreaterThan(10);
+  });
+
+  it('adds the paper grain to a hero scene only, never to a forest thumbnail', () => {
+    renderWithProviders(<TreeScene tree={visual()} timeOfDay="day" />);
+    expect(screen.getByTestId('tree-scene-grain', hidden)).toBeTruthy();
+    screen.unmount();
+    renderWithProviders(<TreeScene tree={visual()} size="thumbnail" motion="still" />);
+    expect(screen.queryByTestId('tree-scene-grain', hidden)).toBeNull();
   });
 
   it('draws without Math.random', () => {
@@ -96,12 +121,12 @@ describe('TreeScene', () => {
 
   it('keeps the tree still under reduced motion, with the same tree drawn', () => {
     renderWithProviders(<TreeScene tree={visual()} timeOfDay="day" />);
-    const moving = ellipses().length;
+    const moving = shapes().length;
     screen.unmount();
     withRepeat.mockClear();
     renderWithProviders(<TreeScene tree={visual()} timeOfDay="day" />, { reducedMotion: true });
     expect(withRepeat).not.toHaveBeenCalled();
-    expect(ellipses().length).toBe(moving);
+    expect(shapes().length).toBe(moving);
     expect(screen.getByRole('image').props.accessibilityLabel).toBe(describeTree(visual()));
   });
 

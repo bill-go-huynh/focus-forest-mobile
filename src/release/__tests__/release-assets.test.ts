@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+import { ASSET_SOURCES } from '../asset-sources';
 import { releaseBlockers, RELEASE_ASSETS } from '../release-assets';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -55,6 +56,30 @@ describe('release assets (R7.1)', () => {
       'community-tree',
     ]);
     expect(releaseBlockers([{ ...RELEASE_ASSETS[0]!, status: 'final' }])).toEqual([]);
+  });
+
+  it('records the source of every asset that is no longer a placeholder (docs/10 §4)', () => {
+    const recorded = new Set(ASSET_SOURCES.flatMap((source) => source.files));
+    for (const asset of RELEASE_ASSETS.filter((a) => a.status !== 'placeholder')) {
+      if (asset.id === 'theme') continue; // Values, not art: decided by the owner (docs/01).
+      for (const file of asset.files) expect(recorded).toContain(file);
+    }
+    for (const source of ASSET_SOURCES) {
+      expect(RELEASE_ASSETS.map((a) => a.id)).toContain(source.asset);
+      expect(source.made).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(source.license.length).toBeGreaterThan(10);
+      for (const file of source.files) expect(statSync(join(ROOT, file)).isDirectory()).toBe(false);
+    }
+  });
+
+  it('records every bundled art file', () => {
+    const art = readdirSync(join(ROOT, 'assets', 'art')).map((name) => `assets/art/${name}`);
+    const recorded = ASSET_SOURCES.flatMap((source) => source.files);
+    for (const file of art) expect(recorded).toContain(file);
+  });
+
+  it('keeps the signature tree provisional until the owner passes the quality gate', () => {
+    expect(RELEASE_ASSETS.find((a) => a.id === 'signature-tree')?.status).toBe('provisional');
   });
 
   (process.env.RELEASE_AUDIT === '1' ? it : it.skip)(

@@ -3,12 +3,14 @@ import type { Decoration } from './stages';
 /**
  * Scene and species palettes (docs/01 §2: tree and scene art use their own palettes, not UI
  * tokens; docs/10 §2: species palette and base-environment lighting presets). This is the only
- * file in the renderer with raw colors. PLACEHOLDER values until the art direction sheet and the
- * master palette exist (docs/10 §3); production art replaces them here.
+ * file in the renderer with raw colors. PROVISIONAL (ART.1, 2026-10-16): the scene follows the
+ * art direction canvas, direction B (painterly-flat), chosen by the owner; it becomes final when
+ * the owner passes the art quality gate on a device (docs/10 §4).
  *
  * Rules the values keep: foliage stays green in every tint, light, and vitality (never brown,
- * grey, or wilted, docs/03 §6); depth comes from value (back foliage darker and less
- * saturated, docs/03 §7); the key light comes from the upper left.
+ * grey, or wilted, docs/03 §6); depth comes from value (back foliage lighter, hazier and less
+ * saturated, front foliage deeper, docs/03 §7); the key light comes from the upper left; night is a deep blue-green,
+ * never black (docs/01 §10).
  */
 
 export const TIMES_OF_DAY = ['dawn', 'day', 'golden_hour', 'dusk', 'night'] as const;
@@ -27,9 +29,9 @@ export const SIGNATURE_PALETTE = {
   seed: '#9C7651',
   /** Three authored foliage tints; the variation seed picks one. */
   tints: [
-    { back: '#5E8F5A', main: '#6FA463', front: '#5A8F4E' },
-    { back: '#5B8C62', main: '#6CA36E', front: '#568A5C' },
-    { back: '#628F55', main: '#76A85E', front: '#5E9050' },
+    { back: '#79AB6E', main: '#7AAD5F', front: '#4E8346' },
+    { back: '#73A878', main: '#73A96A', front: '#4A8052' },
+    { back: '#7EAD66', main: '#80B05A', front: '#538545' },
   ] as const satisfies readonly FoliageTint[],
   /** The Blooming Tree's bloom expression: warm, sunlit leaves (not flowers). */
   accent: '#A9BF5A',
@@ -46,8 +48,15 @@ export const SIGNATURE_PALETTE = {
   calm: '#7E9C93',
   /** Ground shadow under the canopy. */
   shadow: '#2F3B2A',
-  /** How opaque the art's soft layers are. */
-  opacity: { highlight: 0.55, shadow: 0.16, hills: 0.85, lantern: 0.35 },
+  /**
+   * A cluster's volume (ART.1): lighter and a touch warmer on the upper left, darker and a
+   * touch cooler on the lower right, saturation kept (`brush.ts`).
+   */
+  volume: { light: { lightness: 0.14, hue: -8 }, dark: { lightness: -0.15, hue: 6 } },
+  /** Bark lit from the left, shaded on the right. */
+  barkVolume: { light: { lightness: 0.08, hue: 0 }, dark: { lightness: -0.1, hue: 0 } },
+  /** How opaque the art's soft layers are; `grain` is the hero scene's paper texture. */
+  opacity: { highlight: 0.55, shadow: 0.16, hills: 0.85, lantern: 0.35, grain: 0.45 },
   decorations: {
     'hanging-bloom': '#F2C1CF',
     'songbird-nest': '#8B6A4A',
@@ -75,62 +84,76 @@ export interface LightingPreset {
   daylight: boolean;
   /** Fireflies show at night on the richest trees. */
   night: boolean;
+  /** Warm light gathered on the ground under the tree (docs/03 §7 layer 4). */
+  pool: { color: string; opacity: number };
+  /** Haze at the horizon, so the far land recedes and the tree reads first (docs/01 §6). */
+  mist: { color: string; opacity: number };
 }
 
 export const LIGHTING_PRESETS: Record<TimeOfDay, LightingPreset> = {
   dawn: {
-    sky: ['#F6D9C4', '#FBEFDF'],
-    hills: '#B9C7B4',
-    ground: '#9DB38A',
+    sky: ['#E9CDBF', '#F8EBD9'],
+    hills: '#B7C4AE',
+    ground: '#98AE80',
     celestial: { kind: 'sun', x: 52, y: 92, r: 15, color: '#FFE3B8' },
     light: { color: '#FFD9B0', opacity: 0.08 },
     shade: { color: '#3E5A6B', amount: 0.08 },
     glowOpacity: 0.2,
     daylight: true,
     night: false,
+    pool: { color: '#FFE6C2', opacity: 0.45 },
+    mist: { color: '#F8EBD9', opacity: 0.5 },
   },
   day: {
-    sky: ['#CFE6EE', '#F4F1E4'],
-    hills: '#B6CDB0',
-    ground: '#9CBA86',
+    sky: ['#BFD9DE', '#F2E8CF'],
+    hills: '#AFC2A6',
+    ground: '#9DB27F',
     celestial: { kind: 'sun', x: 58, y: 54, r: 16, color: '#FFF6DA' },
     light: { color: '#FFF4D6', opacity: 0.04 },
     shade: { color: '#3E5A6B', amount: 0 },
     glowOpacity: 0.16,
     daylight: true,
     night: false,
+    pool: { color: '#FFF1C4', opacity: 0.55 },
+    mist: { color: '#F2E8CF', opacity: 0.55 },
   },
   golden_hour: {
-    sky: ['#F7CF9A', '#FBE9C9'],
-    hills: '#C2C29A',
-    ground: '#A8B67E',
-    celestial: { kind: 'sun', x: 46, y: 104, r: 17, color: '#FFD58A' },
-    light: { color: '#FFC97A', opacity: 0.12 },
+    sky: ['#E2A97F', '#F8DFB2'],
+    hills: '#C4A684',
+    ground: '#ADA56C',
+    celestial: { kind: 'sun', x: 46, y: 104, r: 17, color: '#FFE3A3' },
+    light: { color: '#FFB866', opacity: 0.1 },
     shade: { color: '#4F6B4A', amount: 0.05 },
-    glowOpacity: 0.26,
+    glowOpacity: 0.3,
     daylight: true,
     night: false,
+    pool: { color: '#FFD98F', opacity: 0.7 },
+    mist: { color: '#F8DFB2', opacity: 0.55 },
   },
   dusk: {
-    sky: ['#8E8DB5', '#E9C3B0'],
-    hills: '#7E8B98',
-    ground: '#6F8770',
+    sky: ['#7F8AA8', '#E6C2AE'],
+    hills: '#7C8A93',
+    ground: '#6C846C',
     celestial: { kind: 'sun', x: 40, y: 140, r: 14, color: '#F7B98F' },
     light: { color: '#F2B38F', opacity: 0.1 },
     shade: { color: '#2E3F5C', amount: 0.22 },
     glowOpacity: 0.32,
     daylight: false,
     night: false,
+    pool: { color: '#F7C9A0', opacity: 0.35 },
+    mist: { color: '#C9B4B4', opacity: 0.4 },
   },
   night: {
-    sky: ['#16243A', '#2E3F55'],
-    hills: '#22324A',
-    ground: '#2B3E3A',
-    celestial: { kind: 'moon', x: 182, y: 58, r: 12, color: '#F1EBD3' },
-    light: { color: '#9FB8E0', opacity: 0.08 },
-    shade: { color: '#16243A', amount: 0.4 },
+    sky: ['#0E1B22', '#21373A'],
+    hills: '#18302A',
+    ground: '#1F3A2E',
+    celestial: { kind: 'moon', x: 182, y: 58, r: 12, color: '#E8EDD8' },
+    light: { color: '#0B2030', opacity: 0.1 },
+    shade: { color: '#10262A', amount: 0.4 },
     glowOpacity: 0.36,
     daylight: false,
     night: true,
+    pool: { color: '#F5E3A8', opacity: 0.14 },
+    mist: { color: '#2A4443', opacity: 0.5 },
   },
 };

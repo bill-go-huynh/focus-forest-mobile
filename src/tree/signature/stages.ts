@@ -6,15 +6,17 @@ import type { TreeStage } from '../tree-contract';
  * many slots are filled, in the order listed here; the variation seed only offsets slots and
  * picks among authored alternatives. There is no anchor engine and no procedural placement.
  *
- * PLACEHOLDER ART (docs/10 §4, stage 1): simple vector shapes in the real layer structure.
- * Production art replaces the shapes behind the same stages, slots, and decorations.
+ * PROVISIONAL ART (ART.1, 2026-10-16): the slots are painted in direction B, painterly-flat
+ * (`brush.ts`: organic outlines inside these ellipses, lit from the upper left). It becomes final
+ * when the owner passes the art quality gate on a device (docs/10 §4); until then the release
+ * audit lists it. Production art may still replace the shapes behind the same stages and slots.
  *
  * Coordinates are in the scene's view box (240 × 288, ground line at y = 252, trunk centered
  * on x = 120). The art leaves room inside `bounds` for the seed's offsets (at most 4.5 across,
  * 1.5 up or down), so a tree never grows or shrinks with its seed.
  */
 
-export const signatureArtStatus = 'placeholder' as const;
+export const signatureArtStatus = 'provisional' as const;
 
 export const TREE_VIEWBOX = { width: 240, height: 288 } as const;
 export const GROUND_Y = 252;
@@ -208,11 +210,11 @@ const youngTree: StageArt = {
   trunk: 'M114 252 C115 225 116 195 118 160 L122 160 C124 195 125 225 126 252 Z',
   branches: {
     core: [
-      branch('M119 190 Q108 178 98 168', 2.5),
-      branch('M121 182 Q132 170 142 162', 2.5),
+      branch('M119 190 Q110 179 102 154', 2.5),
+      branch('M121 182 Q130 172 138 150', 2.5),
       branch('M120 168 Q119 150 120 138', 2),
     ],
-    extra: [branch('M119 205 Q104 196 94 192', 2), branch('M121 198 Q136 190 146 186', 2)],
+    extra: [branch('M119 205 Q106 195 95 173', 2), branch('M121 198 Q134 189 145 169', 2)],
   },
   foliage: {
     back: {
@@ -277,7 +279,7 @@ const growingTree: StageArt = {
       branch('M119 160 Q106 146 98 134', 2.5),
       branch('M121 154 Q134 140 142 128', 2.5),
     ],
-    extra: [branch('M118 205 Q98 198 84 196', 2), branch('M122 200 Q144 192 158 190', 2)],
+    extra: [branch('M118 205 Q103 192 90 163', 2), branch('M122 200 Q133 192 142 172', 2)],
   },
   foliage: {
     back: {
@@ -353,15 +355,15 @@ const matureTree: StageArt = {
   trunk: 'M110 252 C111 216 114 170 116 128 L124 128 C126 170 129 216 130 252 Z',
   branches: {
     core: [
-      branch('M117 186 Q96 170 76 160', 3.5),
-      branch('M123 178 Q146 162 166 154', 3.5),
+      branch('M117 186 Q98 173 83 142', 3.5),
+      branch('M123 178 Q142 167 157 140', 3.5),
       branch('M118 152 Q100 136 88 120', 3),
       branch('M122 146 Q140 130 152 116', 3),
       branch('M120 132 Q119 112 120 96', 2.5),
     ],
     extra: [
-      branch('M117 200 Q94 192 74 190', 2.5),
-      branch('M123 196 Q148 188 168 186', 2.5),
+      branch('M117 200 Q105 192 95 172', 2.5),
+      branch('M123 196 Q135 189 145 174', 2.5),
       branch('M119 168 Q104 160 92 146', 2),
     ],
   },
@@ -448,15 +450,15 @@ const bloomingTree: StageArt = {
   trunk: 'M110 252 C111 214 114 168 116 124 L124 124 C126 168 129 214 130 252 Z',
   branches: {
     core: [
-      branch('M117 184 Q94 168 72 158', 3.5),
-      branch('M123 176 Q148 160 170 152', 3.5),
+      branch('M117 184 Q97 170 80 138', 3.5),
+      branch('M123 176 Q143 164 160 136', 3.5),
       branch('M118 150 Q98 132 84 116', 3),
       branch('M122 144 Q142 126 156 112', 3),
       branch('M120 128 Q119 108 120 90', 2.5),
     ],
     extra: [
-      branch('M117 198 Q92 190 70 188', 2.5),
-      branch('M123 194 Q150 186 172 184', 2.5),
+      branch('M117 198 Q104 191 93 174', 2.5),
+      branch('M123 194 Q136 188 147 174', 2.5),
       branch('M119 166 Q102 158 88 144', 2),
     ],
   },
@@ -547,16 +549,16 @@ const finalForm: StageArt = {
   trunk: 'M108 252 C109 212 112 160 115 116 L125 116 C128 160 131 212 132 252 Z',
   branches: {
     core: [
-      branch('M116 184 Q90 166 64 156', 4),
-      branch('M124 176 Q150 158 176 150', 4),
+      branch('M116 184 Q86 174 62 149', 4),
+      branch('M124 176 Q154 167 178 147', 4),
       branch('M117 150 Q96 130 80 112', 3.5),
       branch('M123 144 Q144 124 160 108', 3.5),
       branch('M120 126 Q118 102 120 82', 3),
       branch('M118 166 Q102 150 90 140', 3),
     ],
     extra: [
-      branch('M116 200 Q90 192 64 190', 3),
-      branch('M124 196 Q152 188 176 188', 3),
+      branch('M116 200 Q101 190 88 168', 3),
+      branch('M124 196 Q148 188 167 170', 3),
       branch('M121 136 Q132 114 138 96', 2.5),
       branch('M119 140 Q106 118 100 100', 2.5),
     ],
