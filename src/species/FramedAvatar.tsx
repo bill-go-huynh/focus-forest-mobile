@@ -10,8 +10,19 @@ import { useEquipment } from './queries';
 /**
  * The profile avatar in the equipped profile frame (docs/10 → Profile frames: a subtle ring
  * that echoes the nature motifs). Presentation only, on Profile only: never on a tree, the
- * forest, or a recap. PLACEHOLDER art, like the other cosmetics.
+ * forest, or a recap. PROVISIONAL art (ART.5, direction B): a twig ring with leaves and a bud,
+ * like its Collection Book mark; final with the other cosmetics at the quality gate.
  */
+/** Leaves along the ring: their angle on it and how they turn from it, in degrees. */
+const LEAVES = [
+  [-55, 60],
+  [-35, 120],
+  [125, 60],
+  [145, 120],
+] as const;
+/** Where the bud sits on the ring, in radians. */
+const BUD = (25 * Math.PI) / 180;
+
 export function FramedAvatar({ initials }: { initials: string | null }) {
   const theme = useTheme();
   const frame = useEquipment().data?.profileFrame?.id ?? null;
@@ -40,19 +51,28 @@ export function FramedAvatar({ initials }: { initials: string | null }) {
             strokeLinecap="round"
             fill="none"
           />
-          <Ellipse
-            cx={c + r * 0.72}
-            cy={c - r * 0.7}
-            rx={ring * 0.7}
-            ry={ring * 0.35}
-            fill={e.frameLeaf}
-          />
-          <Ellipse
-            cx={c - r * 0.75}
-            cy={c + r * 0.7}
-            rx={ring * 0.7}
-            ry={ring * 0.35}
-            fill={e.frameLeaf}
+          {LEAVES.map(([angle, turn]) => {
+            const a = (angle * Math.PI) / 180;
+            const x = c + r * Math.cos(a);
+            const y = c + r * Math.sin(a);
+            return (
+              <Ellipse
+                key={angle}
+                cx={x}
+                cy={y}
+                rx={ring * 0.75}
+                ry={ring * 0.32}
+                fill={e.frameLeaf}
+                rotation={angle + turn}
+                origin={`${x}, ${y}`}
+              />
+            );
+          })}
+          <Circle
+            cx={c + r * Math.cos(BUD)}
+            cy={c + r * Math.sin(BUD)}
+            r={ring * 0.3}
+            fill={e.frameBud}
           />
         </Svg>
       </View>

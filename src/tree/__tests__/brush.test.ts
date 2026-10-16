@@ -125,3 +125,21 @@ describe('scene palette (ART.1, the canvas’ lighting presets)', () => {
     expect(SIGNATURE_PALETTE.opacity.grain).toBeLessThanOrEqual(0.6);
   });
 });
+
+describe('depth through value (ART.5, docs/03 §7)', () => {
+  const lightness = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [
+      number,
+      number,
+      number,
+    ];
+    return (Math.max(r, g, b) + Math.min(r, g, b)) / 2;
+  };
+
+  it.each(SPECIES_KEYS)('%s: back foliage is lighter than main, front deeper', (key) => {
+    for (const tint of speciesDefinition(key).palette.tints) {
+      expect(lightness(tint.back)).toBeGreaterThan(lightness(tint.main) - 0.02);
+      expect(lightness(tint.front)).toBeLessThan(lightness(tint.main));
+    }
+  });
+});

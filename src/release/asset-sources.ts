@@ -79,4 +79,29 @@ export const ASSET_SOURCES: readonly AssetSource[] = [
     method: 'Hand-authored SVG spot scenes in theme colors with soft gradients (docs/10 §2)',
     license: ORIGINAL,
   },
+  {
+    asset: 'species',
+    files: ['src/tree/species/index.ts', 'src/tree/species/palette.ts'],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method:
+      'Species palettes tuned for depth through value; painted by the shared direction B renderer',
+    license: ORIGINAL,
+  },
+  {
+    asset: 'collection',
+    files: ['src/collection/CollectionArt.tsx', 'src/species/FramedAvatar.tsx'],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method: 'Hand-authored SVG cosmetic vignettes and the twig profile frame',
+    license: ORIGINAL,
+  },
+  {
+    asset: 'community-tree',
+    files: ['src/events/CommunityTreeScreen.tsx'],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method: 'The signature species in direction B on the shared renderer',
+    license: ORIGINAL,
+  },
 ];

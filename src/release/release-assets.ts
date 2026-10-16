@@ -73,7 +73,7 @@ export const RELEASE_ASSETS: readonly ReleaseAsset[] = [
   {
     id: 'species',
     what: 'Every other species’ art and palette',
-    status: 'placeholder',
+    status: 'provisional',
     doc: 'docs/10 §2, §5',
     files: ['src/tree/species/index.ts', 'src/tree/species/palette.ts'],
   },
@@ -87,14 +87,14 @@ export const RELEASE_ASSETS: readonly ReleaseAsset[] = [
   {
     id: 'collection',
     what: 'Cosmetic marks, silhouettes, and profile frames',
-    status: 'placeholder',
+    status: 'provisional',
     doc: 'docs/10',
     files: ['src/collection/CollectionArt.tsx', 'src/species/FramedAvatar.tsx'],
   },
   {
     id: 'community-tree',
     what: 'The Community Tree species',
-    status: 'placeholder',
+    status: 'provisional',
     doc: 'docs/10',
     files: ['src/events/CommunityTreeScreen.tsx'],
   },

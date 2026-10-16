@@ -8,7 +8,8 @@ import { SPECIES_PALETTES, type SpeciesPalette } from './palette';
  * palette, bloom and fruit expressions, particles, and a rare variant's effect. It never adds,
  * removes, or reorders a slot, so it can never change what the tree earned.
  *
- * PLACEHOLDER ART: production art replaces the shapes behind the same slots (docs/10 §2, one art
+ * PROVISIONAL ART (ART.5): painted in direction B by the shared renderer; production art may
+ * still replace the shapes behind the same slots (docs/10 §2, one art
  * set per species, each through the art quality gate). There is no anchor engine: no species
  * here needs one (docs/03 §8: generalize only when the complexity is real).
  */

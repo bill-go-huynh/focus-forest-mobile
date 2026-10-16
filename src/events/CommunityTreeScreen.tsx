@@ -33,8 +33,8 @@ function seedOf(id: string): number {
 
 /**
  * The shared tree drawn by the personal tree's renderer: its stage from the community's reached
- * milestone. PLACEHOLDER art: the Community Tree species (docs/10) is drawn as the signature
- * species until its art set ships.
+ * milestone. PROVISIONAL art (ART.5): the Community Tree is drawn as the signature species in
+ * direction B, on the same renderer, until the owner wants a species of its own (docs/10).
  */
 function sceneTree(tree: CommunityTree): TreeVisualState {
   const look = (tree.stage && SCENE_STAGE[tree.stage]) || { stage: 'seed', number: 1, level: 0 };

@@ -3,8 +3,10 @@ import { SIGNATURE_PALETTE, type FoliageTint } from '../signature/palette';
 /**
  * Species palettes (docs/03 §9: each species defines its palette; docs/10 §2: bark, foliage
  * ranges, bloom, fruit, glow tint) and the environment cosmetics' colors. With the signature
- * palette, the only files with raw colors in the renderer. PLACEHOLDER values until each
- * species passes the art quality gate (docs/10 §5); production art replaces them here.
+ * palette, the only files with raw colors in the renderer. PROVISIONAL (ART.5, 2026-10-16):
+ * painted in direction B like the signature tree, with depth through value (back foliage
+ * lighter and hazier, front deeper, docs/03 §7); final when each species passes the art quality
+ * gate (docs/10 §5).
  *
  * Rules the values keep: foliage stays alive in every tint (green, or a species' own warm leaf
  * color for a maple's bloom expression), never brown, grey, or wilted (docs/03 §6).
@@ -52,9 +54,9 @@ const sakura: SpeciesPalette = {
   roots: '#47353A',
   seed: '#8C6A5C',
   tints: [
-    { back: '#7FA36B', main: '#93B87A', front: '#789E64' },
-    { back: '#7AA070', main: '#8EB581', front: '#739A69' },
-    { back: '#84A566', main: '#99BB74', front: '#7DA05F' },
+    { back: '#9EB690', main: '#93B87A', front: '#789E64' },
+    { back: '#9BB793', main: '#8EB581', front: '#719D66' },
+    { back: '#A1B78C', main: '#99BB74', front: '#7DA05F' },
   ],
   accent: '#C9D98A',
   highlight: '#D7E9A8',
@@ -72,9 +74,9 @@ const pine: SpeciesPalette = {
   roots: '#4F3C2F',
   seed: '#7F6347',
   tints: [
-    { back: '#3F6E52', main: '#4D7F5E', front: '#3B684D' },
-    { back: '#3C6B57', main: '#4A7C63', front: '#386551' },
-    { back: '#43704D', main: '#52825A', front: '#3E6A48' },
+    { back: '#558C6B', main: '#4D7F5E', front: '#3B684D' },
+    { back: '#528971', main: '#4A7C63', front: '#386551' },
+    { back: '#5A8E66', main: '#52825A', front: '#3E6A48' },
   ],
   accent: '#7FAE7A',
   highlight: '#9CC39A',
@@ -92,9 +94,9 @@ const maple: SpeciesPalette = {
   roots: '#553D30',
   seed: '#946F50',
   tints: [
-    { back: '#6A9455', main: '#7CA662', front: '#648E50' },
-    { back: '#70935A', main: '#82A568', front: '#698C53' },
-    { back: '#6E9650', main: '#80A85D', front: '#678F4B' },
+    { back: '#85AA73', main: '#7CA662', front: '#648E50' },
+    { back: '#8BA979', main: '#82A568', front: '#698C53' },
+    { back: '#88AC6D', main: '#80A85D', front: '#678F4B' },
   ],
   accent: '#D98B45',
   highlight: '#E9C27A',
@@ -112,9 +114,9 @@ const bonsai: SpeciesPalette = {
   roots: '#4E4035',
   seed: '#857058',
   tints: [
-    { back: '#4F7F57', main: '#5E9064', front: '#4A7A52' },
-    { back: '#4C7C5C', main: '#5B8D69', front: '#477656' },
-    { back: '#537F52', main: '#62915F', front: '#4E7A4D' },
+    { back: '#679C70', main: '#5E9064', front: '#4A7A52' },
+    { back: '#639975', main: '#5B8D69', front: '#477656' },
+    { back: '#6A9B69', main: '#62915F', front: '#4E7A4D' },
   ],
   accent: '#9DBF6E',
   highlight: '#B4D38C',
@@ -132,9 +134,9 @@ const fantasy: SpeciesPalette = {
   roots: '#433D55',
   seed: '#7C6F8C',
   tints: [
-    { back: '#4F8C7E', main: '#5FA08F', front: '#4A8576' },
-    { back: '#4B8786', main: '#5B9B99', front: '#46807F' },
-    { back: '#548E76', main: '#64A286', front: '#4F8770' },
+    { back: '#6CA79A', main: '#5FA08F', front: '#4A8576' },
+    { back: '#66A5A3', main: '#5B9B99', front: '#46807F' },
+    { back: '#73A792', main: '#64A286', front: '#4F8770' },
   ],
   accent: '#9FD3B8',
   highlight: '#B8E6D2',
@@ -151,9 +153,9 @@ const oak: SpeciesPalette = {
   ...signature,
   bark: '#634733',
   tints: [
-    { back: '#5A8A52', main: '#6B9D5C', front: '#55864B' },
-    { back: '#57875A', main: '#689B66', front: '#528455' },
-    { back: '#5E8B4E', main: '#70A058', front: '#598749' },
+    { back: '#73A26B', main: '#6B9D5C', front: '#55864B' },
+    { back: '#73A276', main: '#689B66', front: '#528455' },
+    { back: '#78A568', main: '#70A058', front: '#598749' },
   ],
   blossom: '#D9CF8F',
   blossomCenter: '#B9A75C',
@@ -176,9 +178,9 @@ const ancientPine: SpeciesPalette = {
   ...pine,
   bark: '#4A3B31',
   tints: [
-    { back: '#365F4A', main: '#436F55', front: '#325A45' },
-    { back: '#345D4E', main: '#416D5A', front: '#305848' },
-    { back: '#3A6146', main: '#477152', front: '#355C42' },
+    { back: '#4B7C63', main: '#436F55', front: '#325A45' },
+    { back: '#487A68', main: '#416D5A', front: '#305848' },
+    { back: '#4F7D5D', main: '#477152', front: '#355C42' },
   ],
   effect: '#E3EEF4',
 };
@@ -208,6 +210,9 @@ export const ENVIRONMENT_PALETTE = {
   lanternLightOpacity: 0.5,
   frame: '#7A5A3E',
   frameLeaf: '#7FA36B',
+  frameBud: '#F2C1CF',
+  /** The Collection Book's small lit vignette behind a cosmetic's mark (ART.5). */
+  vignette: { sky: ['#CFE1E2', '#F2E8CF'], ground: ['#A9BF8E', '#7E9666'] },
 } as const;
 
 /**
