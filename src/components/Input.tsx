@@ -128,6 +128,7 @@ export function Input({
         testID={testID}
         style={[
           {
+            fontFamily: type.body.fontFamily,
             fontSize: type.body.fontSize,
             fontWeight: type.body.fontWeight,
             color: colors.text.primary,

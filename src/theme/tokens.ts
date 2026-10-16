@@ -1,5 +1,7 @@
 import type { TextStyle } from 'react-native';
 
+import type { FontFamily } from './fonts';
+
 /** 4-point spacing scale (docs/01_DESIGN_SYSTEM.md §2 → Spacing). */
 export const space = {
   0: 0,
@@ -93,25 +95,36 @@ export function elevationFor(shadowColor: string, strength: number): ElevationTo
 }
 
 /**
- * Semantic type scale (docs/01_DESIGN_SYSTEM.md §3).
- *
- * PROVISIONAL: the font pairing is a Phase 0 decision. Until then every token uses the
- * platform system font (no fontFamily), and sizes are starting values. All text must
- * still scale with the system font size.
+ * Semantic type scale (docs/01_DESIGN_SYSTEM.md §3). Fraunces sets display text only; Inter
+ * sets everything else (owner decision 2026-10-16; faces in `fonts.ts`). Each token names the
+ * face of its weight. PROVISIONAL: the sizes are starting values. All text must still scale
+ * with the system font size.
  */
 type TypeToken = Required<Pick<TextStyle, 'fontSize' | 'lineHeight' | 'fontWeight'>> &
-  Pick<TextStyle, 'fontVariant' | 'letterSpacing'>;
+  Pick<TextStyle, 'fontVariant' | 'letterSpacing'> & { fontFamily: FontFamily };
 
 export const type = {
-  display: { fontSize: 34, lineHeight: 42, fontWeight: '400' },
-  timer: { fontSize: 72, lineHeight: 84, fontWeight: '300', fontVariant: ['tabular-nums'] },
-  title: { fontSize: 24, lineHeight: 32, fontWeight: '600' },
-  headline: { fontSize: 18, lineHeight: 24, fontWeight: '600' },
-  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
-  bodyStrong: { fontSize: 16, lineHeight: 24, fontWeight: '500' },
-  label: { fontSize: 15, lineHeight: 20, fontWeight: '500' },
-  caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
-  stat: { fontSize: 22, lineHeight: 28, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  display: { fontFamily: 'Fraunces-Regular', fontSize: 34, lineHeight: 42, fontWeight: '400' },
+  timer: {
+    fontFamily: 'Inter-Light',
+    fontSize: 72,
+    lineHeight: 84,
+    fontWeight: '300',
+    fontVariant: ['tabular-nums'],
+  },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: 24, lineHeight: 32, fontWeight: '600' },
+  headline: { fontFamily: 'Inter-SemiBold', fontSize: 18, lineHeight: 24, fontWeight: '600' },
+  body: { fontFamily: 'Inter-Regular', fontSize: 16, lineHeight: 24, fontWeight: '400' },
+  bodyStrong: { fontFamily: 'Inter-Medium', fontSize: 16, lineHeight: 24, fontWeight: '500' },
+  label: { fontFamily: 'Inter-Medium', fontSize: 15, lineHeight: 20, fontWeight: '500' },
+  caption: { fontFamily: 'Inter-Regular', fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  stat: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
 } as const satisfies Record<string, TypeToken>;
 
 /**

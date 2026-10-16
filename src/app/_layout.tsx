@@ -44,6 +44,7 @@ import {
   SessionOutboxProvider,
 } from '../sessions';
 import { useTheme } from '../theme';
+import { useAppFonts } from '../theme/fonts';
 import { ActiveTimerProvider, createAppTimerStore } from '../timer';
 import {
   createAppTopicCreateQueue,
@@ -166,12 +167,14 @@ function RootNavigator() {
   const { status } = useSession();
   const { completingSignUp } = useAuthFlow();
   const waitingForPreferences = useWaitingForPreferences();
+  // The bundled faces load before the first screen shows, so text never jumps fonts.
+  const fontsReady = useAppFonts();
 
   useEffect(() => {
     void auth.restoreSession();
   }, [auth]);
 
-  if (status === 'unknown') return <LaunchScreen />;
+  if (status === 'unknown' || !fontsReady) return <LaunchScreen />;
 
   const signedIn = status === 'authenticated' && !completingSignUp;
   // The navigator mounts once the session is known, so the opening URL is kept. While a

@@ -26,6 +26,7 @@ export function Avatar({ initials }: { initials: string | null }) {
             x={c}
             y={c}
             fill={theme.colors.text.accent}
+            fontFamily={theme.type.title.fontFamily}
             fontSize={theme.type.title.fontSize}
             fontWeight={theme.type.title.fontWeight}
             textAnchor="middle"

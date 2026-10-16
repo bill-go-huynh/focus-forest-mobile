@@ -1,7 +1,7 @@
 /**
  * Where every shipped asset came from (docs/10 §4: "Keep a record of the source for every asset
  * (tool, date, prompt or artist, license) in an asset manifest"). An asset leaves `placeholder`
- * only with an entry here. Reference material (the art direction canvas in `design/`) is not
+ * only with an entry here. Third-party assets (the fonts) say so in `by`. Reference material (the art direction canvas in `design/`) is not
  * shipped and is not listed.
  */
 
@@ -103,5 +103,21 @@ export const ASSET_SOURCES: readonly AssetSource[] = [
     by: CLAUDE,
     method: 'The signature species in direction B on the shared renderer',
     license: ORIGINAL,
+  },
+  {
+    asset: 'theme',
+    files: [
+      'assets/fonts/Fraunces-Light.ttf',
+      'assets/fonts/Fraunces-Regular.ttf',
+      'assets/fonts/Inter-Light.ttf',
+      'assets/fonts/Inter-Regular.ttf',
+      'assets/fonts/Inter-Medium.ttf',
+      'assets/fonts/Inter-SemiBold.ttf',
+    ],
+    made: '2026-10-16',
+    by: 'Third-party: Fraunces (The Fraunces Project Authors) and Inter (The Inter Project Authors)',
+    method: 'Static instances downloaded from Google Fonts (fonts.googleapis.com css2 API)',
+    license:
+      'SIL Open Font License 1.1, which allows bundling in an app (assets/fonts/OFL-Fraunces.txt, OFL-Inter.txt)',
   },
 ];
