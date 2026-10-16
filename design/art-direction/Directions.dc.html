@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Three tree directions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1320px; height: 1300px; box-sizing: border-box; padding: 56px; background: #F7F3EA; color: #2B2620; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 36px">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 300; font-size: 48px">Three directions, one tree</h1>
+    <p style="margin: 0; max-width: 560px; font-size: 14px; line-height: 1.5; color: #4D453B">The same signature tree, same layers and slots, drawn three ways. Mature Tree in each lighting preset, then Young, Mature and Final Form at forest-thumbnail size.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 180px repeat(3, 220px) 1fr; column-gap: 24px; row-gap: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #665D51">
+    <span></span><span>Day</span><span>Golden hour</span><span>Night</span><span>Thumbnails · 72 px</span>
+  </div>
+
+  <sc-for list="{{rows}}" as="row" hint-placeholder-count="3">
+    <div style="display: grid; grid-template-columns: 180px repeat(3, 220px) 1fr; column-gap: 24px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px">
+        <div style="font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: 400">{{row.letter}}</div>
+        <div style="font-size: 16px; font-weight: 600">{{row.title}}</div>
+        <div style="font-size: 13px; line-height: 1.5; color: #4D453B">{{row.desc}}</div>
+      </div>
+      <sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="3">
+        <div style="width: 220px; height: 264px; border-radius: 18px; overflow: hidden; box-shadow: 0 1px 2px #2B262014, 0 10px 28px #2B262014">
+          <dc-import name="Tree" look="{{row.look}}" time="{{cell.time}}" stage="5" uid="{{cell.uid}}" hint-size="220px,264px"></dc-import>
+        </div>
+      </sc-for>
+      <div style="display: flex; gap: 12px; align-items: flex-end; height: 264px">
+        <sc-for list="{{row.thumbs}}" as="th" hint-placeholder-count="3">
+          <div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+            <div style="width: 72px; height: 86px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px #2B262014">
+              <dc-import name="Tree" look="{{row.look}}" time="day" stage="{{th.stage}}" uid="{{th.uid}}" hint-size="72px,86px"></dc-import>
+            </div>
+            <div style="font-size: 11px; color: #665D51">{{th.name}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1320,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const defs = [
+      { look: 'soft', letter: 'A', title: 'Soft vector', desc: 'Smooth rounded clusters, gentle gradients, almost no texture. Cleanest at small sizes; closest to the current placeholder.' },
+      { look: 'painterly', letter: 'B', title: 'Painterly-flat', desc: 'Irregular clusters with brushed edges, sunlit highlights and a visible grain. Closest to docs/01 §6. Recommended.' },
+      { look: 'papercut', letter: 'C', title: 'Paper-cut', desc: 'Flat tones per layer, crisp cut edges, a soft shadow under each layer. The most graphic, the least painterly.' },
+    ];
+    const times = ['day', 'golden', 'night'];
+    const thumbs = [[3, 'Young'], [5, 'Mature'], [7, 'Final']];
+    const rows = defs.map((d) => ({
+      ...d,
+      cells: times.map((time) => ({ time, uid: `dir-${d.look}-${time}` })),
+      thumbs: thumbs.map(([stage, name]) => ({ stage, name, uid: `dir-${d.look}-s${stage}` })),
+    }));
+    return { rows };
+  }
+}
+</script>
+</body>
+</html>

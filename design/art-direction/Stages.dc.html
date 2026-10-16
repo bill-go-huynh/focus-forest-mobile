@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Seven stages</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1320px; height: 480px; box-sizing: border-box; padding: 48px; background: #F7F3EA; color: #2B2620; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 28px">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 300; font-size: 40px">One month, seven stages</h1>
+    <p style="margin: 0; max-width: 520px; font-size: 14px; line-height: 1.5; color: #4D453B">Each stage is a complete composition, so a month that ends at Young Tree still looks finished (docs/03 §3). Switch direction and light in Tweaks.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px">
+    <sc-for list="{{stages}}" as="s" hint-placeholder-count="7">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="height: 192px; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px #2B262014, 0 8px 22px #2B262012">
+          <dc-import name="Tree" look="{{look}}" time="{{time}}" stage="{{s.stage}}" uid="{{s.uid}}" hint-size="100%,192px"></dc-import>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="font-size: 14px; font-weight: 600">{{s.name}}</div>
+          <div style="font-size: 12px; color: #665D51">{{s.hint}}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"look":{"editor":"enum","options":["soft","painterly","papercut"],"default":"painterly"},"time":{"editor":"enum","options":["day","golden","night"],"default":"day"},"$preview":{"width":1320,"height":480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const look = this.props.look ?? 'painterly';
+    const time = this.props.time ?? 'day';
+    const rows = [
+      ['Seed', 'Before the first session'],
+      ['Sprout', 'The first session'],
+      ['Young Tree', '~2 h this month'],
+      ['Growing Tree', '~6 h'],
+      ['Mature Tree', '~12 h'],
+      ['Blooming Tree', '~20 h'],
+      ['Final Form', '~30 h'],
+    ];
+    const stages = rows.map(([name, hint], i) => ({ name, hint, stage: i + 1, uid: `stg-${look}-${time}-${i + 1}` }));
+    return { look, time, stages };
+  }
+}
+</script>
+</body>
+</html>

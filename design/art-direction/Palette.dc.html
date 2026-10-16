@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Master palette</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1200px; height: 1000px; box-sizing: border-box; padding: 56px 64px; background: #F7F3EA; color: #2B2620; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 300; font-size: 48px">Master palette</h1>
+    <p style="margin: 0; max-width: 520px; font-size: 14px; line-height: 1.5; color: #4D453B">Interface colors are today's provisional tokens (contrast-tested to WCAG AA). Scene colors are proposed for the tree renderer's palette file and stay out of the interface.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+    <div style="background: #FFFCF6; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Interface · Day garden</h2>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{light}}" as="s" hint-placeholder-count="12">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <div style="height: 56px; border-radius: 12px; background: {{s.hex}}; box-shadow: inset 0 0 0 1px #2B26201A"></div>
+            <div style="font-size: 12px; font-weight: 500">{{s.name}}</div>
+            <div style="font-size: 11px; color: #665D51; font-variant-numeric: tabular-nums">{{s.hex}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background: #16201C; color: #F2EDE3; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Interface · Night garden</h2>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{dark}}" as="s" hint-placeholder-count="12">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <div style="height: 56px; border-radius: 12px; background: {{s.hex}}; box-shadow: inset 0 0 0 1px #F2EDE31F"></div>
+            <div style="font-size: 12px; font-weight: 500">{{s.name}}</div>
+            <div style="font-size: 11px; color: #AAA395; font-variant-numeric: tabular-nums">{{s.hex}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 style="margin: 0; font-size: 16px; font-weight: 600">Scene lighting presets · signature species</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+      <sc-for list="{{scenes}}" as="sc" hint-placeholder-count="3">
+        <div style="border-radius: 20px; overflow: hidden; background: #FFFCF6; display: flex; flex-direction: column">
+          <div style="height: 120px; background: linear-gradient(180deg, {{sc.sky0}} 0%, {{sc.sky1}} 70%, {{sc.ground}} 70%, {{sc.ground}} 100%); position: relative">
+            <div style="position: absolute; left: {{sc.cx}}; top: {{sc.cy}}; width: 28px; height: 28px; border-radius: 50%; background: {{sc.celestial}}; box-shadow: 0 0 24px {{sc.celestial}}"></div>
+          </div>
+          <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+            <div style="font-size: 15px; font-weight: 600">{{sc.name}}</div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+              <sc-for list="{{sc.swatches}}" as="s" hint-placeholder-count="8">
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <div style="height: 32px; border-radius: 8px; background: {{s.hex}}; box-shadow: inset 0 0 0 1px #2B26201A"></div>
+                  <div style="font-size: 11px; color: #4D453B">{{s.name}}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; align-items: center; background: #EFE8DA; border-radius: 16px; padding: 18px 22px; font-size: 14px; line-height: 1.5; color: #4D453B">
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 C12 15 12 11 12 7" stroke="#428552" stroke-width="1.9" stroke-linecap="round" fill="none"></path><path d="M12 11 C8 11 5.5 8.5 5.5 5 C9 5 12 7 12 11 Z" stroke="#428552" stroke-width="1.9" stroke-linejoin="round" fill="none"></path><path d="M12 9 C15.5 9 18.5 6.5 18.5 3.5 C15 3.5 12 5.5 12 9 Z" stroke="#428552" stroke-width="1.9" stroke-linejoin="round" fill="none"></path></svg>
+    <span>Rules the scene keeps: foliage stays green under every light and vitality, never brown or grey; night is deep blue-green, never black; blossom pink and glow are used sparingly.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const light = [
+      ['Background', '#F7F3EA'], ['Linen', '#EFE8DA'], ['Surface', '#FFFCF6'], ['Sunken', '#EBE4D6'], ['Ink', '#2B2620'], ['Muted', '#665D51'],
+      ['Amber', '#9C5B0C'], ['Amber soft', '#F6E7CB'], ['Forest', '#428552'], ['Leaf soft', '#DDEAD8'], ['Bloom', '#D9776C'], ['Glow', '#FFF0C7'],
+    ];
+    const dark = [
+      ['Night moss', '#16201C'], ['Lifted', '#1B2621'], ['Surface', '#212D28'], ['Sunken', '#111915'], ['Ink', '#F2EDE3'], ['Muted', '#AAA395'],
+      ['Lantern', '#E3A63F'], ['Amber soft', '#3A3220'], ['Forest', '#88C895'], ['Leaf soft', '#233A2C'], ['Bloom', '#E59A90'], ['Glow', '#F5E3A8'],
+    ];
+    const sw = (pairs) => pairs.map(([name, hex]) => ({ name, hex }));
+    const scenes = [
+      { name: 'Day', sky0: '#BFD9DE', sky1: '#F2E8CF', ground: '#8FA874', celestial: '#FFF6DA', cx: '78%', cy: '18px',
+        swatches: sw([['Back leaf', '#5E8A5E'], ['Main leaf', '#78A862'], ['Front leaf', '#557F4A'], ['Sunlit edge', '#B8D98A'], ['Bark', '#6B4F3A'], ['Hills', '#AFC2A6'], ['Blossom', '#F4D3DC'], ['Light pool', '#FFF1C4']]) },
+      { name: 'Golden hour', sky0: '#E7B487', sky1: '#F8DFB2', ground: '#9A9762', celestial: '#FFE3A3', cx: '70%', cy: '58px',
+        swatches: sw([['Back leaf', '#6F8A5A'], ['Main leaf', '#8FA75E'], ['Front leaf', '#5D7A45'], ['Sunlit edge', '#E2D07A'], ['Bark', '#7E5940'], ['Hills', '#C6A786'], ['Blossom', '#F6C9C2'], ['Light pool', '#FFD98F']]) },
+      { name: 'Night', sky0: '#0E1B22', sky1: '#21373A', ground: '#1C3329', celestial: '#E8EDD8', cx: '18%', cy: '20px',
+        swatches: sw([['Back leaf', '#24443A'], ['Main leaf', '#3F6B52'], ['Front leaf', '#1E3A2D'], ['Moon edge', '#8FB8A2'], ['Bark', '#3E322B'], ['Hills', '#1E3330'], ['Blossom', '#C9A7B4'], ['Firefly', '#F5E3A8']]) },
+    ];
+    return { light: sw(light), dark: sw(dark), scenes };
+  }
+}
+</script>
+</body>
+</html>

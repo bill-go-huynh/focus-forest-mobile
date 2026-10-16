@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Signature tree</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; height: 100%; line-height: 0">
+<svg width="100%" height="100%" viewBox="0 0 240 288" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{{label}}">
+  <defs>
+    <linearGradient id="{{id.sky}}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{p.sky0}}"></stop>
+      <stop offset="0.78" stop-color="{{p.sky1}}"></stop>
+    </linearGradient>
+    <linearGradient id="{{id.ground}}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{p.ground0}}"></stop>
+      <stop offset="1" stop-color="{{p.ground1}}"></stop>
+    </linearGradient>
+    <linearGradient id="{{id.mist}}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{p.mist}}" stop-opacity="0"></stop>
+      <stop offset="0.55" stop-color="{{p.mist}}" stop-opacity="0.6"></stop>
+      <stop offset="1" stop-color="{{p.mist}}" stop-opacity="0"></stop>
+    </linearGradient>
+    <radialGradient id="{{id.pool}}" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="{{p.pool}}" stop-opacity="1"></stop>
+      <stop offset="1" stop-color="{{p.pool}}" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="{{id.glow}}" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="{{p.glow}}" stop-opacity="0.9"></stop>
+      <stop offset="1" stop-color="{{p.glow}}" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="{{id.halo}}" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="{{p.celestial}}" stop-opacity="0.55"></stop>
+      <stop offset="1" stop-color="{{p.celestial}}" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="{{id.soil}}" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="{{p.soilLight}}"></stop>
+      <stop offset="1" stop-color="{{p.soil}}"></stop>
+    </radialGradient>
+    <radialGradient id="{{id.back}}" cx="0.36" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="{{p.back0}}"></stop>
+      <stop offset="1" stop-color="{{p.back1}}"></stop>
+    </radialGradient>
+    <radialGradient id="{{id.main}}" cx="0.36" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="{{p.main0}}"></stop>
+      <stop offset="1" stop-color="{{p.main1}}"></stop>
+    </radialGradient>
+    <radialGradient id="{{id.front}}" cx="0.36" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="{{p.front0}}"></stop>
+      <stop offset="1" stop-color="{{p.front1}}"></stop>
+    </radialGradient>
+    <linearGradient id="{{id.bark}}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="{{p.bark0}}"></stop>
+      <stop offset="1" stop-color="{{p.bark1}}"></stop>
+    </linearGradient>
+    <filter id="{{id.grain}}" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" stitchTiles="stitch"></feTurbulence>
+      <feColorMatrix type="saturate" values="0"></feColorMatrix>
+    </filter>
+    <filter id="{{id.brush}}" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="5" result="n"></feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+    </filter>
+    <filter id="{{id.drop}}" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1.2" dy="1.8" stdDeviation="1" flood-color="{{p.shadow}}" flood-opacity="0.32"></feDropShadow>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="240" height="288" fill="{{ref.sky}}"></rect>
+  <circle cx="{{p.cx}}" cy="{{p.cy}}" r="{{p.haloR}}" fill="{{ref.halo}}"></circle>
+  <circle cx="{{p.cx}}" cy="{{p.cy}}" r="{{p.cr}}" fill="{{p.celestial}}"></circle>
+  <path d="M0 206 C40 192 70 198 104 200 C140 202 170 188 240 196 L240 288 L0 288 Z" fill="{{p.hillsFar}}"></path>
+  <path d="M0 222 C46 208 88 214 124 218 C164 222 200 210 240 214 L240 288 L0 288 Z" fill="{{p.hills}}"></path>
+  <rect x="0" y="186" width="240" height="56" fill="{{ref.mist}}"></rect>
+  <path d="M0 240 C60 232 180 232 240 240 L240 288 L0 288 Z" fill="{{ref.ground}}"></path>
+  <sc-for list="{{tufts}}" as="t" hint-placeholder-count="0">
+    <path d="{{t.d}}" stroke="{{p.ground1}}" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.7"></path>
+  </sc-for>
+  <ellipse cx="116" cy="246" rx="64" ry="10" fill="{{ref.pool}}" opacity="{{p.poolOp}}"></ellipse>
+  <ellipse cx="{{sh.cx}}" cy="247" rx="{{sh.rx}}" ry="5" fill="{{p.shadow}}" opacity="{{p.shadowOp}}"></ellipse>
+
+  <sc-for list="{{mound}}" as="m" hint-placeholder-count="0">
+    <path d="M90 249 C96 238 144 238 150 249 Z" fill="{{ref.soil}}" filter="{{fx.layer}}"></path>
+  </sc-for>
+  <sc-for list="{{seedParts}}" as="s" hint-placeholder-count="0">
+    <g>
+      <path d="M118 244 Q114 248 108 249" stroke="{{p.bark1}}" stroke-width="1" fill="none" opacity="0.6"></path>
+      <ellipse cx="120" cy="240" rx="7" ry="5" transform="rotate(-20 120 240)" fill="{{ref.bark}}" filter="{{fx.layer}}"></ellipse>
+      <ellipse cx="118" cy="238" rx="2.4" ry="1.4" transform="rotate(-20 118 238)" fill="{{p.edge}}" opacity="0.5"></ellipse>
+      <path d="M123 236 Q125 231 130 230" stroke="{{p.main1}}" stroke-width="1.6" stroke-linecap="round" fill="none"></path>
+    </g>
+  </sc-for>
+  <sc-for list="{{sprout}}" as="s" hint-placeholder-count="0">
+    <g filter="{{fx.layer}}">
+      <path d="M120 246 C119 236 121 226 120 214" stroke="{{p.main1}}" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
+      <sc-for list="{{s.leaves}}" as="l" hint-placeholder-count="3">
+        <path d="{{l.d}}" fill="{{fill.main}}"></path>
+      </sc-for>
+    </g>
+  </sc-for>
+
+  <sc-for list="{{glowHalo}}" as="g" hint-placeholder-count="0">
+    <ellipse cx="120" cy="{{g.cy}}" rx="{{g.rx}}" ry="{{g.ry}}" fill="{{ref.glow}}" opacity="{{g.op}}"></ellipse>
+  </sc-for>
+  <g filter="{{fx.foliage}}">
+    <sc-for list="{{back}}" as="c" hint-placeholder-count="0">
+      <path d="{{c.d}}" fill="{{fill.back}}"></path>
+    </sc-for>
+  </g>
+  <sc-for list="{{trunk}}" as="t" hint-placeholder-count="0">
+    <path d="{{t.d}}" fill="{{fill.bark}}" filter="{{fx.layer}}"></path>
+  </sc-for>
+  <sc-for list="{{branches}}" as="b" hint-placeholder-count="0">
+    <path d="{{b.d}}" stroke="{{p.bark1}}" stroke-width="{{b.w}}" stroke-linecap="round" fill="none"></path>
+  </sc-for>
+  <g filter="{{fx.foliage}}">
+    <sc-for list="{{main}}" as="c" hint-placeholder-count="0">
+      <path d="{{c.d}}" fill="{{fill.main}}"></path>
+    </sc-for>
+    <sc-for list="{{mainLights}}" as="c" hint-placeholder-count="0">
+      <path d="{{c.d}}" fill="{{p.edge}}" opacity="{{p.edgeOp}}"></path>
+    </sc-for>
+  </g>
+  <sc-for list="{{blossoms}}" as="b" hint-placeholder-count="0">
+    <g>
+      <circle cx="{{b.x}}" cy="{{b.y}}" r="{{b.r}}" fill="{{p.blossom}}"></circle>
+      <circle cx="{{b.x}}" cy="{{b.y}}" r="{{b.cr}}" fill="{{p.blossomCenter}}"></circle>
+    </g>
+  </sc-for>
+  <sc-for list="{{fruit}}" as="f" hint-placeholder-count="0">
+    <g>
+      <circle cx="{{f.x}}" cy="{{f.y}}" r="3.2" fill="{{p.fruit}}"></circle>
+      <circle cx="{{f.hx}}" cy="{{f.hy}}" r="1" fill="{{p.edge}}" opacity="0.7"></circle>
+    </g>
+  </sc-for>
+  <g filter="{{fx.foliage}}">
+    <sc-for list="{{front}}" as="c" hint-placeholder-count="0">
+      <path d="{{c.d}}" fill="{{fill.front}}"></path>
+    </sc-for>
+    <sc-for list="{{frontLights}}" as="c" hint-placeholder-count="0">
+      <path d="{{c.d}}" fill="{{p.edge}}" opacity="{{p.edgeOp}}"></path>
+    </sc-for>
+  </g>
+  <sc-for list="{{fireflies}}" as="f" hint-placeholder-count="0">
+    <g>
+      <circle cx="{{f.x}}" cy="{{f.y}}" r="4.5" fill="{{p.glow}}" opacity="0.22"></circle>
+      <circle cx="{{f.x}}" cy="{{f.y}}" r="1.3" fill="{{p.glow}}"></circle>
+    </g>
+  </sc-for>
+  <sc-for list="{{pollen}}" as="f" hint-placeholder-count="0">
+    <circle cx="{{f.x}}" cy="{{f.y}}" r="1" fill="{{p.glow}}" opacity="0.8"></circle>
+  </sc-for>
+  <rect x="0" y="0" width="240" height="288" fill="{{p.tint}}" opacity="{{p.tintOp}}"></rect>
+  <rect x="0" y="0" width="240" height="288" filter="{{ref.grain}}" opacity="{{grainOp}}" style="mix-blend-mode: soft-light"></rect>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"look":{"editor":"enum","options":["soft","painterly","papercut"],"default":"painterly"},"time":{"editor":"enum","options":["day","golden","night"],"default":"day"},"stage":{"editor":"range","min":1,"max":7,"step":1,"default":5},"seed":{"editor":"int","default":7},"uid":{"editor":null,"default":"tree"},"$preview":{"width":240,"height":288}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const look = this.props.look ?? 'painterly';
+    const time = this.props.time ?? 'day';
+    const stage = Math.min(7, Math.max(1, parseInt(this.props.stage ?? 5, 10) || 5));
+    const seed = parseInt(this.props.seed ?? 7, 10) || 7;
+    const uid = String(this.props.uid ?? 'tree').replace(/[^A-Za-z0-9_-]/g, '');
+
+    const P = {
+      day: { sky0: '#BFD9DE', sky1: '#F2E8CF', hillsFar: '#CBD7C2', hills: '#AFC2A6', ground0: '#9DB27F', ground1: '#7B9364', mist: '#F2E8CF',
+        celestial: '#FFF6DA', cx: 186, cy: 52, cr: 15, back0: '#86AD80', back1: '#4F7A55', main0: '#AACB7E', main1: '#5A8D53', front0: '#8DBA6A', front1: '#477A44',
+        edge: '#D9EDA8', edgeOp: 0.38, bark0: '#8A6A50', bark1: '#56402F', soil: '#7E6249', soilLight: '#A88B6C', blossom: '#F6D5DE', blossomCenter: '#E9B949',
+        fruit: '#B0703E', pool: '#FFF1C4', poolOp: 0.55, shadow: '#2F3B2A', shadowOp: 0.18, glow: '#FFF3C4', glowOp: 0.22, tint: '#FFFFFF', tintOp: 0, night: false },
+      golden: { sky0: '#E2A97F', sky1: '#F8DFB2', hillsFar: '#E0BE98', hills: '#C4A684', ground0: '#ADA56C', ground1: '#827B4A', mist: '#F8DFB2',
+        celestial: '#FFE3A3', cx: 172, cy: 168, cr: 18, back0: '#A3AE72', back1: '#55704A', main0: '#D2CC79', main1: '#5E884C', front0: '#A8B763', front1: '#4B7141',
+        edge: '#F6DF8A', edgeOp: 0.5, bark0: '#93664A', bark1: '#583D2C', soil: '#7D5B40', soilLight: '#B08A62', blossom: '#F8CFC6', blossomCenter: '#F0B44C',
+        fruit: '#C0743C', pool: '#FFD98F', poolOp: 0.7, shadow: '#4A3420', shadowOp: 0.2, glow: '#FFE1A0', glowOp: 0.4, tint: '#FFB866', tintOp: 0.07, night: false },
+      night: { sky0: '#0E1B22', sky1: '#21373A', hillsFar: '#1C3031', hills: '#18302A', ground0: '#1F3A2E', ground1: '#13261F', mist: '#2A4443',
+        celestial: '#E8EDD8', cx: 58, cy: 50, cr: 11, back0: '#2F5446', back1: '#17302A', main0: '#507F61', main1: '#1E3D2F', front0: '#3D6B51', front1: '#16322A',
+        edge: '#A3CDB4', edgeOp: 0.28, bark0: '#55453A', bark1: '#2A211C', soil: '#2E2621', soilLight: '#4A3E35', blossom: '#D9B6C3', blossomCenter: '#E5C77A',
+        fruit: '#8E5B38', pool: '#F5E3A8', poolOp: 0.14, shadow: '#05090A', shadowOp: 0.32, glow: '#F5E3A8', glowOp: 0.3, tint: '#0B2030', tintOp: 0.1, night: true },
+    };
+    const p = { ...P[time] };
+    p.haloR = p.cr * 2.8;
+
+    const id = {};
+    const ref = {};
+    for (const k of ['sky', 'ground', 'mist', 'pool', 'glow', 'halo', 'soil', 'back', 'main', 'front', 'bark', 'grain', 'brush', 'drop']) {
+      id[k] = `${uid}-${k}`;
+      ref[k] = `url(#${uid}-${k})`;
+    }
+
+    const mix = (a, b, t) => {
+      const parse = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+      const A = parse(a);
+      const B = parse(b);
+      return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('');
+    };
+    const flat = look === 'papercut';
+    const fill = flat
+      ? { back: mix(p.back0, p.back1, 0.55), main: mix(p.main0, p.main1, 0.45), front: mix(p.front0, p.front1, 0.6), bark: mix(p.bark0, p.bark1, 0.5) }
+      : { back: ref.back, main: ref.main, front: ref.front, bark: ref.bark };
+    const fx = {
+      foliage: look === 'painterly' ? ref.brush : flat ? ref.drop : 'none',
+      layer: flat ? ref.drop : 'none',
+    };
+    const grainOp = { soft: 0.05, painterly: 0.16, papercut: 0.12 }[look] ?? 0.1;
+    const wob = { soft: 0.025, painterly: 0.09, papercut: 0.14 }[look] ?? 0.08;
+
+    let t = seed >>> 0;
+    const rand = () => {
+      t += 0x6d2b79f5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+    const f = (q) => `${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const blob = (cx, cy, r, w) => {
+      const n = 11;
+      const ph1 = rand() * 6.28;
+      const ph2 = rand() * 6.28;
+      const pts = [];
+      for (let i = 0; i < n; i += 1) {
+        const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+        const rr = r * (1 + w * (0.6 * Math.sin(3 * a + ph1) + 0.4 * Math.sin(5 * a + ph2)));
+        pts.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a) * 0.9]);
+      }
+      let d = `M${f(mid(pts[n - 1], pts[0]))}`;
+      for (let i = 0; i < n; i += 1) d += ` Q${f(pts[i])} ${f(mid(pts[i], pts[(i + 1) % n]))}`;
+      return `${d}Z`;
+    };
+    const leaf = (x, y, deg, len, w) => {
+      const a = (deg * Math.PI) / 180;
+      const tip = [x + len * Math.cos(a), y + len * Math.sin(a)];
+      const m = [x + (len / 2) * Math.cos(a), y + (len / 2) * Math.sin(a)];
+      const nrm = [-Math.sin(a) * w, Math.cos(a) * w];
+      return `M${f([x, y])} Q${f([m[0] + nrm[0], m[1] + nrm[1]])} ${f(tip)} Q${f([m[0] - nrm[0], m[1] - nrm[1]])} ${f([x, y])}Z`;
+    };
+
+    const K = { 1: 0, 2: 0, 3: 0.5, 4: 0.66, 5: 0.82, 6: 0.9, 7: 1 }[stage];
+    const counts = { 3: [1, 3, 1], 4: [3, 5, 2], 5: [5, 7, 3], 6: [5, 7, 3], 7: [7, 9, 3] }[stage] ?? [0, 0, 0];
+    const BACK = [[0, -160, 34], [-46, -128, 30], [44, -132, 30], [-70, -104, 22], [70, -106, 22], [-90, -118, 20], [90, -120, 20]];
+    const MAIN = [[0, -142, 36], [-30, -118, 34], [30, -120, 34], [-16, -96, 26], [18, -94, 26], [-58, -96, 24], [58, -98, 24], [-80, -86, 18], [82, -88, 18]];
+    const FRONT = [[0, -108, 22], [-24, -84, 20], [26, -82, 18]];
+    const place = (c) => ({ cx: 120 + c[0] * K, cy: 244 + c[1] * K, r: c[2] * K * 1.04, dx: c[0], dy: c[1] });
+
+    const backC = BACK.slice(0, counts[0]).map(place);
+    const mainC = MAIN.slice(0, counts[1]).map(place);
+    const frontC = FRONT.slice(0, counts[2]).map(place);
+    const back = backC.map((c) => ({ d: blob(c.cx, c.cy, c.r, wob) }));
+    const main = mainC.map((c) => ({ d: blob(c.cx, c.cy, c.r, wob) }));
+    const front = frontC.map((c) => ({ d: blob(c.cx, c.cy, c.r, wob) }));
+    const lights = (cs) => (look === 'painterly' ? cs.map((c) => ({ d: blob(c.cx - c.r * 0.24, c.cy - c.r * 0.3, c.r * 0.52, wob * 1.3) })) : []);
+
+    const tree = stage >= 3;
+    const h = 115 * K;
+    const w0 = 3 + 5 * K;
+    const wt = 1.2 + 1.6 * K;
+    const trunk = tree
+      ? [{ d: `M${120 - w0 - 5} 246 Q${120 - w0} 245 ${120 - w0} 238 C${120 - w0 * 0.8} ${244 - h * 0.45} ${120 - wt - 1} ${244 - h * 0.75} ${120 - wt} ${244 - h} L${120 + wt} ${244 - h} C${120 + wt + 1} ${244 - h * 0.75} ${120 + w0 * 0.8} ${244 - h * 0.45} ${120 + w0} 238 Q${120 + w0} 245 ${120 + w0 + 5} 246 Z` }]
+      : [];
+    const branches = tree
+      ? mainC.slice(1).map((c, i, all) => {
+          const sy = 244 - h * (0.42 + 0.1 * (i % 3));
+          return {
+            d: `M120 ${sy.toFixed(1)} Q${(120 + c.dx * K * 0.6).toFixed(1)} ${sy.toFixed(1)} ${c.cx.toFixed(1)} ${(c.cy + c.r * 0.3).toFixed(1)}`,
+            w: ((1.5 + 3 * K) * (1 - (0.35 * i) / Math.max(1, all.length))).toFixed(2),
+          };
+        })
+      : [];
+
+    const blossoms = [];
+    if (stage >= 6) {
+      const per = stage === 7 ? 3 : 2;
+      for (const c of mainC) {
+        for (let j = 0; j < per; j += 1) {
+          const a = rand() * Math.PI * 2;
+          const dist = c.r * (0.3 + 0.45 * rand());
+          blossoms.push({ x: (c.cx + dist * Math.cos(a)).toFixed(1), y: (c.cy + dist * Math.sin(a)).toFixed(1), r: 2.9, cr: 1.1 });
+        }
+      }
+    }
+    const fruit = stage === 7
+      ? [1, 2, 5, 6].map((i) => mainC[i]).filter(Boolean).map((c) => ({ x: (c.cx + c.r * 0.2).toFixed(1), y: (c.cy + c.r * 0.62).toFixed(1), hx: (c.cx + c.r * 0.2 - 1).toFixed(1), hy: (c.cy + c.r * 0.62 - 1).toFixed(1) }))
+      : [];
+    const glowHalo = stage >= 5 ? [{ cy: (244 - 125 * K).toFixed(1), rx: (100 * K).toFixed(1), ry: (88 * K).toFixed(1), op: p.glowOp }] : [];
+    const sparks = (n) => Array.from({ length: n }, () => ({ x: (120 + (rand() - 0.5) * 200 * K).toFixed(1), y: (244 - 40 - rand() * 150 * K).toFixed(1) }));
+    const fireflies = p.night && stage >= 5 ? sparks(7) : [];
+    const pollen = !p.night && stage >= 5 ? sparks(6) : [];
+
+    const tufts = [18, 44, 70, 168, 196, 222, 32, 208].map((x, i) => ({ d: `M${x} ${252 + (i % 3) * 8} q1 -4 ${i % 2 ? 3 : -3} -6` }));
+    const sh = { cx: tree ? 126 : 122, rx: tree ? Math.max(18, 58 * K).toFixed(1) : 20 };
+    const mound = stage <= 2 ? [1] : [];
+    const seedParts = stage === 1 ? [1] : [];
+    const sprout = stage === 2
+      ? [{ leaves: [{ d: leaf(120, 217, -148, 17, 6) }, { d: leaf(120, 215, -32, 18, 6.5) }, { d: leaf(120, 228, 196, 11, 4) }] }]
+      : [];
+
+    const names = ['Seed', 'Sprout', 'Young Tree', 'Growing Tree', 'Mature Tree', 'Blooming Tree', 'Final Form'];
+    const label = `${names[stage - 1]}, ${time === 'golden' ? 'golden hour' : time}, ${look} direction`;
+
+    return { p, id, ref, fill, fx, grainOp, back, main, front, mainLights: lights(mainC), frontLights: lights(frontC), trunk, branches, blossoms, fruit, glowHalo, fireflies, pollen, tufts, sh, mound, seedParts, sprout, label };
+  }
+}
+</script>
+</body>
+</html>

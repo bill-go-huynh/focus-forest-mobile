@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Badges and icons</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1320px; height: 700px; box-sizing: border-box; padding: 48px; background: {{bg}}; color: {{ink}}; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 300; font-size: 40px">Badges and icons</h1>
+    <p style="margin: 0; max-width: 560px; font-size: 14px; line-height: 1.5; color: {{muted}}">One frame shape per category, one emblem in the scene's style, rarity as material: a matte ring, a gold ring, then gold with a soft glow. Each must still read at 48 px.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px">
+    <sc-for list="{{badges}}" as="b" hint-placeholder-count="6">
+      <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+        <div style="display: flex; gap: 14px; align-items: flex-end">
+          <svg width="112" height="112" viewBox="-8 -8 112 112" role="img" aria-label="{{b.name}} badge">
+            <defs>
+              <linearGradient id="{{b.gid}}" x1="0.2" y1="0" x2="0.8" y2="1">
+                <stop offset="0" stop-color="{{b.c0}}"></stop>
+                <stop offset="1" stop-color="{{b.c1}}"></stop>
+              </linearGradient>
+              <radialGradient id="{{b.hid}}" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0.55" stop-color="#FFE9A8" stop-opacity="0.9"></stop>
+                <stop offset="1" stop-color="#FFE9A8" stop-opacity="0"></stop>
+              </radialGradient>
+            </defs>
+            <circle cx="48" cy="48" r="58" fill="{{b.halo}}" opacity="{{b.haloOp}}"></circle>
+            <path d="{{b.frame}}" fill="{{b.gref}}" stroke="{{b.ring}}" stroke-width="{{b.ringW}}" stroke-linejoin="round"></path>
+            <path d="{{b.frame}}" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="1" transform="translate(48 48) scale(0.9) translate(-48 -48)"></path>
+            <sc-for list="{{b.parts}}" as="pt" hint-placeholder-count="3">
+              <path d="{{pt.d}}" fill="{{pt.fill}}" stroke="{{pt.stroke}}" stroke-width="{{pt.sw}}" stroke-linecap="round" stroke-linejoin="round" opacity="{{pt.op}}"></path>
+            </sc-for>
+          </svg>
+          <svg width="48" height="48" viewBox="-8 -8 112 112" aria-hidden="true">
+            <path d="{{b.frame}}" fill="{{b.gref}}" stroke="{{b.ring}}" stroke-width="{{b.ringW}}" stroke-linejoin="round"></path>
+            <sc-for list="{{b.parts}}" as="pt" hint-placeholder-count="3">
+              <path d="{{pt.d}}" fill="{{pt.fill}}" stroke="{{pt.stroke}}" stroke-width="{{pt.sw}}" stroke-linecap="round" stroke-linejoin="round" opacity="{{pt.op}}"></path>
+            </sc-for>
+          </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <div style="font-size: 14px; font-weight: 600">{{b.name}}</div>
+          <div style="font-size: 12px; color: {{muted}}">{{b.meta}}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding-top: 24px; border-top: 1px solid {{line}}">
+    <div style="display: flex; justify-content: space-between; gap: 24px; align-items: baseline">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Line icons · 24 px, 1.9 px stroke, round terminals</h2>
+      <span style="font-size: 12px; color: {{muted}}">Filled only for the selected tab (docs/01 §5)</span>
+    </div>
+    <div style="display: flex; gap: 28px; align-items: center; flex-wrap: wrap">
+      <sc-for list="{{icons}}" as="ic" hint-placeholder-count="10">
+        <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; width: 72px">
+          <svg width="32" height="32" viewBox="0 0 24 24" role="img" aria-label="{{ic.name}}">
+            <sc-for list="{{ic.paths}}" as="d" hint-placeholder-count="2">
+              <path d="{{d.d}}" fill="{{d.fill}}" stroke="{{iconInk}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path>
+            </sc-for>
+          </svg>
+          <div style="font-size: 12px; color: {{muted}}">{{ic.name}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1320,"height":700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const c = (x, y, r) => `M${x - r} ${y} a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+    const part = (d, fill, extra = {}) => ({ d, fill, stroke: 'none', sw: 0, op: 1, ...extra });
+    const line = (d, stroke, sw = 2.5) => ({ d, fill: 'none', stroke, sw, op: 1 });
+    const FR = {
+      circle: 'M48 6 A42 42 0 1 1 47.9 6 Z',
+      square: 'M26 8 H70 Q88 8 88 26 V70 Q88 88 70 88 H26 Q8 88 8 70 V26 Q8 8 26 8 Z',
+      arch: 'M10 50 A38 38 0 0 1 86 50 V76 Q86 88 74 88 H22 Q10 88 10 76 Z',
+      hex: 'M48 6 L85 27 V69 L48 90 L11 69 V27 Z',
+      shield: 'M48 6 L84 18 V46 Q84 76 48 90 Q12 76 12 46 V18 Z',
+      gem: 'M33 6 H63 L90 33 V63 L63 90 H33 L6 63 V33 Z',
+    };
+    const RING = {
+      common: { ring: '#8A7F70', ringW: 2, halo: 'none', haloOp: 0 },
+      rare: { ring: '#C9922E', ringW: 3.5, halo: 'none', haloOp: 0 },
+      legendary: { ring: '#E3B54A', ringW: 4, halo: 'glow', haloOp: 0.8 },
+    };
+    const stones = Array.from({ length: 7 }, (_, i) => {
+      const a = ((200 + (i * 140) / 6) * Math.PI) / 180;
+      return part(c(48 + 26 * Math.cos(a), 52 - 26 * Math.sin(a), 3.6), '#9C5B0C', { op: 0.55 + i * 0.06 });
+    });
+    const petals = Array.from({ length: 5 }, (_, i) => {
+      const a = ((-90 + i * 72) * Math.PI) / 180;
+      return part(c(48 + 10 * Math.cos(a), 44 + 10 * Math.sin(a), 7.5), '#F6D5DE');
+    });
+    const defs = [
+      { name: 'First Session', meta: 'Focus · common', frame: FR.circle, rarity: 'common', c0: '#EAF2E0', c1: '#AECB9B',
+        parts: [part('M30 74 Q48 62 66 74 Z', '#8A6E52'), line('M48 70 C48 60 48 52 48 44', '#477A44', 3),
+          part('M48 54 C40 54 33 48 33 39 C42 39 48 45 48 54 Z', '#6FA463'), part('M48 47 C56 47 63 41 63 32 C54 32 48 38 48 47 Z', '#8DBA6A')] },
+      { name: '7-Day Streak', meta: 'Consistency · common', frame: FR.square, rarity: 'common', c0: '#F7ECD6', c1: '#D8B77E',
+        parts: [...stones, part('M48 30 C41 35 41 44 48 50 C55 44 55 35 48 30 Z', '#6FA463'), line('M48 50 V58', '#477A44', 2.5)] },
+      { name: 'Early Bird', meta: 'Time-based · common', frame: FR.arch, rarity: 'common', c0: '#F8E4CC', c1: '#E2A97F',
+        parts: [part(c(48, 60, 13), '#F0B44C'), line('M48 36 V30', '#C98E2C'), line('M31 43 L27 39', '#C98E2C'), line('M65 43 L69 39', '#C98E2C'),
+          part('M12 76 Q48 54 84 76 V80 H12 Z', '#7E9666')] },
+      { name: 'Community Contributor', meta: 'Social · rare', frame: FR.hex, rarity: 'rare', c0: '#E2ECEF', c1: '#9DB9C6',
+        parts: [part('M46 72 C30 68 25 50 33 35 C44 43 50 57 46 72 Z', '#5E8A5E'), part('M50 72 C66 68 71 50 63 35 C52 43 46 57 50 72 Z', '#7FAF6A'),
+          part(c(48, 40, 4.5), '#FFF0C7')] },
+      { name: '[Event badge]', meta: 'Event · rare', frame: FR.shield, rarity: 'rare', c0: '#F8E2E4', c1: '#D99BA2',
+        parts: [part('M41 58 L36 78 L42 74 L46 80 L48 60 Z', '#C96F5B'), part('M55 58 L60 78 L54 74 L50 80 L48 60 Z', '#B65F4D'), ...petals, part(c(48, 44, 5), '#E9B949')] },
+      { name: '[Rare badge]', meta: 'Rare · legendary', frame: FR.gem, rarity: 'legendary', c0: '#ECE6F3', c1: '#AFA3CC',
+        parts: [part(c(48, 50, 22), '#FFF0C7', { op: 0.55 }), part('M48 30 C61 37 63 57 48 68 C33 57 35 37 48 30 Z', '#7D5A8C'),
+          line('M43 40 C45 37 49 37 51 40', '#F2EDE3', 2), part('M70 24 L72 30 L78 32 L72 34 L70 40 L68 34 L62 32 L68 30 Z', '#E3B54A')] },
+    ];
+    const badges = defs.map((d, i) => {
+      const r = RING[d.rarity];
+      return { ...d, ...r, gid: `bg-${i}`, hid: `bh-${i}`, gref: `url(#bg-${i})`, halo: r.halo === 'glow' ? `url(#bh-${i})` : 'none' };
+    });
+    const N = 'none';
+    const icons = [
+      { name: 'Seed', paths: [{ d: 'M12 4.5 C16.5 7.5 17 14 12 19.5 C7 14 7.5 7.5 12 4.5 Z', fill: N }, { d: 'M10.5 9.5 C11 8.5 12.5 8.3 13.4 9.2', fill: N }] },
+      { name: 'Sprout', paths: [{ d: 'M12 21 V11', fill: N }, { d: 'M12 13 C8 13 5.5 10.5 5.5 7 C9 7 12 9 12 13 Z', fill: N }, { d: 'M12 11 C15.5 11 18.5 8.5 18.5 5 C15 5 12 7 12 11 Z', fill: N }] },
+      { name: 'Leaf', paths: [{ d: 'M5 19 C5 10 10 5 19 5 C19 14 14 19 5 19 Z', fill: N }, { d: 'M5 19 L13 11', fill: N }] },
+      { name: 'Tree', paths: [{ d: 'M12 21 V14', fill: N }, { d: 'M12 3.5 C16.5 3.5 19 6.5 19 10 C19 13 16.5 15 12 15 C7.5 15 5 13 5 10 C5 6.5 7.5 3.5 12 3.5 Z', fill: N }] },
+      { name: 'Forest', paths: [{ d: 'M8 20 V15', fill: N }, { d: 'M16 20 V13', fill: N }, { d: 'M8 6 C11 6 12.5 8.5 12.5 11 C12.5 13.5 10.5 15 8 15 C5.5 15 3.5 13.5 3.5 11 C3.5 8.5 5 6 8 6 Z', fill: N }, { d: 'M16 3.5 C19 3.5 20.5 6 20.5 8.5 C20.5 11.5 18.5 13 16 13 C13.5 13 12.5 12 12.4 11', fill: N }] },
+      { name: 'Timer', paths: [{ d: 'M12 21 A8 8 0 1 1 12.01 21 Z', fill: N }, { d: 'M12 9 V13 L14.5 14.5', fill: N }, { d: 'M10 2.5 H14', fill: N }] },
+      { name: 'Sun', paths: [{ d: 'M12 16 A4 4 0 1 1 12.01 16 Z', fill: N }, { d: 'M12 3 V5 M12 19 V21 M3 12 H5 M19 12 H21 M5.6 5.6 L7 7 M17 17 L18.4 18.4 M5.6 18.4 L7 17 M17 7 L18.4 5.6', fill: N }] },
+      { name: 'Moon', paths: [{ d: 'M19.5 14.5 A7.5 7.5 0 1 1 9.5 4.5 A6 6 0 0 0 19.5 14.5 Z', fill: N }] },
+      { name: 'Together', paths: [{ d: 'M9 11 A3 3 0 1 1 9.01 11 Z', fill: N }, { d: 'M3.5 19.5 C4 16.5 6.2 15 9 15 C11.8 15 14 16.5 14.5 19.5', fill: N }, { d: 'M16 11.5 A2.5 2.5 0 1 0 15.99 6.5', fill: N }, { d: 'M17 15 C19 15.3 20.3 16.8 20.5 19', fill: N }] },
+      { name: 'Badge', paths: [{ d: 'M12 15 A6 6 0 1 1 12.01 15 Z', fill: N }, { d: 'M8.5 13.8 L7.5 21 L12 19 L16.5 21 L15.5 13.8', fill: N }] },
+      { name: 'Rest day', paths: [{ d: 'M4 18 H20', fill: N }, { d: 'M6 18 C6 13 9 10 12 10 C15 10 18 13 18 18', fill: N }, { d: 'M12 6 V4 M6.5 8 L5.3 6.8 M17.5 8 L18.7 6.8', fill: N }] },
+      { name: 'Tree, selected', paths: [{ d: 'M12 21 V14', fill: N }, { d: 'M12 3.5 C16.5 3.5 19 6.5 19 10 C19 13 16.5 15 12 15 C7.5 15 5 13 5 10 C5 6.5 7.5 3.5 12 3.5 Z', fill: dark ? '#E3A63F' : '#9C5B0C' }] },
+    ];
+    return {
+      badges,
+      icons,
+      bg: dark ? '#16201C' : '#F7F3EA',
+      ink: dark ? '#F2EDE3' : '#2B2620',
+      muted: dark ? '#AAA395' : '#4D453B',
+      line: dark ? '#2F3D36' : '#E2D9C8',
+      iconInk: dark ? '#E3A63F' : '#9C5B0C',
+    };
+  }
+}
+</script>
+</body>
+</html>

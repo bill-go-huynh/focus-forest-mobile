@@ -1,0 +1,11 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-16T09:00:00Z"},"title":"Focus Forest Art Direction","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":1200,"h":1000,"title":"1 · Art direction sheet"},
+"Palette.dc.html":{"x":1280,"y":0,"w":1200,"h":1000,"title":"2 · Master palette"},
+"Directions.dc.html":{"x":0,"y":1120,"w":1320,"h":1300,"title":"3 · Three tree directions"},
+"Stages.dc.html":{"x":1400,"y":1120,"w":1320,"h":480,"title":"4 · Seven stages"},
+"Badges.dc.html":{"x":1400,"y":1720,"w":1320,"h":700,"title":"5 · Badges and icons"},
+"Tree.dc.html":{"x":2560,"y":0,"w":240,"h":288,"title":"Tree component"}
+},
+"order":["Main.dc.html","Palette.dc.html","Directions.dc.html","Stages.dc.html","Badges.dc.html","Tree.dc.html"],
+"notes":{},"designSystems":[]}
