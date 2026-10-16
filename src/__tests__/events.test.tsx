@@ -19,7 +19,8 @@ import { signInForTest } from '../test-utils/secure-store-mock';
 import { settleSheetTransitions, until } from '../test-utils/sheets';
 import { treeDto } from '../test-utils/trees';
 import { describeTree } from '../tree/describe-tree';
-import { knownTrait, toTreeVisualState } from '../tree/visual-state';
+import { TreeScene } from '../tree/TreeScene';
+import { knownTrait, toTreeVisualState, type TreeVisualState } from '../tree/visual-state';
 
 jest.mock(
   'expo-secure-store',
@@ -244,6 +245,21 @@ describe('the Community Tree (a warm shared number, never a race)', () => {
     expect(screen.getByText('Final Form · 50,000 minutes')).toBeOnTheScreen();
     // No list, ranking, or share of any other person (docs/02).
     expect(screen.queryByText(/rank|top|most|least|%/i)).toBeNull();
+  });
+
+  it('draws the shared tree as a species of its own, pink in blossom (docs/03 §10)', async () => {
+    await openTree();
+    const tree = screen.UNSAFE_getByType(TreeScene).props.tree as TreeVisualState;
+    expect(tree.species).toBe('shared-blossom');
+    expect(tree.blossoms.level).toBe(tree.blossoms.max);
+  });
+
+  it('shows blossoms early: a growing shared tree already has some', async () => {
+    server.state.community = makeCommunityTree({ stage: 'growing_tree' });
+    await openTree();
+    const tree = screen.UNSAFE_getByType(TreeScene).props.tree as TreeVisualState;
+    expect(tree.blossoms.level).toBeGreaterThan(0);
+    expect(tree.blossoms.level).toBeLessThan(tree.blossoms.max);
   });
 
   it('celebrates each new milestone once, then marks it seen', async () => {

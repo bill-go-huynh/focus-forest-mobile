@@ -50,7 +50,7 @@ function extent(e: Ellipse) {
 }
 
 describe('species: the same framework, drawn in its own idiom (docs/03 §9)', () => {
-  it('knows the A4.3 catalog, and draws anything else as the signature species', () => {
+  it('knows the A4.3 catalog and the Community Tree, and draws anything else as the signature species', () => {
     expect([...SPECIES_KEYS].sort()).toEqual(
       [
         'signature',
@@ -62,6 +62,8 @@ describe('species: the same framework, drawn in its own idiom (docs/03 §9)', ()
         'fantasy',
         'golden-sakura',
         'ancient-pine',
+        // The Community Tree's own species (ART.8), never one a person owns.
+        'shared-blossom',
       ].sort(),
     );
     expect(speciesKeyOf('sakura')).toBe('sakura');

@@ -24,6 +24,8 @@ export const SPECIES_KEYS = [
   'fantasy',
   'golden-sakura',
   'ancient-pine',
+  // The Community Tree's own species (docs/03 §10), never one a person owns.
+  'shared-blossom',
 ] as const;
 export type SpeciesKey = (typeof SPECIES_KEYS)[number];
 
@@ -57,6 +59,11 @@ export interface SpeciesDefinition {
   fruit: FruitShape;
   particle: 'pollen' | 'petal';
   effect: SpeciesEffect | null;
+  /**
+   * Flowers drawn at each blossom slot, and their size: a sakura's dense pink blossoms
+   * (docs/03 §9). The slot count still follows the blossom level, so the level stays legible.
+   */
+  bloomDensity?: { flowers: number; scale: number };
   palette: SpeciesPalette;
 }
 
@@ -104,6 +111,7 @@ const DEFINITIONS: Record<SpeciesKey, Omit<SpeciesDefinition, 'key' | 'palette'>
     fruit: 'cherry',
     particle: 'petal',
     effect: null,
+    bloomDensity: { flowers: 3, scale: 1.2 },
   },
   pine: {
     name: 'Pine',
@@ -149,6 +157,7 @@ const DEFINITIONS: Record<SpeciesKey, Omit<SpeciesDefinition, 'key' | 'palette'>
     fruit: 'cherry',
     particle: 'petal',
     effect: 'golden-light',
+    bloomDensity: { flowers: 3, scale: 1.2 },
   },
   'ancient-pine': {
     name: 'Ancient Pine',
@@ -158,6 +167,18 @@ const DEFINITIONS: Record<SpeciesKey, Omit<SpeciesDefinition, 'key' | 'palette'>
     fruit: 'cone',
     particle: 'pollen',
     effect: 'ancient-frost',
+  },
+  'shared-blossom': {
+    name: 'Shared Blossom',
+    base: null,
+    // Wide and arching like a sakura, a little broader: a tree many people grew.
+    shape: { width: 1.2, height: 0.92, taper: 0, cluster: { x: 0.92, y: 0.82 }, trunk: 1 },
+    bloom: 'flowers',
+    fruit: 'cherry',
+    particle: 'petal',
+    effect: null,
+    // Fuller than a sakura: a shared tree reads as pink at a glance.
+    bloomDensity: { flowers: 5, scale: 1.6 },
   },
 };
 

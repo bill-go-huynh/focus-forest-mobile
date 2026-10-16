@@ -2,7 +2,7 @@ import { act, screen } from '@testing-library/react-native';
 import { createRef } from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import * as Reanimated from 'react-native-reanimated';
-import { Ellipse, Path } from 'react-native-svg';
+import { Circle, Ellipse, Path } from 'react-native-svg';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import { mockAppState } from '../../test-utils/app-state';
@@ -91,6 +91,23 @@ describe('TreeScene', () => {
       <TreeScene tree={visual({ stage: 'mature_tree', fullness: 5 })} timeOfDay="day" />,
     );
     expect(litClusters().length).toBeGreaterThan(10);
+  });
+
+  it('draws a sakura’s blossoms as dense clusters, as many slots as the level (docs/03 §9)', () => {
+    const count = (species: string) => {
+      renderWithProviders(
+        <TreeScene
+          tree={visual({ stage: 'final_form', blossoms: 5, species })}
+          timeOfDay="day"
+          motion="still"
+        />,
+      );
+      const circles = screen.UNSAFE_root.findAll((node) => node.type === Circle).length;
+      screen.unmount();
+      return circles;
+    };
+    expect(count('sakura')).toBeGreaterThan(count('signature') + 10);
+    expect(count('shared-blossom')).toBeGreaterThan(count('sakura'));
   });
 
   it('adds the paper grain to a hero scene only, never to a forest thumbnail', () => {

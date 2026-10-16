@@ -25,6 +25,7 @@ import { ambientFor, mix, particlesFor, sceneColors, type SceneColors } from './
 import { barkVolume, clusterOutline, KEY_LIGHT, volume } from './signature/brush';
 import { SIGNATURE_PALETTE, type LightingPreset } from './signature/palette';
 import { GROUND_Y, TREE_VIEWBOX } from './signature/stages';
+import { speciesDefinition } from './species';
 import { ENVIRONMENT_PALETTE } from './species/palette';
 import type { TreeVisualState } from './visual-state';
 
@@ -146,6 +147,7 @@ export const TreeArt = memo(function TreeArt({
     transformOrigin: `${(c.pivot.x / W) * 100}% ${(c.pivot.y / H) * 100}%`,
   };
   const leaf = (accent: boolean) => url(accent ? leafId.accent : leafId.main);
+  const density = speciesDefinition(c.species).bloomDensity ?? SINGLE_FLOWER;
   const fixedTraits = c.traits.filter((mark) => mark.anchor !== 'canopy');
   const canopyTraits = c.traits.filter((mark) => mark.anchor === 'canopy');
 
@@ -277,7 +279,7 @@ export const TreeArt = memo(function TreeArt({
           <Animated.View style={[StyleSheet.absoluteFill, motion.blossoms]}>
             <Layer>
               {c.blossoms.map((dot) => (
-                <Bloom key={dot.key} dot={dot} bloom={c.bloom} colors={colors} />
+                <Bloom key={dot.key} dot={dot} bloom={c.bloom} colors={colors} density={density} />
               ))}
             </Layer>
           </Animated.View>
@@ -485,23 +487,39 @@ export const GardenDecoration = memo(function GardenDecoration({
 });
 
 /** A species' bloom expression at one blossom slot (docs/03 §9: each in its own idiom). */
+const SINGLE_FLOWER = { flowers: 1, scale: 1 } as const;
+
 function Bloom({
   dot,
   bloom,
   colors,
+  density,
 }: {
   dot: Dot;
   bloom: TreeComposition['bloom'];
   colors: SceneColors;
+  density: { flowers: number; scale: number };
 }) {
   switch (bloom) {
-    case 'flowers':
+    case 'flowers': {
+      // One flower, or a small cluster around the slot (a sakura's dense blossoms).
+      const r = dot.r * (density.flowers > 1 ? density.scale * 0.72 : 1);
+      const flowers = Array.from({ length: density.flowers }, (_, i) => {
+        if (density.flowers === 1) return { x: dot.cx, y: dot.cy };
+        const a = (i / density.flowers) * Math.PI * 2 - Math.PI / 2;
+        return { x: dot.cx + Math.cos(a) * r * 0.95, y: dot.cy + Math.sin(a) * r * 0.95 };
+      });
       return (
         <G>
-          <Circle cx={dot.cx} cy={dot.cy} r={dot.r} fill={colors.blossom} />
-          <Circle cx={dot.cx} cy={dot.cy} r={dot.r * 0.4} fill={colors.blossomCenter} />
+          {flowers.map((f, i) => (
+            <Circle key={`p${i}`} cx={f.x} cy={f.y} r={r} fill={colors.blossom} />
+          ))}
+          {flowers.map((f, i) => (
+            <Circle key={`c${i}`} cx={f.x} cy={f.y} r={r * 0.36} fill={colors.blossomCenter} />
+          ))}
         </G>
       );
+    }
     case 'tips':
       // Fresh bright tips on a conifer.
       return (

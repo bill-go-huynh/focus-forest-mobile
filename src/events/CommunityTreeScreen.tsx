@@ -17,11 +17,15 @@ import { groupedNumber, stageName } from './event-format';
 import { useCommunityCelebrated, useCommunityTree } from './queries';
 
 /** The community stages on the same stage framework and renderer (docs/03 §10). */
-const SCENE_STAGE: Record<string, { stage: TreeStage; number: number; level: number }> = {
-  seedling: { stage: 'sprout', number: 2, level: 1 },
-  growing_tree: { stage: 'growing_tree', number: 4, level: 3 },
-  bloom: { stage: 'blooming_tree', number: 6, level: 5 },
-  final_form: { stage: 'final_form', number: 7, level: 5 },
+const SCENE_STAGE: Record<
+  string,
+  { stage: TreeStage; number: number; level: number; blossoms: number }
+> = {
+  seedling: { stage: 'sprout', number: 2, level: 1, blossoms: 1 },
+  // Blossoms come early and fill in with every milestone: the shared tree is pink in bloom.
+  growing_tree: { stage: 'growing_tree', number: 4, level: 3, blossoms: 4 },
+  bloom: { stage: 'blooming_tree', number: 6, level: 5, blossoms: 7 },
+  final_form: { stage: 'final_form', number: 7, level: 5, blossoms: 7 },
 };
 
 /** A stable seed from the event id, so the shared tree looks the same on every device. */
@@ -33,17 +37,22 @@ function seedOf(id: string): number {
 
 /**
  * The shared tree drawn by the personal tree's renderer: its stage from the community's reached
- * milestone. PROVISIONAL art (ART.5): the Community Tree is drawn as the signature species in
- * direction B, on the same renderer, until the owner wants a species of its own (docs/10).
+ * milestone, as its own species, Shared Blossom (docs/03 §10; ART.8, owner request 2026-10-16:
+ * a pink tree). PROVISIONAL art, in direction B on the same renderer, until the quality gate.
  */
 function sceneTree(tree: CommunityTree): TreeVisualState {
-  const look = (tree.stage && SCENE_STAGE[tree.stage]) || { stage: 'seed', number: 1, level: 0 };
+  const look = (tree.stage && SCENE_STAGE[tree.stage]) || {
+    stage: 'seed',
+    number: 1,
+    level: 0,
+    blossoms: 0,
+  };
   const now = new Date();
   return toTreeVisualState({
     year: now.getUTCFullYear(),
     month: now.getUTCMonth() + 1,
     status: 'growing',
-    species: 'signature',
+    species: 'shared-blossom',
     variationSeed: seedOf(tree.eventId),
     partialFirstMonth: false,
     configVersion: 1,
@@ -53,7 +62,7 @@ function sceneTree(tree: CommunityTree): TreeVisualState {
       progressToNextStage: null,
       growthMinutes: tree.totalMinutes,
       fullness: { level: look.level, maxLevel: 5 },
-      blossoms: { level: look.level, maxLevel: 7 },
+      blossoms: { level: look.blossoms, maxLevel: 7 },
       richness: { tier: 0, maxTier: 5 },
     },
     traits: [],
