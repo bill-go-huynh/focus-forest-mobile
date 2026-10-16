@@ -79,7 +79,7 @@ export const RELEASE_ASSETS: readonly ReleaseAsset[] = [
     what: 'Badge art',
     status: badgeArtStatus,
     doc: 'docs/10',
-    files: ['src/progression/BadgeMark.tsx'],
+    files: ['src/progression/BadgeMark.tsx', 'src/progression/badge-palette.ts'],
   },
   {
     id: 'collection',

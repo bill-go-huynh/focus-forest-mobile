@@ -68,11 +68,13 @@ module.exports = defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     // The theme defines the raw values; tests assert on them. Tree and scene art use their own
-    // palettes, not UI tokens (docs/01 §2): the signature's, and the species' and garden's.
+    // palettes, not UI tokens (docs/01 §2): the signature's, the species' and garden's, and the
+    // badges'.
     ignores: [
       'src/theme/**',
       'src/tree/signature/palette.ts',
       'src/tree/species/palette.ts',
+      'src/progression/badge-palette.ts',
       '**/__tests__/**',
       '**/*.test.{ts,tsx}',
     ],

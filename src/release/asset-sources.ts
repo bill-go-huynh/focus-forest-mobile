@@ -42,4 +42,17 @@ export const ASSET_SOURCES: readonly AssetSource[] = [
     method: 'Generated noise texture (design/tools/generate-grain.py, fixed seed)',
     license: ORIGINAL,
   },
+  {
+    asset: 'badges',
+    files: [
+      'src/progression/BadgeMark.tsx',
+      'src/progression/badge-art.ts',
+      'src/progression/badge-palette.ts',
+    ],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method:
+      'Hand-authored SVG frames per category and emblems per badge family (design/art-direction/Badges.dc.html)',
+    license: ORIGINAL,
+  },
 ];
