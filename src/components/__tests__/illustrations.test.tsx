@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { Circle, Ellipse, Path, Rect } from 'react-native-svg';
+import { Circle, Ellipse, Path, Rect, Stop } from 'react-native-svg';
 
 import { renderWithProviders } from '../../test-utils/render';
 import { darkTheme, lightTheme, type Theme } from '../../theme';
@@ -19,21 +19,41 @@ const themes = [
 
 beforeEach(() => mockColorScheme.mockReturnValue('light'));
 
-// Every fill and stroke color; "none" is the absence of paint, not a color.
-const shapeFills = () =>
-  screen.UNSAFE_root.findAll((node) => [Circle, Ellipse, Path, Rect].includes(node.type as never))
+// Every fill and stroke color, and every gradient stop; "none" is the absence of paint, and a
+// gradient reference (ART.4) is checked through its stops.
+const shapeFills = () => [
+  ...screen.UNSAFE_root.findAll((node) =>
+    [Circle, Ellipse, Path, Rect].includes(node.type as never),
+  )
     .flatMap((node) => [node.props.fill, node.props.stroke] as (string | undefined)[])
-    .filter((color): color is string => color !== undefined && color !== 'none');
+    .filter(
+      (color): color is string =>
+        color !== undefined && color !== 'none' && !color.startsWith('url(#'),
+    ),
+  ...screen.UNSAFE_root.findAll((node) => node.type === Stop).map(
+    (node) => node.props.stopColor as string,
+  ),
+];
+
+const gradientFills = () =>
+  screen.UNSAFE_root.findAll((node) => [Circle, Ellipse, Path, Rect].includes(node.type as never))
+    .map((node) => node.props.fill as string | undefined)
+    .filter((fill): fill is string => fill?.startsWith('url(#') ?? false);
 
 describe('spot illustrations (docs/10 §2 → UI illustrations)', () => {
   it('uses the documented spot illustrations of the same world', () => {
     expect([...ILLUSTRATION_IDS].sort()).toEqual(['clearing', 'lantern', 'seed-in-soil']);
   });
 
-  it('marks every illustration as a provisional placeholder, not final art (docs/10 §4)', () => {
+  it('marks every illustration provisional until the owner passes the quality gate (ART.4)', () => {
     for (const id of ILLUSTRATION_IDS) {
-      expect(illustrationStatus[id]).toBe('placeholder');
+      expect(illustrationStatus[id]).toBe('provisional');
     }
+  });
+
+  it.each(ILLUSTRATION_IDS)('paints %s with soft light, as the tree scene is (ART.4)', (id) => {
+    renderWithProviders(<SpotIllustration id={id} />);
+    expect(gradientFills().length).toBeGreaterThan(0);
   });
 
   it('has no dying, wilting, or failure imagery among its identifiers', () => {

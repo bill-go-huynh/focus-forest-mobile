@@ -71,4 +71,12 @@ export const ASSET_SOURCES: readonly AssetSource[] = [
     method: 'Hand-authored SVG line icons on a 24-unit grid (docs/01 §5), 50 in the curated set',
     license: ORIGINAL,
   },
+  {
+    asset: 'illustrations',
+    files: ['src/components/illustrations.tsx'],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method: 'Hand-authored SVG spot scenes in theme colors with soft gradients (docs/10 §2)',
+    license: ORIGINAL,
+  },
 ];

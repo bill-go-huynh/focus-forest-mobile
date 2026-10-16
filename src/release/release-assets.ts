@@ -24,9 +24,12 @@ export interface ReleaseAsset {
   files: readonly string[];
 }
 
-const illustrations: AssetStatus = Object.values(illustrationStatus).every((s) => s === 'final')
+const illustrationStates = Object.values(illustrationStatus);
+const illustrations: AssetStatus = illustrationStates.every((s) => s === 'final')
   ? 'final'
-  : 'placeholder';
+  : illustrationStates.some((s) => s === 'placeholder')
+    ? 'placeholder'
+    : 'provisional';
 const theme: AssetStatus = Object.values(themeValueStatus).every((s) => s === ('final' as string))
   ? 'final'
   : 'provisional';
