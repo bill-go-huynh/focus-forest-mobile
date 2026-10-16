@@ -55,4 +55,20 @@ export const ASSET_SOURCES: readonly AssetSource[] = [
       'Hand-authored SVG frames per category and emblems per badge family (design/art-direction/Badges.dc.html)',
     license: ORIGINAL,
   },
+  {
+    asset: 'tab-icons',
+    files: ['src/components/icons.tsx'],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method: 'Hand-authored SVG line icons on a 24-unit grid (docs/01 §5)',
+    license: ORIGINAL,
+  },
+  {
+    asset: 'topic-icons',
+    files: ['src/components/TopicMark.tsx', 'src/components/topic-icons.ts'],
+    made: '2026-10-16',
+    by: CLAUDE,
+    method: 'Hand-authored SVG line icons on a 24-unit grid (docs/01 §5), 50 in the curated set',
+    license: ORIGINAL,
+  },
 ];

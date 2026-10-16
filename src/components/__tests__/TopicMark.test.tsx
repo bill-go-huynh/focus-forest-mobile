@@ -75,18 +75,19 @@ describe('TopicMark (a topic’s icon in its color: never the topic’s only ide
     });
   });
 
-  it('draws the same placeholder for every identifier until the curated set exists', () => {
-    expect(topicMarkStatus).toBe('placeholder');
+  it('draws each curated icon by its identifier, and the default for one it does not know', () => {
+    expect(topicMarkStatus).toBe('provisional');
     const outline = (icon: string) => {
       const { unmount } = renderWithProviders(<TopicMark color="topic.1" icon={icon} />);
-      const drawn = JSON.stringify(shapes().map(({ props: { d, cx, r } }) => ({ d, cx, r })));
+      const drawn = JSON.stringify(shapes().map(({ props: { d } }) => d));
       unmount();
       return drawn;
     };
-    expect(outline('a-future-icon')).toBe(outline('book'));
+    expect(outline('book')).not.toBe(outline('music-note'));
+    expect(outline('a-future-icon')).toBe(outline('topic.default'));
   });
 
-  it('keeps the identifier it was given, so real icons can replace the placeholder', () => {
+  it('keeps the identifier it was given', () => {
     renderWithProviders(<TopicMark color="topic.1" icon="music-note" />);
     expect(mark('music-note')).toBeOnTheScreen();
   });

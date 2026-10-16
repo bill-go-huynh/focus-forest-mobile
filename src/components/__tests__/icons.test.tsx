@@ -19,8 +19,8 @@ describe('tab icons (docs/01 §5: rounded line icons; the active tab is filled)'
     ]);
   });
 
-  it('is marked provisional until Phase 0 picks the icon family', () => {
-    expect(tabIconStatus).toBe('placeholder');
+  it('is provisional art until the owner passes the quality gate (ART.3)', () => {
+    expect(tabIconStatus).toBe('provisional');
   });
 
   it.each(TAB_ICON_NAMES)('draws %s as a line icon with the stroke token', (name) => {
