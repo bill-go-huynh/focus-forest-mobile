@@ -144,12 +144,12 @@ describe('route structure', () => {
     expect(outside).toEqual([]);
   });
 
-  it('has exactly the welcome, sign-up, and sign-in screens in the auth group (M11, welcome)', () => {
+  it('has exactly the welcome, sign-up, sign-in, and forgot-password screens in the auth group (M11, W.1, W.3)', () => {
     expect(
       routeFiles(AUTH)
         .map((file) => relative(AUTH, file))
         .sort(),
-    ).toEqual(['sign-in.tsx', 'sign-up.tsx', 'welcome.tsx']);
+    ).toEqual(['forgot-password.tsx', 'sign-in.tsx', 'sign-up.tsx', 'welcome.tsx']);
   });
 
   it('asks for no notification permission at launch (docs/02: ask in context)', () => {

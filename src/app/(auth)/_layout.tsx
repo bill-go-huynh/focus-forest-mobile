@@ -16,6 +16,8 @@ export default function AuthLayout() {
       </Stack.Protected>
       <Stack.Screen name="sign-in" />
       <Stack.Screen name="sign-up" />
+      {/* W.3 Forgot password, from sign in. */}
+      <Stack.Screen name="forgot-password" />
     </Stack>
   );
 }

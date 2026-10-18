@@ -21,7 +21,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const { submit, busy, error } = useSignIn();
   const passwordRef = useRef<InputHandle>(null);
-  const { control, handleSubmit } = useForm<SignInValues>({
+  const { control, handleSubmit, getValues } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' },
     mode: 'onSubmit',
@@ -81,6 +81,18 @@ export default function SignInScreen() {
           variant="primary"
           label={busy ? 'Signing in…' : 'Sign in'}
           onPress={handleSubmit(submit)}
+          disabled={busy}
+        />
+        {/* W.3 The email typed here goes along, so it need not be typed twice. */}
+        <Button
+          variant="tertiary"
+          label="Forgot password?"
+          onPress={() =>
+            router.push({
+              pathname: '/forgot-password',
+              params: { email: getValues('email').trim() },
+            })
+          }
           disabled={busy}
         />
         <GoogleSignInButton disabled={busy} />

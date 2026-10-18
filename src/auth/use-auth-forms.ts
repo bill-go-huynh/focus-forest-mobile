@@ -17,7 +17,7 @@ import {
 } from './describe-error';
 import { googleWebClientId, requestGoogleIdToken } from './google';
 import { getDeviceTimeZone } from './device-time-zone';
-import type { SignInValues, SignUpValues } from './validation';
+import type { ResetConfirmValues, SignInValues, SignUpValues } from './validation';
 
 const PROFILE_NETWORK_MESSAGE =
   "Your account is ready, but we couldn't save your name yet. Check your connection and try again.";
@@ -172,4 +172,45 @@ export function useGoogleSignIn() {
   }
 
   return { submit, busy, error, available: googleWebClientId() !== null };
+}
+
+/**
+ * W.3 Forgot password: send a code to the email, then the code and a new password sign in (the
+ * app opens Home on its own). `sentTo` is the email the last code went to.
+ */
+export function usePasswordReset() {
+  const { auth } = useApi();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<AuthErrorDescription | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const inFlight = useRef(false);
+
+  async function run(task: () => Promise<void>) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      await task();
+    } catch (cause) {
+      setError(describeAuthError(cause));
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }
+
+  const sendCode = (email: string) =>
+    run(async () => {
+      await auth.requestPasswordReset(email);
+      setSentTo(email);
+    });
+
+  const confirm = (values: ResetConfirmValues) =>
+    run(async () => {
+      if (!sentTo) return;
+      await auth.resetPassword({ email: sentTo, code: values.code, password: values.password });
+    });
+
+  return { sendCode, confirm, sentTo, busy, error };
 }

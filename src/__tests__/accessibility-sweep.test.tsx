@@ -155,14 +155,17 @@ describe('accessibility of every screen (M7.3)', () => {
     expect(renderedCopy(screen.toJSON()).flatMap(avoidedWordProblems)).toEqual([]);
   });
 
-  it.each(['/welcome', '/sign-in', '/sign-up'])('%s (signed out)', async (route) => {
-    const secureStore = jest.requireMock('expo-secure-store') as {
-      deleteItemAsync: (key: string) => Promise<void>;
-    };
-    await secureStore.deleteItemAsync('focus-forest.session');
-    renderApp(appRoutes, { initialUrl: route });
-    await settle();
-    expect(accessibilityProblems(screen.toJSON())).toEqual([]);
-    expect(renderedCopy(screen.toJSON()).flatMap(avoidedWordProblems)).toEqual([]);
-  });
+  it.each(['/welcome', '/sign-in', '/sign-up', '/forgot-password'])(
+    '%s (signed out)',
+    async (route) => {
+      const secureStore = jest.requireMock('expo-secure-store') as {
+        deleteItemAsync: (key: string) => Promise<void>;
+      };
+      await secureStore.deleteItemAsync('focus-forest.session');
+      renderApp(appRoutes, { initialUrl: route });
+      await settle();
+      expect(accessibilityProblems(screen.toJSON())).toEqual([]);
+      expect(renderedCopy(screen.toJSON()).flatMap(avoidedWordProblems)).toEqual([]);
+    },
+  );
 });

@@ -12,13 +12,15 @@ const email = z
   .max(254, 'Enter a valid email address.')
   .pipe(z.email('Enter a valid email address.'));
 
+// Passwords are kept exactly as typed.
+const newPassword = z
+  .string()
+  .min(8, 'Use at least 8 characters for your password.')
+  .max(128, 'Use at most 128 characters for your password.');
+
 export const signUpSchema = z.object({
   email,
-  // Passwords are kept exactly as typed.
-  password: z
-    .string()
-    .min(8, 'Use at least 8 characters for your password.')
-    .max(128, 'Use at most 128 characters for your password.'),
+  password: newPassword,
   displayName: z
     .string()
     .trim()
@@ -32,5 +34,17 @@ export const signInSchema = z.object({
   password: z.string().min(1, 'Enter your password.').max(128, 'Enter your password.'),
 });
 
+/** W.3 Forgot password: the email to send a code to, then the code and a new password. */
+export const resetRequestSchema = z.object({ email });
+export const resetConfirmSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Enter the 6-digit code from the email.'),
+  password: newPassword,
+});
+
 export type SignUpValues = z.infer<typeof signUpSchema>;
+export type ResetRequestValues = z.infer<typeof resetRequestSchema>;
+export type ResetConfirmValues = z.infer<typeof resetConfirmSchema>;
 export type SignInValues = z.infer<typeof signInSchema>;

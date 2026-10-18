@@ -1,6 +1,7 @@
 import RootLayout from '../app/_layout';
 import AuthLayout from '../app/(auth)/_layout';
 import WelcomeRoute from '../app/(auth)/welcome';
+import ForgotPasswordRoute from '../app/(auth)/forgot-password';
 import SignInScreen from '../app/(auth)/sign-in';
 import SignUpScreen from '../app/(auth)/sign-up';
 import TabsLayout from '../app/(tabs)/_layout';
@@ -47,6 +48,7 @@ export const appRoutes = {
   _layout: RootLayout,
   '(auth)/_layout': AuthLayout,
   '(auth)/welcome': WelcomeRoute,
+  '(auth)/forgot-password': ForgotPasswordRoute,
   '(auth)/sign-up': SignUpScreen,
   '(auth)/sign-in': SignInScreen,
   '(tabs)/_layout': TabsLayout,

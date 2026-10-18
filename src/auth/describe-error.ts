@@ -18,6 +18,9 @@ const SAFE_API_MESSAGES = new Set([
   'Enter a valid email address.',
   'Use at least 8 characters for your password.',
   'Use at most 128 characters for your password.',
+  // W.3 Forgot password.
+  'That code is not right, or it has expired. Ask for a new one.',
+  'Enter the 6-digit code from the email.',
 ]);
 const EMAIL_TAKEN = 'An account with this email already exists.';
 /** W.2 Google sign-in's own refusals (POST /auth/google). */

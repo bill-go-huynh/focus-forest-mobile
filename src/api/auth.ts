@@ -64,6 +64,27 @@ export function createAuth({ client, session }: { client: ApiClient; session: Se
       return session.getSnapshot().status;
     },
 
+    /** W.3 Asks the API to email a reset code. It answers the same whether the email has an account. */
+    async requestPasswordReset(email: string): Promise<void> {
+      await client.request('/auth/password-reset/request', {
+        method: 'POST',
+        body: { email },
+        auth: false,
+      });
+    },
+
+    /** W.3 The emailed code sets a new password; the API signs this device in. */
+    async resetPassword(reset: { email: string; code: string; password: string }) {
+      const result = await client.request('/auth/password-reset/confirm', {
+        method: 'POST',
+        body: reset,
+        auth: false,
+        schema: sessionSchema,
+      });
+      await session.setSession(result);
+      return result.user;
+    },
+
     /** Also forgets the Google account on this device, so the next sign-in can pick another. */
     async signOut(): Promise<void> {
       await session.clear();
