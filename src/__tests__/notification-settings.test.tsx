@@ -7,6 +7,7 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
+import { WELCOME_TITLE } from '../test-utils/welcome';
 
 /**
  * M6.1 Notification settings and delivery (spec §18, docs/02: reminders are invitations, the
@@ -275,7 +276,7 @@ describe('the device (M6.1)', () => {
     await openSettings();
     await waitFor(() => expect(devices()).toHaveLength(1));
     fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(devices()[1]).toMatchObject({
       method: 'DELETE',
       headers: { Authorization: 'Bearer test-access' },
@@ -292,7 +293,7 @@ describe('the device (M6.1)', () => {
     await waitFor(() => expect(devices()).toHaveLength(1));
     offline = true;
     fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
   });
 });
 

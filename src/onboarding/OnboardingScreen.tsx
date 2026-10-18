@@ -21,8 +21,8 @@ import { useOnboarding, useOnboardingStore } from './OnboardingProvider';
 
 /**
  * Onboarding for a new account (docs/02 → Onboarding, docs/05 §3; M3.3), opened once after
- * sign-up. It shows "one month = one tree → forest" with the user's own seed (this month's tree
- * from Home), then a daily goal with the server's suggestion (GET /me/goals), saved only when
+ * sign-up. The welcome has already shown the concept before sign-up, so this plants the user's
+ * own seed (this month's tree from Home), then a daily goal with the server's suggestion (GET /me/goals), saved only when
  * chosen: Skip creates no goal, and the first goal applies today (the server says so). It ends
  * on the first session (the Phase 2 Start Focus) or Home.
  *
@@ -78,9 +78,11 @@ function ConceptStep({ onContinue }: { onContinue: () => void }) {
   const homeTree = home?.tree ?? null;
   const tree = useMemo(() => (homeTree ? toTreeVisualState(homeTree) : null), [homeTree]);
   return (
-    <Screen title="One month, one tree">
+    <Screen title="Your seed is planted">
       <Body>
-        {"Each focus session grows this month's tree. When the month ends, it joins your forest."}
+        {
+          "This is this month's tree. Each focus session helps it grow, and when the month ends it joins your forest."
+        }
       </Body>
       <View>
         {tree ? (

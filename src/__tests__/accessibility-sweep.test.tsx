@@ -155,7 +155,7 @@ describe('accessibility of every screen (M7.3)', () => {
     expect(renderedCopy(screen.toJSON()).flatMap(avoidedWordProblems)).toEqual([]);
   });
 
-  it.each(['/sign-in', '/sign-up'])('%s (signed out)', async (route) => {
+  it.each(['/welcome', '/sign-in', '/sign-up'])('%s (signed out)', async (route) => {
     const secureStore = jest.requireMock('expo-secure-store') as {
       deleteItemAsync: (key: string) => Promise<void>;
     };

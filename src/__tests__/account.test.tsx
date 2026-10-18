@@ -7,6 +7,7 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
+import { WELCOME_TITLE } from '../test-utils/welcome';
 
 /**
  * M7.1 Your data (docs/11 Privacy; Phase 7 owner decision 3): download a copy of everything
@@ -144,7 +145,7 @@ describe('deleting the account (M7.1)', () => {
     field('Type DELETE to confirm', 'DELETE');
     fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
 
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(requests.find((r) => r.method === 'DELETE')).toMatchObject({
       url: `${API}/me`,
       body: { password: 'correct horse' },
@@ -168,7 +169,7 @@ describe('deleting the account (M7.1)', () => {
     field('Type DELETE to confirm', 'DELETE');
     fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
     expect(await screen.findByText('That password is not right.')).toBeOnTheScreen();
-    expect(screen.queryByRole('header', { name: 'Create your account' })).toBeNull();
+    expect(screen.queryByRole('header', { name: WELCOME_TITLE })).toBeNull();
   });
 
   it('keeps the account when the server cannot be reached', async () => {

@@ -13,6 +13,7 @@ import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { settleSheetTransitions, until } from '../test-utils/sheets';
 import { makeTopic } from '../test-utils/topics';
+import { WELCOME_TITLE, signUpFromWelcome } from '../test-utils/welcome';
 
 const mockSecureStore = new Map<string, string>();
 jest.mock('expo-secure-store', () => ({
@@ -118,12 +119,12 @@ const type = (label: string, text: string) =>
 
 async function signUp() {
   const router = renderApp(appRoutes, { initialUrl: '/' });
-  await screen.findByRole('header', { name: 'Create your account' });
+  await signUpFromWelcome();
   type('Email', 'mai@example.com');
   type('Password', 'correct horse');
   type('Your name', 'Mai');
   fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
-  await screen.findByRole('header', { name: 'One month, one tree' });
+  await screen.findByRole('header', { name: 'Your seed is planted' });
   return router;
 }
 
@@ -133,12 +134,12 @@ async function toDailyGoal() {
 }
 
 describe('onboarding after sign-up (docs/02, docs/05)', () => {
-  it('explains one month, one tree, and plants the user’s seed', async () => {
+  it('plants the user’s seed, after the welcome explained the concept', async () => {
     const router = await signUp();
     expect(router.getPathname()).toBe('/onboarding');
     expect(
       screen.getByText(
-        "Each focus session grows this month's tree. When the month ends, it joins your forest.",
+        "This is this month's tree. Each focus session helps it grow, and when the month ends it joins your forest.",
       ),
     ).toBeOnTheScreen();
     expect(await screen.findByRole('image')).toBeOnTheScreen();
@@ -213,7 +214,7 @@ describe('onboarding after sign-up (docs/02, docs/05)', () => {
 describe('existing users', () => {
   it('never see onboarding on sign-in, and their default goal is not saved for them', async () => {
     const router = renderApp(appRoutes, { initialUrl: '/' });
-    await screen.findByRole('header', { name: 'Create your account' });
+    await screen.findByRole('header', { name: WELCOME_TITLE });
     fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     type('Email', 'mai@example.com');
@@ -222,7 +223,7 @@ describe('existing users', () => {
     expect(await screen.findByTestId('tab-bar')).toBeOnTheScreen();
     await pause(300);
     expect(router.getPathname()).toBe('/');
-    expect(screen.queryByRole('header', { name: 'One month, one tree' })).toBeNull();
+    expect(screen.queryByRole('header', { name: 'Your seed is planted' })).toBeNull();
     expect(goalWrites()).toEqual([]);
   });
 });
@@ -256,7 +257,7 @@ describe('durable onboarding state', () => {
     await signUp();
     await untilStored({ version: 1, status: 'pending', step: 'concept' });
     let router = await relaunch();
-    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Your seed is planted' })).toBeOnTheScreen();
     expect(router.getPathname()).toBe('/onboarding');
 
     await toDailyGoal();
@@ -282,7 +283,7 @@ describe('durable onboarding state', () => {
     const router = await relaunch();
     await pause(300);
     expect(router.getPathname()).toBe('/');
-    expect(screen.queryByRole('header', { name: 'One month, one tree' })).toBeNull();
+    expect(screen.queryByRole('header', { name: 'Your seed is planted' })).toBeNull();
   });
 
   it('completes when the first focus starts from the last step, before Focus opens', async () => {
@@ -307,7 +308,7 @@ describe('durable onboarding state', () => {
       JSON.stringify({ version: 1, status: 'pending', step: 'goal' }),
     );
     const router = renderApp(appRoutes, { initialUrl: '/' });
-    await screen.findByRole('header', { name: 'Create your account' });
+    await screen.findByRole('header', { name: WELCOME_TITLE });
     fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     type('Email', 'mai@example.com');

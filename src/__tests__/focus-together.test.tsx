@@ -16,6 +16,7 @@ import { settleSheetTransitions, until } from '../test-utils/sheets';
 import { makeTopic } from '../test-utils/topics';
 import { LINH_ID } from '../test-utils/social';
 import { treeDto } from '../test-utils/trees';
+import { WELCOME_TITLE } from '../test-utils/welcome';
 
 jest.mock(
   'expo-secure-store',
@@ -639,7 +640,7 @@ describe('notification taps and links (M6.2; docs/05 §4)', () => {
     await secureStore.deleteItemAsync('focus-forest.session');
     launchFromNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' });
     const router = renderApp(appRoutes, { initialUrl: '/' });
-    await screen.findByRole('header', { name: 'Create your account' });
+    await screen.findByRole('header', { name: WELCOME_TITLE });
     fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     fireEvent.changeText(screen.getByLabelText('Email'), 'mai@example.com');

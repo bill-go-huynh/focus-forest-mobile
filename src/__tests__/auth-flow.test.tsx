@@ -7,6 +7,7 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { lightTheme } from '../theme';
+import { signUpFromWelcome, WELCOME_TITLE } from '../test-utils/welcome';
 
 // Boundaries only: secure storage, the network, the device time zone, and the app config.
 const mockSecureStore = new Map<string, string>();
@@ -131,7 +132,7 @@ async function fillSignUp({
   password = 'correct horse',
   name = 'Mai',
 } = {}) {
-  await screen.findByRole('header', { name: 'Create your account' });
+  await signUpFromWelcome();
   type('Email', email);
   type('Password', password);
   type('Your name', name);
@@ -147,11 +148,12 @@ describe('launch: restore the session, then route by its status', () => {
 
     expect(await screen.findByTestId('launch-screen')).toBeOnTheScreen();
     expect(screen.queryByTestId('tab-bar')).toBeNull();
+    expect(screen.queryByRole('header', { name: WELCOME_TITLE })).toBeNull();
     expect(screen.queryByRole('header', { name: 'Create your account' })).toBeNull();
     expect(screen.queryByRole('header', { name: 'Welcome back' })).toBeNull();
 
     await act(async () => release());
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(screen.queryByTestId('tab-bar')).toBeNull();
   });
 
@@ -181,19 +183,19 @@ describe('launch: restore the session, then route by its status', () => {
     );
     serve(() => ({ status: 401, body: nestError(401, 'Sign in again to continue.') }));
     openApp();
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(stored()).toBeNull();
   });
 
   it('does not get stuck on the launch screen when secure storage cannot be read', async () => {
     mockSecureStoreFailure = new Error('Keychain unavailable');
     openApp();
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
   });
 
   it('keeps signed-out users out of the tabs', async () => {
     const router = openApp('/forest');
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(router.getPathname()).not.toBe('/forest');
   });
 
@@ -212,7 +214,7 @@ describe('sign up', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
 
     // M3.3: a new account goes through onboarding once, above Home.
-    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Your seed is planted' })).toBeOnTheScreen();
     expect(router.getPathname()).toBe('/onboarding');
     expect(authCalls().map((r) => [r.method, r.url])).toEqual([
       ['POST', `${API}/auth/sign-up`],
@@ -249,7 +251,7 @@ describe('sign up', () => {
     expect(screen.queryByTestId('tab-bar')).toBeNull();
 
     await act(async () => releaseProfile());
-    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Your seed is planted' })).toBeOnTheScreen();
     expect(requests.filter((r) => r.url === `${API}/auth/sign-up`)).toHaveLength(1);
   });
 
@@ -274,7 +276,7 @@ describe('sign up', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByRole('header', { name: 'One month, one tree' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Your seed is planted' })).toBeOnTheScreen();
     expect(requests.filter((r) => r.url === `${API}/auth/sign-up`)).toHaveLength(1);
     expect(requests.filter((r) => r.url === `${API}/me/profile`)).toHaveLength(2);
   });
@@ -325,7 +327,7 @@ describe('sign up', () => {
 
   it('sets up the fields for password managers and the right keyboards', async () => {
     openApp();
-    await screen.findByRole('header', { name: 'Create your account' });
+    await signUpFromWelcome();
     expect(screen.getByLabelText('Email').props).toMatchObject({
       keyboardType: 'email-address',
       autoCapitalize: 'none',
@@ -342,7 +344,7 @@ describe('sign up', () => {
 describe('sign in', () => {
   async function openSignIn() {
     const router = openApp();
-    await screen.findByRole('header', { name: 'Create your account' });
+    await screen.findByRole('header', { name: WELCOME_TITLE });
     fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     return router;
@@ -428,7 +430,7 @@ describe('scope (docs/02 onboarding; no features beyond M11)', () => {
     '"%s" offers no forgot-password, email verification, or social sign-in',
     async (heading) => {
       openApp();
-      await screen.findByRole('header', { name: 'Create your account' });
+      await signUpFromWelcome();
       if (heading === 'Welcome back') {
         fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
         await screen.findByRole('header', { name: heading });
@@ -441,7 +443,7 @@ describe('scope (docs/02 onboarding; no features beyond M11)', () => {
 
   it('has one primary action on each auth screen', async () => {
     openApp();
-    await screen.findByRole('header', { name: 'Create your account' });
+    await signUpFromWelcome();
     const primaries = screen
       .getAllByRole('button')
       .filter(
