@@ -1,3 +1,6 @@
+import { z } from 'zod';
+
+import { forgetGoogleAccount } from '../auth/google';
 import type { ApiClient } from './client';
 import { ApiError } from './errors';
 import { sessionSchema, type SessionStatus, type SessionStore, type SessionUser } from './session';
@@ -28,6 +31,24 @@ export function createAuth({ client, session }: { client: ApiClient; session: Se
     signIn: (credentials: Credentials): Promise<SessionUser> => start('/auth/sign-in', credentials),
 
     /**
+     * W.2 Signs in with the ID token Google gave the app. A new Google account is created by the
+     * server, with its Google name and this device's time zone (`created`: it onboards).
+     */
+    async signInWithGoogle(
+      idToken: string,
+      timezone: string | null,
+    ): Promise<{ user: SessionUser; created: boolean }> {
+      const { created, ...result } = await client.request('/auth/google', {
+        method: 'POST',
+        body: { idToken, ...(timezone ? { timezone } : {}) },
+        auth: false,
+        schema: googleSessionSchema,
+      });
+      await session.setSession(result);
+      return { user: result.user, created };
+    },
+
+    /**
      * Reads the saved session and renews an expired access token. Offline, the user stays
      * signed in; the next request refreshes. A rejected refresh token signs out.
      */
@@ -43,8 +64,14 @@ export function createAuth({ client, session }: { client: ApiClient; session: Se
       return session.getSnapshot().status;
     },
 
-    signOut: (): Promise<void> => session.clear(),
+    /** Also forgets the Google account on this device, so the next sign-in can pick another. */
+    async signOut(): Promise<void> {
+      await session.clear();
+      await forgetGoogleAccount();
+    },
   };
 }
+
+const googleSessionSchema = sessionSchema.extend({ created: z.boolean() });
 
 export type Auth = ReturnType<typeof createAuth>;

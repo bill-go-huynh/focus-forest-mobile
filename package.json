@@ -21,6 +21,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-google-signin/google-signin": "^16.1.5",
     "@tanstack/react-query": "^5.104.0",
     "expo": "~57.0.25",
     "expo-asset": "~57.0.20",

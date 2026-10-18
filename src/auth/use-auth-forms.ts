@@ -9,7 +9,13 @@ import {
 } from '../api';
 import { useOnboardingStore } from '../onboarding/OnboardingProvider';
 import { useAuthFlow } from './AuthFlowProvider';
-import { describeAuthError, type AuthErrorDescription } from './describe-error';
+import {
+  describeAuthError,
+  GOOGLE_FAILED_MESSAGE,
+  GOOGLE_UNAVAILABLE_MESSAGE,
+  type AuthErrorDescription,
+} from './describe-error';
+import { googleWebClientId, requestGoogleIdToken } from './google';
 import { getDeviceTimeZone } from './device-time-zone';
 import type { SignInValues, SignUpValues } from './validation';
 
@@ -118,4 +124,52 @@ export function useSignIn() {
   }
 
   return { submit, busy, error };
+}
+
+/**
+ * W.2 "Continue with Google", on sign up and sign in: Google's chooser, then POST /auth/google. A
+ * new account is created by the server with its Google name and the device time zone, so it only
+ * needs marking onboarding-pending (M3.3) before the app opens, like a sign-up. Backing out of the
+ * chooser changes nothing. `available` is false when the app has no Google client configured.
+ */
+export function useGoogleSignIn() {
+  const { auth } = useApi();
+  const { setCompletingSignUp } = useAuthFlow();
+  const onboarding = useOnboardingStore();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<AuthErrorDescription | null>(null);
+  const inFlight = useRef(false);
+
+  async function submit() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const google = await requestGoogleIdToken();
+      if (google.kind === 'cancelled') return;
+      if (google.kind !== 'token') {
+        setError({
+          message:
+            google.kind === 'unavailable' ? GOOGLE_UNAVAILABLE_MESSAGE : GOOGLE_FAILED_MESSAGE,
+        });
+        return;
+      }
+      // The auth screens stay up until a new account is marked, so it opens on onboarding.
+      setCompletingSignUp(true);
+      try {
+        const { user, created } = await auth.signInWithGoogle(google.idToken, getDeviceTimeZone());
+        if (created) await onboarding.markPending(user.id);
+      } catch (cause) {
+        setError(describeAuthError(cause));
+      } finally {
+        setCompletingSignUp(false);
+      }
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }
+
+  return { submit, busy, error, available: googleWebClientId() !== null };
 }

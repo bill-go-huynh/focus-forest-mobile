@@ -3,13 +3,21 @@ import { z } from 'zod';
 import { HttpError, UnauthenticatedError } from './errors';
 import type { TokenStore } from './token-store';
 
-/** The API's AuthResult (A3: POST /auth/sign-up, /auth/sign-in, /auth/refresh). */
+/**
+ * The API's AuthResult (A3: POST /auth/sign-up, /auth/sign-in, /auth/refresh; W.2 /auth/google).
+ * `signInMethod` (W.2) says whether the account signs in with its password or only with Google;
+ * sessions saved before it have none, which means the password.
+ */
 export const sessionSchema = z.object({
   accessToken: z.string().min(1),
   accessTokenExpiresAt: z.iso.datetime(),
   refreshToken: z.string().min(1),
   refreshTokenExpiresAt: z.iso.datetime(),
-  user: z.object({ id: z.string().min(1), email: z.string().min(1) }),
+  user: z.object({
+    id: z.string().min(1),
+    email: z.string().min(1),
+    signInMethod: z.enum(['password', 'google']).optional(),
+  }),
 });
 export type Session = z.infer<typeof sessionSchema>;
 export type SessionUser = Session['user'];

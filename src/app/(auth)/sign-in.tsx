@@ -4,7 +4,13 @@ import { useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 
-import { FormMessage, signInSchema, useSignIn, type SignInValues } from '../../auth';
+import {
+  FormMessage,
+  GoogleSignInButton,
+  signInSchema,
+  useSignIn,
+  type SignInValues,
+} from '../../auth';
 import { Button } from '../../components/Button';
 import { Input, type InputHandle } from '../../components/Input';
 import { Screen } from '../../components/Screen';
@@ -77,6 +83,7 @@ export default function SignInScreen() {
           onPress={handleSubmit(submit)}
           disabled={busy}
         />
+        <GoogleSignInButton disabled={busy} />
         <Button
           variant="tertiary"
           label="Create an account"

@@ -1,4 +1,4 @@
-export { deleteAccount, exportMyData } from './account';
+export { deleteAccount, exportMyData, type DeleteConfirmation } from './account';
 export { sendClientErrors } from './client-errors';
 export { analyticsBatchSchema, sendAnalyticsEvents } from './analytics';
 export { createApi, type Api } from './api';

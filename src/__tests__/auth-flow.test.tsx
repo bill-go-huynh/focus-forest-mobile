@@ -427,7 +427,8 @@ describe('sign in', () => {
 
 describe('scope (docs/02 onboarding; no features beyond M11)', () => {
   it.each(['Create your account', 'Welcome back'])(
-    '"%s" offers no forgot-password, email verification, or social sign-in',
+    // Google sign-in (W.2, owner decision 2026-10-18) is the one outside sign-in method.
+    '"%s" offers no forgot-password, email verification, or other social sign-in',
     async (heading) => {
       openApp();
       await signUpFromWelcome();
@@ -435,9 +436,7 @@ describe('scope (docs/02 onboarding; no features beyond M11)', () => {
         fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
         await screen.findByRole('header', { name: heading });
       }
-      expect(
-        screen.queryByText(/forgot|reset|verify|verification|google|apple|facebook|continue with/i),
-      ).toBeNull();
+      expect(screen.queryByText(/forgot|reset|verify|verification|apple|facebook/i)).toBeNull();
     },
   );
 

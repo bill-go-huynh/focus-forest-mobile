@@ -20,6 +20,14 @@ const SAFE_API_MESSAGES = new Set([
   'Use at most 128 characters for your password.',
 ]);
 const EMAIL_TAKEN = 'An account with this email already exists.';
+/** W.2 Google sign-in's own refusals (POST /auth/google). */
+const GOOGLE_API_MESSAGES = new Set([
+  'This email already has a Focus Forest account. Sign in with your password.',
+  'This email already belongs to another Focus Forest account.',
+  'Google sign-in could not be confirmed.',
+]);
+export const GOOGLE_UNAVAILABLE_MESSAGE = "Google sign-in isn't available on this device.";
+export const GOOGLE_FAILED_MESSAGE = "We couldn't sign you in with Google. Please try again.";
 
 export const NETWORK_MESSAGE =
   "We couldn't reach Focus Forest. Check your connection and try again.";
@@ -33,7 +41,10 @@ export function describeAuthError(error: unknown): AuthErrorDescription {
   if (error instanceof HttpError && error.status === 429) return { message: RATE_LIMITED_MESSAGE };
   if (error instanceof HttpError && error.status < 500) {
     const known = error.messages.find(
-      (message) => SAFE_API_MESSAGES.has(message) || message === EMAIL_TAKEN,
+      (message) =>
+        SAFE_API_MESSAGES.has(message) ||
+        GOOGLE_API_MESSAGES.has(message) ||
+        message === EMAIL_TAKEN,
     );
     if (known === EMAIL_TAKEN) return { field: 'email', message: known };
     if (known) return { message: known };

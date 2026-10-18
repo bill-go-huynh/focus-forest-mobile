@@ -4,7 +4,13 @@ import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, View } from 'react-native';
 
-import { FormMessage, signUpSchema, useSignUp, type SignUpValues } from '../../auth';
+import {
+  FormMessage,
+  GoogleSignInButton,
+  signUpSchema,
+  useSignUp,
+  type SignUpValues,
+} from '../../auth';
 import { Button } from '../../components/Button';
 import { Input, type InputHandle } from '../../components/Input';
 import { Screen } from '../../components/Screen';
@@ -120,6 +126,7 @@ export default function SignUpScreen() {
             disabled={busy}
           />
         )}
+        {profilePending ? null : <GoogleSignInButton disabled={busy} />}
         {profilePending ? null : (
           <Button
             variant="tertiary"

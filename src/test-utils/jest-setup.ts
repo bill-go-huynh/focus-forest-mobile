@@ -33,6 +33,17 @@ beforeEach(() => {
   ).resetNotificationsMock();
 });
 
+// Google Sign-In is native (W.2): tests get it in memory (src/test-utils/google-signin-mock).
+jest.mock(
+  '@react-native-google-signin/google-signin',
+  () => jest.requireActual('./google-signin-mock').googleSignInMock,
+);
+beforeEach(() => {
+  (
+    jest.requireActual('./google-signin-mock') as typeof import('./google-signin-mock')
+  ).resetGoogleSignInMock();
+});
+
 // Capturing a view and the native share sheet are native (M3.4 recap card): tests get fakes that
 // answer a temporary image and share it, reset before each test.
 jest.mock('react-native-view-shot', () => ({

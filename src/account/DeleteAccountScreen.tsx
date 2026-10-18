@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
-import { deleteAccount, HttpError, NetworkError, useApi, useSession } from '../api';
+import {
+  deleteAccount,
+  HttpError,
+  NetworkError,
+  useApi,
+  useSession,
+  type DeleteConfirmation,
+} from '../api';
 import { FormMessage } from '../auth';
+import { requestGoogleIdToken } from '../auth/google';
 import { DestructiveButton } from '../components/Button';
 import { Input } from '../components/Input';
 import { Screen } from '../components/Screen';
@@ -18,6 +26,9 @@ function describeError(error: unknown): string {
   if (error instanceof HttpError && error.code === 'password_incorrect') {
     return 'That password is not right.';
   }
+  if (error instanceof HttpError && error.code === 'google_account_mismatch') {
+    return 'That Google account is not the one you sign in with. Nothing was deleted.';
+  }
   return "We couldn't delete your account. Nothing was deleted; please try again.";
 }
 
@@ -25,7 +36,8 @@ function describeError(error: unknown): string {
  * Deleting the account (M7.1; docs/11 Privacy; Phase 7 owner decision 3), under Settings. This
  * screen is the confirmation: it says what is erased and what stays, and asks for the password
  * and DELETE typed out. The account is then deleted at once on the server; the device forgets
- * everything it kept for it, and the app returns to its start.
+ * everything it kept for it, and the app returns to its start. W.2: an account that signs in only
+ * with Google has no password; it confirms with Google's chooser instead, after DELETE.
  */
 export function DeleteAccountScreen() {
   const theme = useTheme();
@@ -35,15 +47,28 @@ export function DeleteAccountScreen() {
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ready = password.length > 0 && typed.trim() === CONFIRM_WORD && !busy;
+  const withGoogle = user?.signInMethod === 'google';
+  const ready = (withGoogle || password.length > 0) && typed.trim() === CONFIRM_WORD && !busy;
 
   const remove = async () => {
     const userId = user?.id;
     if (!userId) return;
     setBusy(true);
     setError(null);
+    let confirmation: DeleteConfirmation = { password };
+    if (withGoogle) {
+      const google = await requestGoogleIdToken();
+      if (google.kind !== 'token') {
+        if (google.kind !== 'cancelled') {
+          setError("We couldn't confirm with Google. Nothing was deleted; please try again.");
+        }
+        setBusy(false);
+        return;
+      }
+      confirmation = { googleIdToken: google.idToken };
+    }
     try {
-      await deleteAccount(client, password);
+      await deleteAccount(client, confirmation);
     } catch (caught) {
       setError(describeError(caught));
       setBusy(false);
@@ -67,14 +92,18 @@ export function DeleteAccountScreen() {
           Minutes you gave to a Community Tree stay in its total, without your name.
         </Text>
         <Text style={body}>You can download a copy of your data first, from Settings.</Text>
-        <Input
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          autoComplete="current-password"
-        />
+        {withGoogle ? (
+          <Text style={body}>Google asks you to confirm it is your account.</Text>
+        ) : (
+          <Input
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoComplete="current-password"
+          />
+        )}
         <Input
           label={`Type ${CONFIRM_WORD} to confirm`}
           value={typed}
@@ -87,7 +116,9 @@ export function DeleteAccountScreen() {
         <DestructiveButton
           label="Delete my account"
           disabled={!ready}
-          disabledReason="Enter your password and type DELETE first."
+          disabledReason={
+            withGoogle ? 'Type DELETE first.' : 'Enter your password and type DELETE first.'
+          }
           onRequestConfirm={() => void remove()}
         />
       </View>

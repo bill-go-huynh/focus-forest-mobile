@@ -8,7 +8,15 @@ export function exportMyData(client: ApiClient): Promise<unknown> {
   return client.request('/me/export');
 }
 
-/** Deletes the account and everything it owns, at once; the password confirms it. */
-export async function deleteAccount(client: ApiClient, password: string): Promise<void> {
-  await client.request('/me', { method: 'DELETE', body: { password } });
+/**
+ * Deletes the account and everything it owns, at once. The password confirms it, or (W.2) for an
+ * account that signs in only with Google, a fresh Google ID token for the same Google account.
+ */
+export type DeleteConfirmation = { password: string } | { googleIdToken: string };
+
+export async function deleteAccount(
+  client: ApiClient,
+  confirmation: DeleteConfirmation,
+): Promise<void> {
+  await client.request('/me', { method: 'DELETE', body: confirmation });
 }
