@@ -30,9 +30,11 @@ export interface ButtonProps {
   testID?: string;
   /** Lets an overlay return focus here when it closes. */
   ref?: Ref<View>;
+  /** A decorative mark before the label (for example, Google's on "Continue with Google"). */
+  icon?: IconRenderer;
 }
 
-export function Button({ variant, label, accessibilityLabel = label, ...rest }: ButtonProps) {
+export function Button({ variant, label, accessibilityLabel = label, icon, ...rest }: ButtonProps) {
   const theme = useTheme();
   requireText(label, 'label', 'Button');
   if (!accessibilityLabel.toLowerCase().includes(label.toLowerCase())) {
@@ -65,7 +67,16 @@ export function Button({ variant, label, accessibilityLabel = label, ...rest }: 
       fill={styles.fill}
       {...rest}
     >
-      <Label text={label} color={styles.text} />
+      {icon ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[3] }}>
+          <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+            {icon({ color: styles.text, size: theme.icon.sm + theme.space[1] })}
+          </View>
+          <Label text={label} color={styles.text} />
+        </View>
+      ) : (
+        <Label text={label} color={styles.text} />
+      )}
     </BaseButton>
   );
 }

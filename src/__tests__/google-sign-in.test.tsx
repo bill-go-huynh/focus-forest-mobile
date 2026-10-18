@@ -102,6 +102,8 @@ describe('Continue with Google (W.2)', () => {
   it('creates the account from Google and opens onboarding, with no second profile step', async () => {
     const router = openApp();
     await signUpFromWelcome();
+    // Google's own "G" mark on the button (Google's sign-in branding), decorative to readers.
+    expect(screen.getByTestId('google-mark', { includeHiddenElements: true })).toBeOnTheScreen();
     continueWithGoogle();
 
     expect(await screen.findByRole('header', { name: 'Your seed is planted' })).toBeOnTheScreen();
@@ -215,7 +217,7 @@ describe('a Google account on this device', () => {
     mockSecureStore.set(SESSION_KEY, JSON.stringify(googleSession()));
     openApp('/profile/settings');
     fireEvent.press(await screen.findByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
     expect(GoogleSignin.signOut).toHaveBeenCalled();
   });
 
@@ -227,7 +229,7 @@ describe('a Google account on this device', () => {
     fireEvent.changeText(screen.getByLabelText('Type DELETE to confirm'), 'DELETE');
     fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
 
-    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
     const deletion = requests.find((r) => r.method === 'DELETE');
     expect(deletion?.body).toEqual({ googleIdToken: GOOGLE_ID_TOKEN });
   });

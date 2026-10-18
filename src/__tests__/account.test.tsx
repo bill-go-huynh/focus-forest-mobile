@@ -7,7 +7,8 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
-import { WELCOME_TITLE } from '../test-utils/welcome';
+// This device had an account signed in, so a signed-out app opens on sign in (W.1).
+const SIGNED_OUT_HEADER = 'Welcome back';
 
 /**
  * M7.1 Your data (docs/11 Privacy; Phase 7 owner decision 3): download a copy of everything
@@ -145,13 +146,17 @@ describe('deleting the account (M7.1)', () => {
     field('Type DELETE to confirm', 'DELETE');
     fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
 
-    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: SIGNED_OUT_HEADER })).toBeOnTheScreen();
     expect(requests.find((r) => r.method === 'DELETE')).toMatchObject({
       url: `${API}/me`,
       body: { password: 'correct horse' },
     });
     await waitFor(async () =>
-      expect(await AsyncStorage.getAllKeys()).toEqual(['focus-forest/home/v1/someone-else']),
+      // The welcome flag is the device's, not the account's (W.1): it holds nothing about anyone.
+      expect([...(await AsyncStorage.getAllKeys())].sort()).toEqual([
+        'focus-forest/home/v1/someone-else',
+        'focus-forest/welcome/v1',
+      ]),
     );
     const secureStore = jest.requireMock('expo-secure-store') as {
       getItemAsync: (key: string) => Promise<string | null>;
@@ -169,7 +174,7 @@ describe('deleting the account (M7.1)', () => {
     field('Type DELETE to confirm', 'DELETE');
     fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
     expect(await screen.findByText('That password is not right.')).toBeOnTheScreen();
-    expect(screen.queryByRole('header', { name: WELCOME_TITLE })).toBeNull();
+    expect(screen.queryByRole('header', { name: SIGNED_OUT_HEADER })).toBeNull();
   });
 
   it('keeps the account when the server cannot be reached', async () => {

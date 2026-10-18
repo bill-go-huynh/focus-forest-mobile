@@ -5,6 +5,7 @@ import { AccessibilityInfo, Dimensions } from 'react-native';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { avoidedWordProblems, renderedCopy } from '../test-utils/avoided-words';
+import { WELCOME_KEY } from '../welcome/welcome-store';
 
 // Boundaries only: secure storage (no saved session: the person is signed out) and the config.
 jest.mock('expo-secure-store', () => ({
@@ -119,5 +120,39 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     await screen.findByRole('header', { name: PAGES[0] });
     fireEvent.press(screen.getByRole('button', { name: 'Next' }));
     expect(await screen.findByRole('header', { name: PAGES[1] })).toBeOnTheScreen();
+  });
+});
+
+describe('the welcome is shown once per device', () => {
+  it('opens sign in instead, once an account has signed in on this device', async () => {
+    await AsyncStorage.setItem(WELCOME_KEY, JSON.stringify({ version: 1, status: 'done' }));
+    const router = openApp();
+    expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
+    expect(screen.queryByRole('header', { name: PAGES[0] })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Create an account' }));
+    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(router.getPathname()).toBe('/sign-up');
+  });
+
+  it('keeps showing it to someone who has not signed in yet', async () => {
+    openApp();
+    await screen.findByRole('header', { name: PAGES[0] });
+    fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Get started' }));
+    await screen.findByRole('header', { name: 'Create your account' });
+    // Looking is not signing in: the next launch still starts with the welcome.
+    expect(await AsyncStorage.getItem(WELCOME_KEY)).toBeNull();
+  });
+
+  it('shows it when the device storage cannot be read', async () => {
+    jest.spyOn(AsyncStorage, 'getItem').mockRejectedValue(new Error('storage unavailable'));
+    openApp();
+    expect(await screen.findByRole('header', { name: PAGES[0] })).toBeOnTheScreen();
+  });
+
+  it('ignores a stored value it does not understand', async () => {
+    await AsyncStorage.setItem(WELCOME_KEY, 'not json');
+    openApp();
+    expect(await screen.findByRole('header', { name: PAGES[0] })).toBeOnTheScreen();
   });
 });

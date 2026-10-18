@@ -46,6 +46,7 @@ import {
 import { useTheme } from '../theme';
 import { useAppFonts } from '../theme/fonts';
 import { ActiveTimerProvider, createAppTimerStore } from '../timer';
+import { useWelcome, WelcomeProvider } from '../welcome/WelcomeProvider';
 import {
   createAppTopicCreateQueue,
   createAppTopicStore,
@@ -133,10 +134,13 @@ export default function RootLayout() {
                                   {/* A new account's onboarding, kept across kills (M3.3). */}
                                   <OnboardingProvider store={onboarding}>
                                     <AuthFlowProvider>
-                                      {/* A calm fallback for a failing screen, and crash reports (M7.2). */}
-                                      <ErrorReportingProvider reporter={errors}>
-                                        <RootNavigator />
-                                      </ErrorReportingProvider>
+                                      {/* The welcome opens signed-out launches until an account signs in here (W.1). */}
+                                      <WelcomeProvider>
+                                        {/* A calm fallback for a failing screen, and crash reports (M7.2). */}
+                                        <ErrorReportingProvider reporter={errors}>
+                                          <RootNavigator />
+                                        </ErrorReportingProvider>
+                                      </WelcomeProvider>
                                     </AuthFlowProvider>
                                   </OnboardingProvider>
                                   <ThemedStatusBar />
@@ -167,6 +171,7 @@ function RootNavigator() {
   const { status } = useSession();
   const { completingSignUp } = useAuthFlow();
   const waitingForPreferences = useWaitingForPreferences();
+  const welcome = useWelcome();
   // The bundled faces load before the first screen shows, so text never jumps fonts.
   const fontsReady = useAppFonts();
 
@@ -174,9 +179,16 @@ function RootNavigator() {
     void auth.restoreSession();
   }, [auth]);
 
-  if (status === 'unknown' || !fontsReady) return <LaunchScreen />;
-
   const signedIn = status === 'authenticated' && !completingSignUp;
+  // Once an account is in, this device has seen the welcome for good (W.1). Marked only when the
+  // auth screens are gone, so the welcome never leaves a stack the person is still in.
+  const { done: welcomeDone, markDone: markWelcomeDone } = welcome;
+  useEffect(() => {
+    if (signedIn && welcomeDone === false) markWelcomeDone();
+  }, [signedIn, welcomeDone, markWelcomeDone]);
+
+  if (status === 'unknown' || !fontsReady || welcomeDone === null) return <LaunchScreen />;
+
   // The navigator mounts once the session is known, so the opening URL is kept. While a
   // signed-in launch reads the saved theme, the launch screen stays on top, so a dark-theme
   // user never sees a light flash.

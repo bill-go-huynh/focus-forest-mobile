@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { useTheme } from '../theme';
 import { FormMessage } from './FormMessage';
+import { GoogleMark } from './GoogleMark';
 import { useGoogleSignIn } from './use-auth-forms';
 
 /**
@@ -36,6 +37,7 @@ export function GoogleSignInButton({ disabled = false }: { disabled?: boolean })
       <Button
         variant="secondary"
         label={busy ? 'Opening Google…' : 'Continue with Google'}
+        icon={({ size }) => <GoogleMark size={size} />}
         onPress={() => void submit()}
         disabled={busy || disabled}
       />

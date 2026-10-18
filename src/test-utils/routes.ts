@@ -1,5 +1,5 @@
 import RootLayout from '../app/_layout';
-import AuthLayout, { unstable_settings as authSettings } from '../app/(auth)/_layout';
+import AuthLayout from '../app/(auth)/_layout';
 import WelcomeRoute from '../app/(auth)/welcome';
 import SignInScreen from '../app/(auth)/sign-in';
 import SignUpScreen from '../app/(auth)/sign-up';
@@ -45,7 +45,7 @@ import NotFoundRoute from '../app/+not-found';
 /** The app's real routes, for renderRouter from expo-router/testing-library. */
 export const appRoutes = {
   _layout: RootLayout,
-  '(auth)/_layout': { default: AuthLayout, unstable_settings: authSettings },
+  '(auth)/_layout': AuthLayout,
   '(auth)/welcome': WelcomeRoute,
   '(auth)/sign-up': SignUpScreen,
   '(auth)/sign-in': SignInScreen,

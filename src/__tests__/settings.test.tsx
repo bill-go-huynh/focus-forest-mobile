@@ -10,7 +10,8 @@ import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
 import { darkTheme, lightTheme } from '../theme';
-import { WELCOME_TITLE } from '../test-utils/welcome';
+// This device had an account signed in, so a signed-out app opens on sign in (W.1).
+const SIGNED_OUT_HEADER = 'Welcome back';
 
 jest.mock(
   'expo-secure-store',
@@ -384,7 +385,7 @@ describe('sign out', () => {
     const before = requests.length;
     fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
 
-    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: SIGNED_OUT_HEADER })).toBeOnTheScreen();
     expect(screen.queryByTestId('tab-bar')).toBeNull();
     // A5 and A3 have no sign-out endpoint: nothing is sent.
     expect(requests.length).toBe(before);
