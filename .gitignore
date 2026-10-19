@@ -44,3 +44,6 @@ yarn-error.*
 # testing
 coverage/
 
+
+# Firebase config (W.4): kept out of git; EAS builds get it from the GOOGLE_SERVICES_JSON file variable.
+google-services.json
