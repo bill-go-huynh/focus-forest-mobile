@@ -18,13 +18,21 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 - [ ] **PR-3** Dùng **development build mới** (EAS, có Google Sign-In và icon mới), không dùng Expo Go. Expo Go không có thông báo hệ thống.
 - [ ] **PR-4** Email quên mật khẩu: chưa đặt `SMTP_URL` thì mã nằm trong log của API (dòng `[Mail] To …`). Muốn nhận email thật thì đặt `SMTP_URL` (xem `.env.example` của API).
 - [ ] **PR-5** Google: Gmail dùng để test phải có trong **Test users** (Google Auth Platform → Audience), hoặc app đã Publish.
-- [ ] **PR-6** Push từ server (mục 5.11, 5.12 và các case push ở mục 4) **chưa test được trên Android**: cần project Firebase (`google-services.json` trong app, build lại APK, khoá FCM tải lên EAS) **và** API chạy với `PUSH_PROVIDER=expo`. Hiện chưa có Firebase, nên bỏ qua các case này. Thông báo timer ("Focus complete") thì không cần gì: điện thoại tự lên lịch, test được ngay.
+- [ ] **PR-6** Push từ server: API chạy với `PUSH_PROVIDER=expo` (đã có trong `.env`, nhớ khởi động lại API). App là bản build có Firebase (từ 2026-10-19). Khoá FCM V1 đã tải lên EAS. Làm mục **0.4** trước khi test mục 5.11–5.12 và các case push ở mục 4.
 
 ### 0.2 Tài khoản và thiết bị
 - [ ] **PR-7** Tài khoản **A** trên điện thoại thật. Tài khoản **B** trên emulator hoặc máy thứ hai. Tài khoản **C** (tuỳ chọn) cho các ca từ 3 người.
 - [ ] **PR-8** Mỗi tài khoản có username, ít nhất 1 topic và có time zone (đăng ký từ app là có sẵn).
 - [ ] **PR-9** Admin: trong `focus-forest-api` chạy `npm run build`, rồi `ADMIN_PASSWORD=… npm run admin:create -- --email <email> --role admin`. Trong `focus-forest-admin` chạy `npm run dev`, mở `http://localhost:3001`.
 - [ ] **PR-10** Giả lập thời gian, dựng lịch sử: xem phần **"Cách giả lập thời gian"** ở đầu mục 3. Tóm tắt: đổi giờ Mac (kèm giờ điện thoại), gửi session lùi ngày qua API, sửa DB dev, hoặc đổi cấu hình trong admin.
+
+### 0.4 Kiểm tra nhanh push (làm trước các case push)
+
+- [ ] **PU-1** Mở app, vào Settings → bật **Daily goal reminder** → **Mong đợi:** Android hỏi quyền thông báo; chọn Allow. Log API có `PUT /me/devices/…`, tức máy đã đăng ký push token. Không có dòng này thì xem PU-5.
+- [ ] **PU-2** Bấm **Later** hoặc **Earlier** để giờ nhắc là mốc 15 phút kế tiếp (ví dụ 15:05 thì đặt 15:15). Hôm nay chưa đạt daily goal, và hôm nay không phải rest day. Khoá máy → **Mong đợi:** trong vòng 15 phút sau giờ đặt có thông báo "A little focus today?". Icon trên thanh trạng thái là cây trắng, không phải ô vuông xám.
+- [ ] **PU-3** Chạm vào thông báo khi app đang đóng → **Mong đợi:** app mở và vào Home.
+- [ ] **PU-4** Bắt đầu một phiên focus rồi để đến giờ nhắc của một reminder khác → **Mong đợi:** không có thông báo trong lúc focus; kết thúc phiên xong mới đến (nếu chưa quá 2 giờ).
+- [ ] **PU-5** Nếu PU-1 không có `PUT /me/devices`: kiểm tra (a) đang dùng APK mới chứ không phải Expo Go hay APK cũ, (b) đã cấp quyền thông báo, (c) điện thoại có Google Play Services. Có `PUT` mà không có thông báo: xem log API quanh giờ nhắc (lỗi từ Expo, ví dụ thiếu khoá FCM, sẽ hiện ở đó) và gửi em.
 
 ### 0.3 Mẹo
 - Chế độ máy bay = offline.
