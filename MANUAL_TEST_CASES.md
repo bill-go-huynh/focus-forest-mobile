@@ -28,11 +28,11 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 
 ### 0.4 Kiểm tra nhanh push (làm trước các case push)
 
-- [ ] **PU-1** Mở app, vào Settings → bật **Daily goal reminder** → **Mong đợi:** Android hỏi quyền thông báo; chọn Allow. Log API có `PUT /me/devices/…`, tức máy đã đăng ký push token. Không có dòng này thì xem PU-5.
+- [ ] **PU-1** Mở app, vào Settings → bật **Daily goal reminder** → **Mong đợi:** Android hỏi quyền thông báo; chọn Allow. Kiểm tra máy đã đăng ký push: trong `focus-forest-api` chạy `npm run prisma:studio`, bảng **PushDevice** (`push_devices`) có một dòng mới cho tài khoản này, token dạng `ExponentPushToken[…]`. Không có dòng nào thì xem PU-5.
 - [ ] **PU-2** Bấm **Later** hoặc **Earlier** để giờ nhắc là mốc 15 phút kế tiếp (ví dụ 15:05 thì đặt 15:15). Hôm nay chưa đạt daily goal, và hôm nay không phải rest day. Khoá máy → **Mong đợi:** trong vòng 15 phút sau giờ đặt có thông báo "A little focus today?". Icon trên thanh trạng thái là cây trắng, không phải ô vuông xám.
 - [ ] **PU-3** Chạm vào thông báo khi app đang đóng → **Mong đợi:** app mở và vào Home.
 - [ ] **PU-4** Bắt đầu một phiên focus rồi để đến giờ nhắc của một reminder khác → **Mong đợi:** không có thông báo trong lúc focus; kết thúc phiên xong mới đến (nếu chưa quá 2 giờ).
-- [ ] **PU-5** Nếu PU-1 không có `PUT /me/devices`: kiểm tra (a) đang dùng APK mới chứ không phải Expo Go hay APK cũ, (b) đã cấp quyền thông báo, (c) điện thoại có Google Play Services. Có `PUT` mà không có thông báo: xem log API quanh giờ nhắc (lỗi từ Expo, ví dụ thiếu khoá FCM, sẽ hiện ở đó) và gửi em.
+- [ ] **PU-5** Nếu không có dòng trong **PushDevice**: kiểm tra (a) đang dùng APK mới chứ không phải Expo Go hay APK cũ, (b) đã cấp quyền thông báo, (c) điện thoại có Google Play Services. Có dòng nhưng không có thông báo: trong Prisma Studio mở bảng **NotificationOutbox** (`notification_outbox`), tìm dòng category `dailyGoalReminder` của tài khoản. `pending` là chưa tới lượt quét; `skipped` là bị bỏ, cột `reason` ghi lý do (ví dụ đã đạt goal, đang focus); `failed` là gửi lỗi, cột `reason` ghi lỗi từ Expo, ví dụ thiếu khoá FCM. Chụp dòng đó gửi em. Không có dòng nào nghĩa là chưa đến giờ, hoặc profile thiếu time zone.
 
 ### 0.3 Mẹo
 - Chế độ máy bay = offline.
