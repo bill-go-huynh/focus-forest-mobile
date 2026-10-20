@@ -251,10 +251,13 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 
 ### 2.4 Màn Focus (timer)
 
-- [ ] **CL-78** Bắt đầu phiên 25 phút → **Mong đợi:** toàn màn hình, không có tab bar. Hiện icon và tên topic, dòng `25 min session`, đồng hồ `25:00` đếm xuống mỗi giây với caption `Time left`, vòng tiến độ có valueText `0 of 25 min`, nút `Pause` và nút `End session` đặt cách xa nhau.
+- [ ] **CL-78** Bắt đầu phiên 25 phút → **Mong đợi:** toàn màn hình, không có tab bar. Hiện icon và tên topic, dòng `25 min session`, nhãn **`Focusing`** (chấm xanh, nền xanh nhạt), một **vòng tiến độ lớn có cây của tháng bên trong** (cây lay nhẹ), đồng hồ `25:00` đếm xuống mỗi giây với caption `Time left`, nút `Pause` (nút phụ) và nút `End session` đặt cách xa nhau.
 - [ ] **CL-79** Phiên ≥ 60 phút → **Mong đợi:** định dạng `01:05:07`. Dưới 60 phút thì là `mm:ss`.
-- [ ] **CL-80** Vòng tiến độ → **Mong đợi:** chỉ nhảy theo từng **phút** focus nguyên (`10 of 25 min`), trong khi đồng hồ nhảy mỗi giây.
-- [ ] **CL-81** Bấm `Pause` → **Mong đợi:** caption đổi thành `Paused`, đồng hồ đứng yên, nút đổi thành `Resume`, vòng tiến độ đứng yên. Bấm `Resume` thì chạy tiếp từ đúng chỗ dừng.
+- [ ] **CL-80** Vòng tiến độ quanh cây → **Mong đợi:** màu xanh lá, chỉ nhảy theo từng **phút** focus nguyên (TalkBack đọc `Session progress`, `10 of 25 min`), trong khi đồng hồ nhảy mỗi giây.
+- [ ] **CL-81** Bấm `Pause` → **Mong đợi:** nhãn đổi thành **`Paused`** (hai vạch, nền vàng nhạt); cây mờ đi và đứng yên; vòng tiến độ chuyển xám và đứng yên; đồng hồ đứng yên và nhạt màu; caption thành **`Pause time left: 30:00`** rồi đếm xuống; nút **`Resume` thành nút chính** (nền cam đậm). Bấm `Resume` thì mọi thứ về trạng thái đang tập và chạy tiếp từ đúng chỗ dừng.
+- [ ] **CL-81a** Pause 10 phút, Resume, rồi Pause lại → **Mong đợi:** caption bắt đầu từ **`Pause time left: 20:00`**, vì quỹ dừng 30 phút tính cho cả phiên, không phải từng lần.
+- [ ] **CL-81b** Nhìn từ xa một cánh tay, không đọc chữ → **Mong đợi:** phân biệt được ngay đang tập hay đang dừng (cây sáng/mờ, vòng xanh/xám, nút chính khác nhau).
+- [ ] **CL-81c** Tài khoản mới, cây còn là hạt, hoặc mở Focus khi offline chưa có dữ liệu Home → **Mong đợi:** vòng tiến độ vẫn hiện với nền trơn bên trong; đồng hồ và nút vẫn hoạt động bình thường.
 - [ ] **CL-82** Bấm `Pause` hoặc `Resume` dồn dập → **Mong đợi:** nút bị vô hiệu trong lúc lưu và trạng thái không bị lệch.
 - [ ] **CL-83** Pause 10 phút, Resume, rồi pause tiếp đúng **20:00** và Resume → **Mong đợi:** vẫn Resume được, vì tổng pause đúng 30:00 là giới hạn còn được phép.
 - [ ] **CL-84** Pause liền một mạch quá **30 phút** (để màn hình mở) → **Mong đợi:** khi tổng pause vượt 30:00, phiên tự kết thúc tại đúng thời điểm chạm 30:00. Màn chuyển qua `Saving your session.` rồi sang Completion.
@@ -287,8 +290,8 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 - [ ] **CL-111** Pause rồi Resume khi khoá màn hình → **Mong đợi:** thông báo dự kiến đổi theo: lúc chạy thì báo khi hoàn thành, lúc pause thì báo khi chạm giới hạn pause. Không có thông báo cũ sai thời điểm. Kết thúc sớm thì huỷ thông báo.
 - [ ] **CL-112** Tắt ngày giờ tự động và lùi đồng hồ máy 10 phút khi đang chạy, rồi bấm `Pause` → **Mong đợi:** thấy `Your device time changed.` và `Focus controls will be available when the clock catches up.` Phiên giữ nguyên.
 - [ ] **CL-113** Tiến đồng hồ máy thêm 1 giờ khi đang chạy phiên 25 phút → **Mong đợi:** phiên lập tức coi là hoàn thành tại mốc planned, xem thêm CL-123 về phía server.
-- [ ] **CL-114** Chạm vùng đồng hồ khi bật TalkBack → **Mong đợi:** đọc lên thời gian còn lại dạng `24 minutes 59 seconds left`. Không tự đọc theo từng nhịp tick.
-- [ ] **CL-115** Đặt cỡ chữ 200% → **Mong đợi:** đồng hồ, tên topic, `Pause` / `Resume` / `End session` vẫn hiện đủ và bấm được.
+- [ ] **CL-114** Chạm vùng đồng hồ khi bật TalkBack → **Mong đợi:** đọc lên thời gian còn lại dạng `24 minutes 59 seconds left`. Không tự đọc theo từng nhịp tick. Cây trong vòng **không** được đọc. Bấm Pause thì TalkBack đọc `Paused`, bấm Resume thì đọc `Focusing`.
+- [ ] **CL-115** Đặt cỡ chữ 200% → **Mong đợi:** nhãn trạng thái, đồng hồ, tên topic, `Pause` / `Resume` / `End session` vẫn hiện đủ và bấm được (cuộn được nếu cần).
 - [ ] **CL-116** Topic của phiên không còn trên máy, ví dụ dữ liệu bị xoá → **Mong đợi:** tên hiện `Focus topic`. (khó tái hiện)
 - [ ] **CL-117** Mở `/focus` khi không có phiên nào, ví dụ qua deep link → **Mong đợi:** thấy `No focus session is running.` và nút `Back to Home`.
 - [ ] **CL-118** Phiên đã xong nhưng lưu outbox lỗi → **Mong đợi:** thấy `Your session is still saved on this device.` / `Try again in a moment.` với nút `Try again` và `Back to Home`. (khó tái hiện)
@@ -429,6 +432,15 @@ Server không có "time travel" trong runtime. `Clock` luôn là `SystemClock` (
 - Forest level bắt đầu ở 1/3/6/12/24 cây. Lake mở ở level 2.
 
 ---
+
+### 3.0b Art cây (ART.10, 2026-10-20)
+
+- [ ] **AR-1** Home với cây từ Young Tree trở lên, ban ngày → **Mong đợi:** tán cây là **một khối liền** (không phải các cục rời), phía trên bên trái sáng hơn phía dưới bên phải; giữa các cụm là lá tối, không lộ trời; viền cụm mảnh, không đậm như tô màu.
+- [ ] **AR-2** Thân cây → **Mong đợi:** phần trên thân tối hơn (bóng tán đổ xuống), phần dưới sáng.
+- [ ] **AR-3** Gốc cây đã lớn → **Mong đợi:** ụ đất chủ yếu là cỏ, có các bụi cỏ nhỏ quanh gốc. Hạt giống và mầm vẫn là ụ đất nâu.
+- [ ] **AR-4** Trời ban ngày, bình minh, hoàng hôn → **Mong đợi:** có 2 đám mây mờ ở phía không có mặt trời; có dãy đồi xa mờ sau đồi gần. Ban đêm không có mây.
+- [ ] **AR-5** Đổi loài cây (Pine, Sakura…) → **Mong đợi:** bóng tối của tán theo đúng dáng loài (thông thon dài), không có hình bầu dục tối lộ ra quanh tán.
+- [ ] **AR-6** Màn Home, Focus, Forest cuộn nhanh trên máy tầm trung → **Mong đợi:** cây vẫn mượt, không giật hơn trước.
 
 ### 3.1 Onboarding sau sign-up
 
@@ -1409,7 +1421,7 @@ Catalog: First Session (1 session), 10/50/100/500 Hours (600/3000/6000/30000 ph�
 - [ ] **ST-150** TalkBack ở Edit profile → **Mong đợi:** mỗi ô chỉ đọc tên ô một lần (Name, Username, Bio, Password, "Type DELETE to confirm"), không đọc nhãn thừa. Lỗi validation được đọc.
 - [ ] **ST-151** TalkBack ở màn đang tải → **Mong đợi:** skeleton đọc "Loading your profile", "Loading your settings", "Loading your privacy settings", "Loading blocked people", "Loading your tree".
 - [ ] **ST-152** TalkBack trên cây Home/Forest → **Mong đợi:** mỗi TreeScene đọc đúng một mô tả, không đọc từng layer SVG. Avatar frame không được đọc.
-- [ ] **ST-153** Màn Focus → **Mong đợi:** countdown không tự đọc mỗi giây. Chạm "Time left" (hint "Reads the time left aloud.") thì đọc thời gian còn lại. Pause, Resume và End rõ nghĩa.
+- [ ] **ST-153** Màn Focus → **Mong đợi:** countdown không tự đọc mỗi giây. Chạm "Time left" (hint "Reads the time left aloud.") thì đọc thời gian còn lại. Nhãn `Focusing` / `Paused` đọc được; Pause, Resume và End rõ nghĩa; trạng thái không chỉ dựa vào màu.
 - [ ] **ST-154** Cỡ chữ và display size Android lên tối đa (khoảng 200%) → **Mong đợi:** Profile, Edit profile, Settings (gồm Notifications có dòng giờ), Privacy, Blocked, Delete account, Home, Focus, Completion và History không bị cắt chữ, cuộn tới được mọi nút. Không có Text nào tắt font scaling.
 - [ ] **ST-155** Touch target → **Mong đợi:** mọi nút, chip, switch và nút Earlier/Later bấm dễ, vùng chạm tối thiểu 44×44.
 - [ ] **ST-156** Dark mode → **Mong đợi:** chữ thường đạt độ tương phản ≥4.5:1, chữ lớn và icon/viền ô nhập ≥3:1. Kiểm tra bằng mắt hoặc công cụ ở Settings, Edit profile (helper text, lỗi), nút đỏ "Delete account", InlineStatus, ErrorState và overlay mùa.
