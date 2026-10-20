@@ -37,7 +37,12 @@ export const control = { minHeight: 52, borderWidth: 2 } as const;
  * Progress ring geometry (docs/01 §8 → Progress indicators: a soft ring, rounded caps).
  * PROVISIONAL starting values, like the type sizes.
  */
-export const progressRing = { size: 72, strokeWidth: 8 } as const;
+export const progressRing = {
+  size: 72,
+  strokeWidth: 8,
+  /** The Focus dial: the session ring around this month's tree (docs/01 §8 → Timer progress). */
+  dial: { size: 264, strokeWidth: 10, inset: 14 },
+} as const;
 
 /**
  * Achievement progress (docs/01 §8: a slim linear bar plus a fraction). PROVISIONAL, like the

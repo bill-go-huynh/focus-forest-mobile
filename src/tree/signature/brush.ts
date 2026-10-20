@@ -127,6 +127,11 @@ export function volume(color: string): { light: string; dark: string } {
   return { light: shift(color, v.light), dark: shift(color, v.dark) };
 }
 
+/** A color moved by a lightness and hue step (ART.10's canopy light bands). */
+export function tone(color: string, by: { lightness: number; hue: number }): string {
+  return shift(color, by);
+}
+
 /** Where a cluster's light falls, as a radial gradient in the cluster's own box. */
 export const KEY_LIGHT = { cx: '30%', cy: '24%', r: '86%' } as const;
 

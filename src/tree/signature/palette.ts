@@ -48,6 +48,8 @@ export const SIGNATURE_PALETTE = {
   calm: '#7E9C93',
   /** Ground shadow under the canopy. */
   shadow: '#2F3B2A',
+  /** Soft daylight clouds (ART.10). */
+  cloud: '#FFFDF6',
   /**
    * A cluster's volume (ART.1): lighter and a touch warmer on the upper left, darker and a
    * touch cooler on the lower right, saturation kept (`brush.ts`).
@@ -56,7 +58,44 @@ export const SIGNATURE_PALETTE = {
   /** Bark lit from the left, shaded on the right. */
   barkVolume: { light: { lightness: 0.08, hue: 0 }, dark: { lightness: -0.1, hue: 0 } },
   /** How opaque the art's soft layers are; `grain` is the hero scene's paper texture. */
-  opacity: { highlight: 0.55, shadow: 0.16, hills: 0.85, lantern: 0.35, grain: 0.45 },
+  opacity: {
+    highlight: 0.55,
+    shadow: 0.16,
+    hills: 0.85,
+    lantern: 0.35,
+    grain: 0.45,
+    /**
+     * ART.10: each cluster's own form over the canopy-wide light (lit edge, shaded edge), the
+     * dark core that joins the clusters into one canopy, the canopy's shade on the trunk, and
+     * the sky's clouds and far hills.
+     */
+    /** A thin darker edge on each cluster, like a brush's edge. */
+    rim: 0.2,
+    core: 0.9,
+    trunkShade: 0.45,
+    cloud: 0.6,
+    farHills: 0.55,
+  },
+  /**
+   * ART.10: the light across the whole canopy, from its upper left. A cluster takes the band of
+   * its distance from that point (`reach` × the canopy's larger side is the far end): lit, mid,
+   * shade, deep. Each band keeps the cluster's own lit-to-shaded gradient.
+   */
+  canopyLight: {
+    cx: 0.3,
+    cy: 0.18,
+    reach: 0.9,
+    bands: [
+      { lightness: 0.07, hue: -4 },
+      { lightness: 0, hue: 0 },
+      { lightness: -0.06, hue: 3 },
+      { lightness: -0.12, hue: 6 },
+    ],
+  },
+  /** ART.10: grass tufts around the mound once the tree has grown past a sprout. */
+  grass: { tufts: 13, height: 7, shade: 0.45, width: 1.2 },
+  /** ART.10: how much larger than a cluster its share of the dark core is. */
+  coreSpread: 1.12,
   decorations: {
     'hanging-bloom': '#F2C1CF',
     'songbird-nest': '#8B6A4A',

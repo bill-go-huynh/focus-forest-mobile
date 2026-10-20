@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -25,8 +25,17 @@ export interface ProgressRingProps {
   label: string;
   /** The value in words, such as "42 / 60 min" or "Goal reached". Shown, and read aloud. */
   valueText: string;
-  /** forest for goals (default); accent for other progress. There is no red tone. */
-  tone?: 'forest' | 'accent';
+  /**
+   * forest for goals (default); accent for other progress; rest for progress that is on hold
+   * (a paused focus session). There is no red tone.
+   */
+  tone?: 'forest' | 'accent' | 'rest';
+  /**
+   * `dial`: the large Focus ring with `children` inside it (this month's tree); its label and
+   * value are read, not shown, because the countdown beside it says the same.
+   */
+  variant?: 'standard' | 'dial';
+  children?: ReactNode;
   testID?: string;
 }
 
@@ -37,6 +46,8 @@ export function ProgressRing({
   label,
   valueText,
   tone = 'forest',
+  variant = 'standard',
+  children,
   testID,
 }: ProgressRingProps) {
   const theme = useTheme();
@@ -68,13 +79,17 @@ export function ProgressRing({
     });
   }, [target, reducedMotion, animated, theme.motion.progress, theme.easing.standard]);
 
-  const { size, strokeWidth } = theme.progressRing;
+  const dial = variant === 'dial';
+  const { size, strokeWidth } = dial ? theme.progressRing.dial : theme.progressRing;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const ringColors =
-    tone === 'forest'
-      ? { arc: colors.forest.primary, track: colors.forest.soft }
-      : { arc: colors.accent.primary, track: colors.accent.soft };
+  const ringColors = {
+    forest: { arc: colors.forest.primary, track: colors.forest.soft },
+    accent: { arc: colors.accent.primary, track: colors.accent.soft },
+    // On hold: a neutral arc on a sunken track, 3:1 apart (tokens test).
+    rest: { arc: colors.border.default, track: colors.surface.sunken },
+  }[tone];
+  const window = size - 2 * theme.progressRing.dial.inset;
   // Nothing to draw at 0%: a rounded cap on an empty arc would show as a dot.
   const drawArc = target > 0 || shown > 0;
 
@@ -85,14 +100,38 @@ export function ProgressRing({
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(target), text: valueText }}
-      style={{
-        flexDirection: isLargeText ? 'column' : 'row',
-        alignItems: isLargeText ? 'flex-start' : 'center',
-        gap: space[3],
-      }}
+      style={
+        dial
+          ? { alignSelf: 'center' }
+          : {
+              flexDirection: isLargeText ? 'column' : 'row',
+              alignItems: isLargeText ? 'flex-start' : 'center',
+              gap: space[3],
+            }
+      }
     >
-      {/* The text beside it describes the ring, so the drawing is hidden. */}
-      <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      {/* The text beside it (or the countdown, for the dial) describes the ring, so the drawing is hidden. */}
+      <View
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+        style={{ width: size, height: size }}
+      >
+        {dial && children ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: theme.progressRing.dial.inset,
+              left: theme.progressRing.dial.inset,
+              width: window,
+              height: window,
+              borderRadius: theme.radius.full,
+              overflow: 'hidden',
+              backgroundColor: colors.surface.sunken,
+            }}
+          >
+            {children}
+          </View>
+        ) : null}
         <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <Circle
             testID="progress-ring-track"
@@ -126,10 +165,12 @@ export function ProgressRing({
         </Svg>
       </View>
       {/* No numberOfLines: text wraps at large sizes instead of truncating. */}
-      <View style={{ flexShrink: 1 }}>
-        <Text style={[type.caption, { color: colors.text.secondary }]}>{label}</Text>
-        <Text style={[type.bodyStrong, { color: colors.text.primary }]}>{valueText}</Text>
-      </View>
+      {dial ? null : (
+        <View style={{ flexShrink: 1 }}>
+          <Text style={[type.caption, { color: colors.text.secondary }]}>{label}</Text>
+          <Text style={[type.bodyStrong, { color: colors.text.primary }]}>{valueText}</Text>
+        </View>
+      )}
     </View>
   );
 }

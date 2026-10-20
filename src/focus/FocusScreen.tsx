@@ -1,9 +1,11 @@
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Animated, Easing, Pressable, Text, View } from 'react-native';
 
-import { announce, MIN_TOUCH_TARGET } from '../accessibility';
+import { announce, MIN_TOUCH_TARGET, useReducedMotion } from '../accessibility';
 import { useCompletionIntents } from '../completion/CompletionIntentsProvider';
+import { useHome } from '../core-loop/queries';
+import { useSceneTimeOfDay } from '../core-loop/use-scene-time';
 import { Button } from '../components/Button';
 import { Confirmation } from '../components/Confirmation';
 import { InlineStatus } from '../components/InlineStatus';
@@ -18,6 +20,7 @@ import type { HandoffResult } from '../sessions/session-handoff';
 import { useTheme } from '../theme';
 import type { TimerOperationResult } from '../timer/active-timer-store';
 import { RoomPresence } from '../rooms/RoomPresence';
+import { toTreeVisualState, TreeScene } from '../tree';
 import { useActiveTimer, useActiveTimerStore } from '../timer/ActiveTimerProvider';
 import { derive, type TimerState } from '../timer/timer-engine';
 import { useTopicIdentity } from '../topics/topic-create-sync';
@@ -48,6 +51,7 @@ const handoffStuck = (result: HandoffResult) =>
     result.reason === 'invalid_submission');
 
 const minutesInWords = (minutes: number) => `${minutes} minute${minutes === 1 ? '' : 's'}`;
+const MINUTE_MS = 60_000;
 
 /**
  * Focus (docs/05 → Timer): a full-screen takeover over the stored timer. It never keeps time
@@ -117,6 +121,8 @@ function RunningFocus({ timer }: { timer: TimerState }) {
     if (result.ok || result.reason === 'finished' || result.reason === 'no_timer') return;
     setNotice(result.reason === 'time_went_backwards' ? CLOCK_NOTICE : failure);
   };
+  // What is left of the session's pause allowance (the total pause, not this pause alone).
+  const pauseLeft = Math.max(0, timer.rules.maxPauseMinutes * MINUTE_MS - view.pausedMilliseconds);
 
   const readTimeLeft = () =>
     void announce(spokenTimeLeft(derive(timer, timers.now()).remainingMilliseconds));
@@ -143,6 +149,18 @@ function RunningFocus({ timer }: { timer: TimerState }) {
         </View>
       </View>
 
+      <StatusPill paused={paused} />
+
+      <ProgressRing
+        variant="dial"
+        tone={paused ? 'rest' : 'forest'}
+        progress={ringPercent(view.focusedMilliseconds, timer.plannedMinutes)}
+        label="Session progress"
+        valueText={focusedText(view.focusedMilliseconds, timer.plannedMinutes)}
+      >
+        <FocusTree paused={paused} />
+      </ProgressRing>
+
       {/* On request only (docs/11): the name never changes, so nothing is read as it ticks. */}
       <Pressable
         accessible
@@ -150,29 +168,22 @@ function RunningFocus({ timer }: { timer: TimerState }) {
         accessibilityLabel="Time left"
         accessibilityHint="Reads the time left aloud."
         onPress={readTimeLeft}
-        style={{
-          minHeight: MIN_TOUCH_TARGET,
-          alignItems: 'center',
-          paddingVertical: theme.space[8],
-        }}
+        style={{ minHeight: MIN_TOUCH_TARGET, alignItems: 'center' }}
       >
         <Text
           numberOfLines={1}
           adjustsFontSizeToFit
-          style={[theme.type.timer, { color: theme.colors.text.primary }]}
+          style={[
+            theme.type.timer,
+            { color: paused ? theme.colors.text.muted : theme.colors.text.primary },
+          ]}
         >
           {formatCountdown(view.remainingMilliseconds)}
         </Text>
         <Text style={[theme.type.caption, { color: theme.colors.text.secondary }]}>
-          {paused ? 'Paused' : 'Time left'}
+          {paused ? `Pause time left: ${formatCountdown(pauseLeft)}` : 'Time left'}
         </Text>
       </Pressable>
-
-      <ProgressRing
-        progress={ringPercent(view.focusedMilliseconds, timer.plannedMinutes)}
-        label="Session progress"
-        valueText={focusedText(view.focusedMilliseconds, timer.plannedMinutes)}
-      />
 
       {notice ? (
         <InlineStatus tone="attention" message={notice.message} detail={notice.detail} />
@@ -180,13 +191,16 @@ function RunningFocus({ timer }: { timer: TimerState }) {
 
       {/* Large and well apart; End sits away from Pause and asks first (docs/11). */}
       <View style={{ gap: theme.space[12] }}>
+        {/* Paused, the next step is clear: Resume is the one primary action (docs/01 §8). */}
         {paused ? (
           <Button
-            variant="secondary"
+            variant="primary"
             label="Resume"
             disabled={busy}
             onPress={() =>
-              void operate(() => timers.resume(), { message: "We couldn't resume on this device." })
+              void operate(() => timers.resume(), {
+                message: "We couldn't resume on this device.",
+              }).then(() => announce('Focusing'))
             }
           />
         ) : (
@@ -195,7 +209,9 @@ function RunningFocus({ timer }: { timer: TimerState }) {
             label="Pause"
             disabled={busy}
             onPress={() =>
-              void operate(() => timers.pause(), { message: "We couldn't pause on this device." })
+              void operate(() => timers.pause(), {
+                message: "We couldn't pause on this device.",
+              }).then(() => announce('Paused'))
             }
           />
         )}
@@ -223,6 +239,110 @@ function RunningFocus({ timer }: { timer: TimerState }) {
         }}
       />
     </Screen>
+  );
+}
+
+/**
+ * Running or paused, in words and in form (docs/11: never by color alone): a filled dot while
+ * focusing, two bars while paused.
+ */
+function StatusPill({ paused }: { paused: boolean }) {
+  const theme = useTheme();
+  const { colors, space, radius } = theme;
+  const mark = paused ? colors.text.accent : colors.forest.primary;
+  return (
+    <View
+      style={{
+        alignSelf: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space[2],
+        paddingVertical: space[1],
+        paddingHorizontal: space[3],
+        borderRadius: radius.full,
+        backgroundColor: paused ? colors.accent.soft : colors.forest.soft,
+      }}
+    >
+      <View
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+        style={{ flexDirection: 'row', gap: space[1] / 2 }}
+      >
+        {paused ? (
+          <>
+            <View
+              style={{
+                width: space[1],
+                height: space[3],
+                borderRadius: radius.sm,
+                backgroundColor: mark,
+              }}
+            />
+            <View
+              style={{
+                width: space[1],
+                height: space[3],
+                borderRadius: radius.sm,
+                backgroundColor: mark,
+              }}
+            />
+          </>
+        ) : (
+          <View
+            style={{
+              width: space[2],
+              height: space[2],
+              borderRadius: radius.full,
+              backgroundColor: mark,
+            }}
+          />
+        )}
+      </View>
+      <Text style={[theme.type.label, { color: colors.text.primary }]}>
+        {paused ? 'Paused' : 'Focusing'}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * This month's tree inside the dial (docs/05 → Timer: "a dim, calm scene"). Calm while
+ * focusing; dimmed and still while paused. Decorative: the countdown and the dial carry the
+ * meaning. Nothing shows until Home is known (it is cached for offline launches).
+ */
+function FocusTree({ paused }: { paused: boolean }) {
+  const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+  const timeOfDay = useSceneTimeOfDay();
+  const { home } = useHome();
+  const homeTree = home?.tree ?? null;
+  const tree = useMemo(() => (homeTree ? toTreeVisualState(homeTree) : null), [homeTree]);
+  const dimmed = paused ? theme.opacity.muted : 1;
+  const [opacity] = useState(() => new Animated.Value(dimmed));
+  useEffect(() => {
+    if (reducedMotion) {
+      opacity.setValue(dimmed);
+      return;
+    }
+    Animated.timing(opacity, {
+      toValue: dimmed,
+      duration: theme.motion.base,
+      easing: Easing.bezier(...theme.easing.standard),
+      useNativeDriver: true,
+    }).start();
+  }, [dimmed, reducedMotion, opacity, theme.motion.base, theme.easing.standard]);
+  if (!tree) return null;
+  const window = theme.progressRing.dial.size - 2 * theme.progressRing.dial.inset;
+  return (
+    <Animated.View
+      testID="focus-tree"
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+      // Shows the canopy and the ground: the scene is taller than the round window.
+      style={{ position: 'absolute', left: 0, right: 0, top: -window / 5, opacity }}
+    >
+      <TreeScene tree={tree} timeOfDay={timeOfDay} motion="calm" active={!paused} />
+    </Animated.View>
   );
 }
 

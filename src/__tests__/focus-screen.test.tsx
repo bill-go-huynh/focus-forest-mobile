@@ -6,7 +6,9 @@ import { AccessibilityInfo, Animated } from 'react-native';
 import type { Topic } from '../api';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
 import { mockAppState } from '../test-utils/app-state';
+import { makeHome } from '../test-utils/core-loop';
 import { makePreferences } from '../test-utils/preferences';
+import { lightTheme } from '../theme';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
@@ -64,6 +66,7 @@ function handler({ url }: FakeRequest) {
   if (pathname === '/session-rules')
     return { status: 200, body: { version: 1, minValidMinutes: 5, maxPauseMinutes: 30 } };
   if (pathname === '/me/topics') return { status: 200, body: [reading] };
+  if (pathname === '/me/home' && homeKnown) return { status: 200, body: makeHome() };
   return { status: 503, body: nestError(503, 'Not in this test.') };
 }
 
@@ -75,6 +78,8 @@ function handler({ url }: FakeRequest) {
 let clock = 0;
 /** Motion on for the one test about the ring's animation; reduced everywhere else. */
 let motion = false;
+/** Whether the server answers Home, so Focus can show this month's tree. */
+let homeKnown = true;
 let T0 = 0;
 let appState: ReturnType<typeof mockAppState>;
 
@@ -92,6 +97,7 @@ beforeEach(async () => {
   T0 = Date.now();
   clock = T0;
   motion = false;
+  homeKnown = true;
   jest.spyOn(deviceClock, 'now').mockImplementation(() => clock);
   appState = mockAppState();
 });
@@ -657,5 +663,91 @@ describe('the progress ring', () => {
     clock = T0 + 3 * MINUTE;
     await shows('22:00');
     await until(() => ringAnimations() === opened + 1);
+  });
+});
+
+describe('running and paused look different at a glance', () => {
+  const fill = (name: string) => {
+    const button = screen.getByRole('button', { name });
+    const style = Array.isArray(button.props.style)
+      ? Object.assign({}, ...button.props.style.flat())
+      : button.props.style;
+    return style?.backgroundColor;
+  };
+
+  it('says Focusing while it runs, with Pause as a quiet secondary action', async () => {
+    await storeTimer(timerState());
+    clock = T0 + 2 * MINUTE;
+    await openFocus();
+    expect(screen.getByText('Focusing')).toBeOnTheScreen();
+    expect(screen.getByText('Time left')).toBeOnTheScreen();
+    expect(screen.queryByText('Paused')).toBeNull();
+    expect(fill('Pause')).not.toBe(lightTheme.colors.accent.primary);
+  });
+
+  it('says Paused, how much pause time is left, and makes Resume the clear next step', async () => {
+    await storeTimer(timerState({ pausedAt: T0 + 5 * MINUTE }));
+    clock = T0 + 6 * MINUTE;
+    await openFocus();
+    expect(screen.getByText('Paused')).toBeOnTheScreen();
+    expect(screen.queryByText('Focusing')).toBeNull();
+    expect(screen.getByText('Pause time left: 29:00')).toBeOnTheScreen();
+    expect(fill('Resume')).toBe(lightTheme.colors.accent.primary);
+
+    clock = T0 + 7 * MINUTE + 30 * SECOND;
+    await shows('Pause time left: 27:30');
+  });
+
+  it('counts the pause allowance across pauses', async () => {
+    await storeTimer(
+      timerState({
+        pauses: [{ startedAt: T0 + MINUTE, endedAt: T0 + 11 * MINUTE }],
+        pausedAt: T0 + 12 * MINUTE,
+      }),
+    );
+    clock = T0 + 12 * MINUTE;
+    await openFocus();
+    expect(screen.getByText('Pause time left: 20:00')).toBeOnTheScreen();
+  });
+
+  it('switches at once when paused and resumed', async () => {
+    await storeTimer(timerState());
+    clock = T0 + MINUTE;
+    await openFocus();
+    fireEvent.press(screen.getByRole('button', { name: 'Pause' }));
+    expect(await screen.findByText('Paused')).toBeOnTheScreen();
+    fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+    expect(await screen.findByText('Focusing')).toBeOnTheScreen();
+  });
+});
+
+describe("this month's tree on Focus (docs/05: a dim, calm scene)", () => {
+  it('shows the tree inside the session dial, hidden from screen readers', async () => {
+    await storeTimer(timerState());
+    clock = T0 + MINUTE;
+    await openFocus();
+    const tree = await screen.findByTestId('focus-tree', { includeHiddenElements: true });
+    expect(tree).toBeOnTheScreen();
+    expect(screen.queryByTestId('focus-tree')).toBeNull();
+  });
+
+  it('dims the tree and stills it while paused', async () => {
+    await storeTimer(timerState({ pausedAt: T0 + MINUTE }));
+    clock = T0 + 2 * MINUTE;
+    await openFocus();
+    const tree = await screen.findByTestId('focus-tree', { includeHiddenElements: true });
+    await until(() => {
+      const style = Object.assign({}, ...[tree.props.style].flat(3).filter(Boolean));
+      return style.opacity === lightTheme.opacity.muted;
+    });
+  });
+
+  it('keeps the dial and the countdown when the tree is not known', async () => {
+    homeKnown = false;
+    await storeTimer(timerState());
+    clock = T0 + MINUTE;
+    await openFocus();
+    expect(screen.getByText('24:00')).toBeOnTheScreen();
+    expect(screen.getByRole('progressbar', { name: 'Session progress' })).toBeOnTheScreen();
   });
 });

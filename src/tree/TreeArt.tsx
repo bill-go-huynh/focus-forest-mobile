@@ -22,7 +22,7 @@ import {
 } from './composition';
 import { KNOWN_BACKGROUNDS, KNOWN_DECORATIONS } from './environment';
 import { ambientFor, mix, particlesFor, sceneColors, type SceneColors } from './scene';
-import { barkVolume, clusterOutline, KEY_LIGHT, volume } from './signature/brush';
+import { barkVolume, clusterOutline, KEY_LIGHT, tone, volume } from './signature/brush';
 import { SIGNATURE_PALETTE, type LightingPreset } from './signature/palette';
 import { GROUND_Y, TREE_VIEWBOX } from './signature/stages';
 import { speciesDefinition } from './species';
@@ -103,8 +103,88 @@ function LeafLight({ id, color }: { id: string; color: string }) {
 }
 
 /** One leaf cluster: an organic outline inside its authored ellipse. */
-function Cluster({ shape, fill, opacity }: { shape: Ellipse; fill: string; opacity?: number }) {
-  return <Path d={clusterOutline(shape, shape.key)} fill={fill} opacity={opacity} />;
+function Cluster({
+  shape,
+  fill,
+  opacity,
+  rim,
+}: {
+  shape: Ellipse;
+  fill: string;
+  opacity?: number;
+  /** A thin darker edge (ART.10). */
+  rim?: string;
+}) {
+  return (
+    <Path
+      d={clusterOutline(shape, shape.key)}
+      fill={fill}
+      opacity={opacity}
+      stroke={rim}
+      strokeWidth={rim ? 0.8 : undefined}
+      strokeOpacity={rim ? SIGNATURE_PALETTE.opacity.rim : undefined}
+    />
+  );
+}
+
+/** The canopy light band a cluster sits in: 0 lit, then mid, shade, deep (ART.10). */
+function bandOf(shape: Ellipse, box: Box): number {
+  const l = SIGNATURE_PALETTE.canopyLight;
+  const d = Math.hypot(
+    shape.cx - (box.x + box.width * l.cx),
+    shape.cy - (box.y + box.height * l.cy),
+  );
+  const t = d / (Math.max(box.width, box.height) * l.reach);
+  return Math.min(l.bands.length - 1, Math.floor(Math.max(0, t) * l.bands.length));
+}
+
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** The box around every foliage cluster; null for a tree with no foliage yet. */
+export function canopyBox(c: TreeComposition): Box | null {
+  const all = [...c.foliage.back, ...c.foliage.main, ...c.foliage.front];
+  if (all.length === 0) return null;
+  const left = Math.min(...all.map((e) => e.cx - e.rx));
+  const right = Math.max(...all.map((e) => e.cx + e.rx));
+  const top = Math.min(...all.map((e) => e.cy - e.ry));
+  const bottom = Math.max(...all.map((e) => e.cy + e.ry));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/** A full canopy (from the Young Tree on) gets the joining core and the trunk shade. */
+const FULL_CANOPY = 4;
+
+/** A small deterministic fraction for the seed and an index, so tufts never move between renders. */
+const unit = (seed: number, i: number) => (((seed ^ (i * 2654435761)) >>> 0) % 1000) / 1000;
+
+/** Grass tufts around the mound (ART.10): three blades each, darker than the ground. */
+function GrassTufts({ mound, seed, color }: { mound: Ellipse; seed: number; color: string }) {
+  const g = SIGNATURE_PALETTE.grass;
+  return (
+    <>
+      {Array.from({ length: g.tufts }, (_, i) => {
+        const t = i / (g.tufts - 1);
+        const x = mound.cx + (t - 0.5) * mound.rx * 2.5 + (unit(seed, i) - 0.5) * 6;
+        const y = mound.cy + mound.ry * (0.5 + unit(seed, i + 40) * 0.6);
+        const h = g.height * (0.7 + unit(seed, i + 80) * 0.6);
+        return (
+          <Path
+            key={i}
+            d={`M${x} ${y} q-1 ${-h * 0.6} -2.6 ${-h} M${x} ${y} q0.4 ${-h * 0.7} 0.6 ${-h * 1.15} M${x} ${y} q1 ${-h * 0.6} 2.6 ${-h * 0.9}`}
+            stroke={color}
+            strokeWidth={g.width}
+            strokeLinecap="round"
+            fill="none"
+          />
+        );
+      })}
+    </>
+  );
 }
 
 export const TreeArt = memo(function TreeArt({
@@ -134,6 +214,8 @@ export const TreeArt = memo(function TreeArt({
   const poolId = `pool-${uid}`;
   const barkId = `bark-${uid}`;
   const moundId = `mound-${uid}`;
+  const bandId = (layer: string, band: number) => `band-${uid}-${layer}-${band}`;
+  const trunkShadeId = `trunkshade-${uid}`;
   const leafId = {
     back: `leaf-${uid}-back`,
     main: `leaf-${uid}-main`,
@@ -150,6 +232,11 @@ export const TreeArt = memo(function TreeArt({
   const density = speciesDefinition(c.species).bloomDensity ?? SINGLE_FLOWER;
   const fixedTraits = c.traits.filter((mark) => mark.anchor !== 'canopy');
   const canopyTraits = c.traits.filter((mark) => mark.anchor === 'canopy');
+  const box = useMemo(() => canopyBox(c), [c]);
+  const fullCanopy = box !== null && c.foliage.main.length >= FULL_CANOPY;
+  const grown = c.stage !== 'seed' && c.stage !== 'sprout';
+  const o = SIGNATURE_PALETTE.opacity;
+  const grass = mix(lighting.ground, SIGNATURE_PALETTE.shadow, SIGNATURE_PALETTE.grass.shade);
 
   return (
     <>
@@ -173,11 +260,32 @@ export const TreeArt = memo(function TreeArt({
             <Stop offset="1" stopColor={lighting.pool.color} stopOpacity={0} />
           </RadialGradient>
           {/* The soil mound fades into the ground at its edge, lit from the upper left. */}
+          {/* A grown tree stands in grass: only a little earth shows at its foot (ART.10). */}
           <RadialGradient id={moundId} cx="44%" cy="30%" r="62%">
-            <Stop offset="0" stopColor={barkVolume(colors.soil).light} />
-            <Stop offset="0.5" stopColor={colors.soil} />
-            <Stop offset="1" stopColor={lighting.ground} />
+            {(grown
+              ? [
+                  mix(lighting.ground, colors.soil, 0.35),
+                  mix(lighting.ground, colors.soil, 0.12),
+                  lighting.ground,
+                ]
+              : [barkVolume(colors.soil).light, colors.soil, lighting.ground]
+            ).map((color, i) => (
+              <Stop key={i} offset={grown ? [0, 0.45, 1][i] : [0, 0.5, 1][i]} stopColor={color} />
+            ))}
           </RadialGradient>
+          {box ? (
+            <LinearGradient
+              id={trunkShadeId}
+              gradientUnits="userSpaceOnUse"
+              x1={0}
+              y1={box.y + box.height - 8}
+              x2={0}
+              y2={box.y + box.height + 30}
+            >
+              <Stop offset="0" stopColor={SIGNATURE_PALETTE.shadow} stopOpacity={o.trunkShade} />
+              <Stop offset="1" stopColor={SIGNATURE_PALETTE.shadow} stopOpacity={0} />
+            </LinearGradient>
+          ) : null}
           <LinearGradient id={barkId} x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0" stopColor={bark.light} />
             <Stop offset="0.45" stopColor={colors.bark} />
@@ -202,6 +310,7 @@ export const TreeArt = memo(function TreeArt({
           opacity={SIGNATURE_PALETTE.opacity.shadow}
         />
         <Shape shape={c.mound} fill={url(moundId)} />
+        {grown ? <GrassTufts mound={c.mound} seed={tree.seed} color={grass} /> : null}
         <G transform={c.mirrored ? MIRROR : undefined}>
           {c.roots ? (
             <Path
@@ -213,6 +322,8 @@ export const TreeArt = memo(function TreeArt({
             />
           ) : null}
           {c.trunk ? <Path d={c.trunk} fill={url(barkId)} /> : null}
+          {/* The canopy shades the top of the trunk (ART.10). */}
+          {c.trunk && fullCanopy ? <Path d={c.trunk} fill={url(trunkShadeId)} /> : null}
         </G>
         {c.seed ? <Shape shape={c.seed} fill={colors.seed} /> : null}
         {fixedTraits.map((mark) => (
@@ -242,6 +353,26 @@ export const TreeArt = memo(function TreeArt({
               <Defs>
                 <LeafLight id={leafId.back} color={colors.foliage.back} />
               </Defs>
+              {/* The dark heart of the canopy: gaps between clusters read as depth, not sky. */}
+              {/* One path, so the core costs one element however full the canopy is. */}
+              {fullCanopy ? (
+                <Path
+                  d={c.foliage.main
+                    .map((shape) =>
+                      clusterOutline(
+                        {
+                          ...shape,
+                          rx: shape.rx * SIGNATURE_PALETTE.coreSpread,
+                          ry: shape.ry * SIGNATURE_PALETTE.coreSpread,
+                        },
+                        shape.key,
+                      ),
+                    )
+                    .join(' ')}
+                  fill={volume(colors.foliage.back).dark}
+                  opacity={o.core}
+                />
+              ) : null}
               {c.foliage.back.map((shape) => (
                 <Cluster key={shape.key} shape={shape} fill={url(leafId.back)} />
               ))}
@@ -252,12 +383,28 @@ export const TreeArt = memo(function TreeArt({
               <Defs>
                 <LeafLight id={leafId.main} color={colors.foliage.main} />
                 <LeafLight id={leafId.accent} color={colors.foliage.accent} />
+                {fullCanopy
+                  ? SIGNATURE_PALETTE.canopyLight.bands.map((by, band) => (
+                      <LeafLight
+                        key={band}
+                        id={bandId('main', band)}
+                        color={tone(colors.foliage.main, by)}
+                      />
+                    ))
+                  : null}
               </Defs>
-              {c.foliage.main.map((shape) => (
-                <Cluster key={shape.key} shape={shape} fill={leaf(shape.accent)} />
-              ))}
-              {c.foliage.richness.map((shape) => (
-                <Cluster key={shape.key} shape={shape} fill={url(leafId.main)} />
+              {/* ART.10: one light across the canopy (bands), each cluster keeping its own form. */}
+              {[...c.foliage.main, ...c.foliage.richness].map((shape) => (
+                <Cluster
+                  key={shape.key}
+                  shape={shape}
+                  fill={
+                    box && fullCanopy && !shape.accent
+                      ? url(bandId('main', bandOf(shape, box)))
+                      : leaf(shape.accent)
+                  }
+                  rim={fullCanopy ? volume(colors.foliage.main).dark : undefined}
+                />
               ))}
               {c.highlights.map((shape) => (
                 <Cluster
@@ -291,7 +438,12 @@ export const TreeArt = memo(function TreeArt({
               <LeafLight id={leafId.front} color={colors.foliage.front} />
             </Defs>
             {c.foliage.front.map((shape) => (
-              <Cluster key={shape.key} shape={shape} fill={url(leafId.front)} />
+              <Cluster
+                key={shape.key}
+                shape={shape}
+                fill={url(leafId.front)}
+                rim={fullCanopy ? volume(colors.foliage.front).dark : undefined}
+              />
             ))}
           </Layer>
         </Animated.View>
@@ -413,6 +565,16 @@ export const Backdrop = memo(function Backdrop({
         <Rect x={0} y={0} width={W} height={H} fill={`url(#${skyId})`} />
         <Circle cx={celestial.x} cy={celestial.y} r={celestial.r * 2.8} fill={`url(#${haloId})`} />
         <Circle cx={celestial.x} cy={celestial.y} r={celestial.r} fill={celestial.color} />
+        {/* ART.10: soft clouds by day, on the side away from the sun. */}
+        {lighting.daylight ? <Clouds sunX={celestial.x} lighting={lighting} /> : null}
+        {/* ART.10: a hazier ridge behind the near hills gives the land depth. */}
+        {known === 'misty-hills' ? null : (
+          <Path
+            d={`M0 206 Q64 184 128 198 T${W} 188 L${W} 232 L0 232 Z`}
+            fill={mix(lighting.hills, lighting.sky[1], 0.5)}
+            opacity={SIGNATURE_PALETTE.opacity.farHills}
+          />
+        )}
         {/* Far hills in mist sit behind the near hills (layer 2). */}
         {known === 'misty-hills' ? (
           <>
@@ -435,6 +597,25 @@ export const Backdrop = memo(function Backdrop({
     </View>
   );
 });
+
+/** Two soft clouds, each a few overlapping ovals, away from the sun (ART.10). */
+function Clouds({ sunX, lighting }: { sunX: number; lighting: LightingPreset }) {
+  const left = sunX > W / 2;
+  const color = mix(SIGNATURE_PALETTE.cloud, lighting.sky[1], 0.25);
+  const cloud = (x: number, y: number, s: number) => (
+    <G opacity={SIGNATURE_PALETTE.opacity.cloud}>
+      <SvgEllipse cx={x} cy={y} rx={22 * s} ry={6 * s} fill={color} />
+      <SvgEllipse cx={x - 8 * s} cy={y - 4 * s} rx={10 * s} ry={7 * s} fill={color} />
+      <SvgEllipse cx={x + 5 * s} cy={y - 6 * s} rx={12 * s} ry={9 * s} fill={color} />
+    </G>
+  );
+  return (
+    <>
+      {cloud(left ? 62 : W - 62, 46, 1)}
+      {cloud(left ? 132 : W - 132, 96, 0.7)}
+    </>
+  );
+}
 
 /**
  * An equipped decoration on the ground in front of the tree (docs/03 §7 layer 17): beside the
