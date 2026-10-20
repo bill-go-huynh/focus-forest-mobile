@@ -4,6 +4,7 @@ import { AccessibilityInfo } from 'react-native';
 
 import { celebrationsKey } from '../celebrations/celebration-store';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
+import { mockAppState } from '../test-utils/app-state';
 import { makeGrowth, makeHome } from '../test-utils/core-loop';
 import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
@@ -25,7 +26,8 @@ jest.mock('expo-constants', () => ({
 /**
  * DM.3 The demo live channel (`/demo/live`): a demo account's open app hears what an admin
  * changed on the Demo page. A session arrives as the server answered it, so the app celebrates
- * it as its own; anything else is read again. A real account never connects.
+ * it as its own; anything else is read again. Which accounts are demo accounts is the server's
+ * call (a demo world may use any email): an account it turns away stops listening.
  */
 
 const API = 'https://api.example.com';
@@ -58,6 +60,7 @@ class FakeSocket {
 }
 
 let requests: FakeRequest[];
+let appState: ReturnType<typeof mockAppState>;
 const homeReads = () => requests.filter((r) => new URL(r.url).pathname === '/me/home').length;
 const originalSocket = (globalThis as { WebSocket?: unknown }).WebSocket;
 
@@ -74,6 +77,7 @@ beforeEach(async () => {
   });
   requests = net.requests;
   globalThis.fetch = net.fetch;
+  appState = mockAppState();
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
 });
 afterEach(() => {
@@ -85,20 +89,38 @@ const demoSockets = () =>
   FakeSocket.all.filter((s) => s.url === `${'wss://api.example.com'}/demo/live`);
 
 describe('demo live changes (DM.3)', () => {
-  it('connects a demo account and sends its token first', async () => {
-    signInForTest({ id: USER, email: 'demo3@focusforest.test' });
+  it('connects whatever the email, and sends its token first', async () => {
+    signInForTest({ id: USER, email: 'bill.presenter@gmail.com' });
     renderApp(appRoutes, { initialUrl: '/' });
     await until(() => demoSockets().length === 1);
     await until(() => demoSockets()[0]!.sent.length > 0);
     expect(demoSockets()[0]!.sent[0]).toEqual({ type: 'auth', token: expect.any(String) });
   });
 
-  it('never connects a real account', async () => {
-    signInForTest({ id: USER, email: 'mai@example.com' });
+  it.each(['not_a_demo_account', 'demo_off'])(
+    'stops listening for good when the server answers %s',
+    async (code) => {
+      signInForTest({ id: USER, email: 'mai@example.com' });
+      renderApp(appRoutes, { initialUrl: '/' });
+      await screen.findByTestId('tab-bar');
+      await until(() => demoSockets().length === 1 && demoSockets()[0]!.sent.length > 0);
+      demoSockets()[0]!.push({ type: 'error', code });
+      expect(demoSockets()[0]!.readyState).toBe(3);
+      await appState.emit('background');
+      await appState.emit('active');
+      await act(() => new Promise((r) => setTimeout(r, 100)));
+      expect(demoSockets()).toHaveLength(1);
+    },
+  );
+
+  it('listens again after coming back to the foreground', async () => {
+    signInForTest({ id: USER, email: 'demo3@focusforest.test' });
     renderApp(appRoutes, { initialUrl: '/' });
-    await screen.findByTestId('tab-bar');
-    await act(() => new Promise((r) => setTimeout(r, 200)));
-    expect(demoSockets()).toEqual([]);
+    await until(() => demoSockets().length === 1);
+    await appState.emit('background');
+    expect(demoSockets()[0]!.readyState).toBe(3);
+    await appState.emit('active');
+    await until(() => demoSockets().length === 2);
   });
 
   it('keeps a session from the admin to celebrate, and reads Home again', async () => {

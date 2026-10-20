@@ -62,6 +62,22 @@ beforeEach(() => {
   jest.mocked(sharing.shareAsync).mockReset().mockResolvedValue(undefined);
 });
 
+// Node's own WebSocket would reach the network: the signed-in app opens the demo channel (DM.3)
+// for every account, so tests get a socket that never connects. Suites that need a live channel
+// put their own fake in its place.
+class QuietSocket {
+  readyState = 0;
+  onopen: (() => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
+  onclose: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  send(): void {}
+  close(): void {
+    this.readyState = 3;
+  }
+}
+(globalThis as { WebSocket?: unknown }).WebSocket = QuietSocket;
+
 // 10 s: Phase 5 added suites that open the whole app, and with four workers a first render
 // sometimes passed 5 s under load (a different test each run, every one green alone).
 configure({ asyncUtilTimeout: 10_000 });

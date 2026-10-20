@@ -62,6 +62,9 @@ class FakeSocket {
   }
 }
 
+/** The room channel's sockets (the demo channel, DM.3, opens its own). */
+const roomSockets = () => FakeSocket.all.filter((s) => s.url.endsWith('/rooms/live'));
+
 /**
  * A5.4 as these tests script it. Every change is REST and answers the room; `room` is what the
  * server holds now.
@@ -376,8 +379,8 @@ describe('the lobby (docs/02 Focus Together: quick to get ready, no chat)', () =
 
   it('follows the live channel: signs in with a message, then shows changes', async () => {
     await openRoom();
-    await until(() => FakeSocket.all.some((s) => s.sent.length >= 2));
-    const socket = FakeSocket.all.at(-1)!;
+    await until(() => roomSockets().some((s) => s.sent.length >= 2));
+    const socket = roomSockets().at(-1)!;
     expect(socket.url).toBe('wss://api.example.com/rooms/live');
     expect(socket.url).not.toContain('token');
     expect(socket.sent).toEqual([
@@ -398,11 +401,13 @@ describe('the lobby (docs/02 Focus Together: quick to get ready, no chat)', () =
 
   it('ignores live messages about another room', async () => {
     await openRoom();
-    await until(() => FakeSocket.all.some((s) => s.sent.length >= 2));
-    FakeSocket.all.at(-1)!.push({
-      type: 'room',
-      room: { ...makeRoom({ name: 'Another room' }), id: '0190b000-0000-7000-8000-00000000c002' },
-    });
+    await until(() => roomSockets().some((s) => s.sent.length >= 2));
+    roomSockets()
+      .at(-1)!
+      .push({
+        type: 'room',
+        room: { ...makeRoom({ name: 'Another room' }), id: '0190b000-0000-7000-8000-00000000c002' },
+      });
     // Query updates reach the screen on the next tick.
     await act(() => new Promise<void>((resolve) => setTimeout(resolve, 100)));
     expect(screen.getByRole('header', { name: 'Morning study' })).toBeOnTheScreen();

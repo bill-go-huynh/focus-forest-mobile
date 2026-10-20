@@ -40,7 +40,9 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 
 - [ ] **DM-1** Admin → **Demo** → nhập mật khẩu (≥ 8 ký tự) → **Make a demo world** → **Mong đợi:** hiện "Demo world N" với 6 tài khoản: Presenter Bill, Comeback An, Recovery Vy, 3 bạn Mai/Khoa/Linh; mỗi dòng ghi email đăng nhập và "What it shows". Trước ngày 8 trong tháng: báo cần từ ngày 8.
 - [ ] **DM-2** Mật khẩu ngắn hơn 8 ký tự → **Mong đợi:** "Use at least 8 characters.", không tạo gì.
-- [ ] **DM-3** Đăng nhập `demoN@focusforest.test` trên máy → **Mong đợi:** mở app là lễ trồng cây của tháng trước, rồi recap; Home có cây tháng này, chuỗi **6 ngày**; Together có 3 bạn; rừng có reaction.
+- [ ] **DM-1b** Trước khi bấm Make a demo world, nhập **Email for Presenter (Bill)** = một email anh chọn (ví dụ email thật của anh chưa từng đăng ký app), mở "Emails for the other accounts" nhập thêm email cho Khoa → **Mong đợi:** bảng world hiện đúng email đã nhập cho Bill và Khoa (viết thường, bỏ khoảng trắng); các tài khoản để trống vẫn là `demoN-…@focusforest.test`. Đăng nhập trên máy bằng email đã nhập + mật khẩu demo được.
+- [ ] **DM-1c** Nhập email **đã có tài khoản** (ví dụ tài khoản anh đang dùng) → **Mong đợi:** "… already has an account. A demo world only makes new accounts.", không tạo world nào. Nhập cùng một email cho 2 tài khoản → báo "… is entered for two accounts…". Nhập email sai định dạng → báo email không hợp lệ.
+- [ ] **DM-3** Đăng nhập email của Presenter (đã nhập ở DM-1b, hoặc `demoN@focusforest.test`) trên máy → **Mong đợi:** mở app là lễ trồng cây của tháng trước, rồi recap; Home có cây tháng này, chuỗi **6 ngày**; Together có 3 bạn; rừng có reaction.
 - [ ] **DM-4** Admin: Account = Bill, Minutes = 25 → **Add a finished session**, app đang mở ở Home → **Mong đợi:** trong vài giây, máy tự hiện hiệu ứng: cây thành **Mature Tree**, badge **50 Hours** (kèm Maple, Stone Lantern), chuỗi **7 ngày** (badge, Pine), không cần chạm gì. Admin hiện "Added 25 minutes for Bill. The phone shows it now."
 - [ ] **DM-5** Bấm Add a finished session lần nữa ngay sau → **Mong đợi:** admin báo phải chờ thêm bao nhiêu phút (phiên không được chồng nhau).
 - [ ] **DM-6** Mở sự kiện "Demo Grove N" trên máy sau DM-4 → **Mong đợi:** Community Tree đã vượt mốc đầu, có màn chúc mừng.
@@ -50,7 +52,7 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 - [ ] **DM-10** Trên máy: Together → tạo phòng → admin bấm **Khoa joins my room and is ready** → **Mong đợi:** Khoa hiện trong phòng với trạng thái Ready ngay; bấm I'm ready trên máy là đếm ngược bắt đầu. Chưa tạo phòng mà bấm: admin báo "Open a room in Focus Together on the phone first."
 - [ ] **DM-11** Đăng nhập tài khoản Comeback (An) → **Mong đợi:** cây "Resting quietly"; admin Add a finished session cho An → máy chuyển "Waking up".
 - [ ] **DM-12** Đăng nhập tài khoản Recovery (Vy) → admin Add a finished session cho Vy → **Mong đợi:** Profile → Goals and rest days hiện "Want to keep your 4-day streak?" với nút Keep my streak.
-- [ ] **DM-13** Đăng nhập một tài khoản thường (không phải demo) → **Mong đợi:** thao tác admin trên tài khoản demo không ảnh hưởng gì; máy không kết nối kênh demo.
+- [ ] **DM-13** Đăng nhập một tài khoản thường (không do demo world tạo, kể cả email có dạng `demo…@focusforest.test` tự đăng ký) → **Mong đợi:** thao tác admin trên tài khoản demo không ảnh hưởng gì; máy bị server từ chối ở kênh demo và thôi kết nối (không có gì hiện ra cho người dùng).
 - [ ] **DM-14** Tắt `DEMO_TOOLS` (đặt `off`, khởi động lại API) → **Mong đợi:** trang Demo ghi "Demo tools are off…", không có nút nào.
 
 ### 0.3 Mẹo
