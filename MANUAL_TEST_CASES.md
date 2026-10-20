@@ -34,6 +34,25 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 - [ ] **PU-4** Bắt đầu một phiên focus rồi để đến giờ nhắc của một reminder khác → **Mong đợi:** không có thông báo trong lúc focus; kết thúc phiên xong mới đến (nếu chưa quá 2 giờ).
 - [ ] **PU-5** Nếu không có dòng trong **PushDevice**: kiểm tra (a) đang dùng APK mới chứ không phải Expo Go hay APK cũ, (b) đã cấp quyền thông báo, (c) điện thoại có Google Play Services. Có dòng nhưng không có thông báo: trong Prisma Studio mở bảng **NotificationOutbox** (`notification_outbox`), tìm dòng category `dailyGoalReminder` của tài khoản. `pending` là chưa tới lượt quét; `skipped` là bị bỏ, cột `reason` ghi lý do (ví dụ đã đạt goal, đang focus); `failed` là gửi lỗi, cột `reason` ghi lỗi từ Expo, ví dụ thiếu khoá FCM. Chụp dòng đó gửi em. Không có dòng nào nghĩa là chưa đến giờ, hoặc profile thiếu time zone.
 
+### 0.5 Tab Demo (DM, spec/demo)
+
+**Chuẩn bị:** API có `DEMO_TOOLS=on` và `PUSH_PROVIDER=expo` trong `.env`, khởi động lại API. Admin web đăng nhập bằng role admin. Điện thoại đăng nhập tài khoản demo và mở app sẵn.
+
+- [ ] **DM-1** Admin → **Demo** → nhập mật khẩu (≥ 8 ký tự) → **Make a demo world** → **Mong đợi:** hiện "Demo world N" với 6 tài khoản: Presenter Bill, Comeback An, Recovery Vy, 3 bạn Mai/Khoa/Linh; mỗi dòng ghi email đăng nhập và "What it shows". Trước ngày 8 trong tháng: báo cần từ ngày 8.
+- [ ] **DM-2** Mật khẩu ngắn hơn 8 ký tự → **Mong đợi:** "Use at least 8 characters.", không tạo gì.
+- [ ] **DM-3** Đăng nhập `demoN@focusforest.test` trên máy → **Mong đợi:** mở app là lễ trồng cây của tháng trước, rồi recap; Home có cây tháng này, chuỗi **6 ngày**; Together có 3 bạn; rừng có reaction.
+- [ ] **DM-4** Admin: Account = Bill, Minutes = 25 → **Add a finished session**, app đang mở ở Home → **Mong đợi:** trong vài giây, máy tự hiện hiệu ứng: cây thành **Mature Tree**, badge **50 Hours** (kèm Maple, Stone Lantern), chuỗi **7 ngày** (badge, Pine), không cần chạm gì. Admin hiện "Added 25 minutes for Bill. The phone shows it now."
+- [ ] **DM-5** Bấm Add a finished session lần nữa ngay sau → **Mong đợi:** admin báo phải chờ thêm bao nhiêu phút (phiên không được chồng nhau).
+- [ ] **DM-6** Mở sự kiện "Demo Grove N" trên máy sau DM-4 → **Mong đợi:** Community Tree đã vượt mốc đầu, có màn chúc mừng.
+- [ ] **DM-7** **Make today a rest day** cho Bill → **Mong đợi:** Home trên máy tự đổi sang "Rest day today · …".
+- [ ] **DM-8** Friend = Linh → **Friend reacts to the forest** → **Mong đợi:** mục Reactions trong Together cập nhật ngay.
+- [ ] **DM-9** **Send now** lần lượt 10 loại thông báo → **Mong đợi:** mỗi loại có push trên máy trong vài giây; admin hiện "Sent: “…”". Loại không gửi được thì admin ghi lý do (ví dụ "No phone is registered…" nếu máy chưa đăng ký push, hoặc nhắc mục tiêu khi mục tiêu hôm nay đã đạt).
+- [ ] **DM-10** Trên máy: Together → tạo phòng → admin bấm **Khoa joins my room and is ready** → **Mong đợi:** Khoa hiện trong phòng với trạng thái Ready ngay; bấm I'm ready trên máy là đếm ngược bắt đầu. Chưa tạo phòng mà bấm: admin báo "Open a room in Focus Together on the phone first."
+- [ ] **DM-11** Đăng nhập tài khoản Comeback (An) → **Mong đợi:** cây "Resting quietly"; admin Add a finished session cho An → máy chuyển "Waking up".
+- [ ] **DM-12** Đăng nhập tài khoản Recovery (Vy) → admin Add a finished session cho Vy → **Mong đợi:** Profile → Goals and rest days hiện "Want to keep your 4-day streak?" với nút Keep my streak.
+- [ ] **DM-13** Đăng nhập một tài khoản thường (không phải demo) → **Mong đợi:** thao tác admin trên tài khoản demo không ảnh hưởng gì; máy không kết nối kênh demo.
+- [ ] **DM-14** Tắt `DEMO_TOOLS` (đặt `off`, khởi động lại API) → **Mong đợi:** trang Demo ghi "Demo tools are off…", không có nút nào.
+
 ### 0.3 Mẹo
 - Chế độ máy bay = offline.
 - Bật TalkBack rồi chạm vào cây để nghe trạng thái của cây (stage, canopy, blossom, vitality).
