@@ -36,7 +36,7 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 
 ### 0.5 Tab Demo (DM, spec/demo)
 
-**Chuẩn bị:** API có `DEMO_TOOLS=on` và `PUSH_PROVIDER=expo` trong `.env`, khởi động lại API. Admin web đăng nhập bằng role admin. Điện thoại đăng nhập tài khoản demo và mở app sẵn.
+**Chuẩn bị:** chạy lại `npm run prisma:migrate:deploy` trong `focus-forest-api` (có migration mới `demo_accounts`, 2026-10-20; PR-1 đã chạy trước đó chưa có nó). API có `DEMO_TOOLS=on` và `PUSH_PROVIDER=expo` trong `.env`, khởi động lại API. Admin web đăng nhập bằng role admin. Điện thoại đăng nhập tài khoản demo và mở app sẵn.
 
 - [ ] **DM-1** Admin → **Demo** → nhập mật khẩu (≥ 8 ký tự) → **Make a demo world** → **Mong đợi:** hiện "Demo world N" với 6 tài khoản: Presenter Bill, Comeback An, Recovery Vy, 3 bạn Mai/Khoa/Linh; mỗi dòng ghi email đăng nhập và "What it shows". Trước ngày 8 trong tháng: báo cần từ ngày 8.
 - [ ] **DM-2** Mật khẩu ngắn hơn 8 ký tự → **Mong đợi:** "Use at least 8 characters.", không tạo gì.
@@ -53,7 +53,8 @@ Danh sách này đi qua **toàn bộ tính năng** của app trên điện tho�
 - [ ] **DM-11** Đăng nhập tài khoản Comeback (An) → **Mong đợi:** cây "Resting quietly"; admin Add a finished session cho An → máy chuyển "Waking up".
 - [ ] **DM-12** Đăng nhập tài khoản Recovery (Vy) → admin Add a finished session cho Vy → **Mong đợi:** Profile → Goals and rest days hiện "Want to keep your 4-day streak?" với nút Keep my streak.
 - [ ] **DM-13** Đăng nhập một tài khoản thường (không do demo world tạo, kể cả email có dạng `demo…@focusforest.test` tự đăng ký) → **Mong đợi:** thao tác admin trên tài khoản demo không ảnh hưởng gì; máy bị server từ chối ở kênh demo và thôi kết nối (không có gì hiện ra cho người dùng).
-- [ ] **DM-14** Tắt `DEMO_TOOLS` (đặt `off`, khởi động lại API) → **Mong đợi:** trang Demo ghi "Demo tools are off…", không có nút nào.
+- [ ] **DM-14** Tắt `DEMO_TOOLS` (đặt `off`, khởi động lại API) → **Mong đợi:** trang Demo ghi "Demo tools are off…", không có nút nào. App trên máy (kể cả đang đăng nhập tài khoản demo) vẫn dùng bình thường, không báo lỗi gì.
+- [ ] **DM-15** World tạo **trước** migration `demo_accounts` (nếu anh đã tạo ở lần test trước) → sau khi migrate và khởi động lại API → **Mong đợi:** world cũ vẫn hiện trong trang Demo với đủ 6 tài khoản, các nút vẫn tác động lên máy như trước. World mới tạo được đánh số tiếp theo, không trùng.
 
 ### 0.3 Mẹo
 - Chế độ máy bay = offline.
