@@ -47,6 +47,7 @@ import { useTheme } from '../theme';
 import { useAppFonts } from '../theme/fonts';
 import { ActiveTimerProvider, createAppTimerStore } from '../timer';
 import { useWelcome, WelcomeProvider } from '../welcome/WelcomeProvider';
+import { DemoLive } from '../demo/demo-live';
 import {
   createAppTopicCreateQueue,
   createAppTopicStore,
@@ -234,6 +235,8 @@ function RootNavigator() {
       {/* A tapped notification opens its link once signed in (M6.2). */}
       <NotificationLinkNavigator />
       {signedIn ? <OnboardingNavigator /> : null}
+      {/* DM.3: demo accounts hear what the admin's Demo page changes (spec/demo). */}
+      {signedIn ? <DemoLive /> : null}
       {waitingForPreferences ? <LaunchScreen overlay /> : null}
     </View>
   );
