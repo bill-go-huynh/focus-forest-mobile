@@ -40,6 +40,10 @@ import { WELCOME_PAGES, type WelcomeArt } from './welcome-pages';
  * settles in scale, the words lead it, the backdrop's tone and the page dots blend between
  * pages, and the art floats gently. Under reduced motion every movement becomes a crossfade.
  * Only the page in view animates its tree and is read by a screen reader.
+ *
+ * Kept light while the pages move (owner, 2026-10-22: swiping felt heavy): only the page in
+ * view and its neighbours draw their trees, and while the pages move the trees hold still and
+ * each page's art moves as one cached picture instead of being redrawn every frame.
  */
 
 /** How far the art lags behind its page, and the words lead it, as a share of the width. */
@@ -67,7 +71,16 @@ export function WelcomeScreen() {
   const pager = useAnimatedRef<Animated.ScrollView>();
   const offset = useSharedValue(0);
   const [index, setIndex] = useState(0);
+  // True while the pages move (a drag, its fling, or Next).
+  const [moving, setMoving] = useState(false);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const last = WELCOME_PAGES.length - 1;
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    [],
+  );
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -77,10 +90,16 @@ export function WelcomeScreen() {
   const onSettled = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const settled = Math.round(event.nativeEvent.contentOffset.x / width);
     setIndex(Math.max(0, Math.min(last, settled)));
+    setMoving(false);
   };
   const goTo = (page: number) => {
     setIndex(page);
     pager.current?.scrollTo({ x: page * width, animated: !reducedMotion });
+    if (reducedMotion) return;
+    // A scroll the app starts may not report its end: the pages rest once it has had time.
+    setMoving(true);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => setMoving(false), theme.motion.progress);
   };
 
   const tints = pageTints(theme);
@@ -127,6 +146,7 @@ export function WelcomeScreen() {
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        onScrollBeginDrag={() => setMoving(true)}
         onMomentumScrollEnd={onSettled}
         style={{ flex: 1 }}
       >
@@ -138,6 +158,8 @@ export function WelcomeScreen() {
             body={page.body}
             art={page.art}
             current={i === index}
+            near={Math.abs(i - index) <= 1}
+            moving={moving}
             offset={offset}
             width={width}
             reducedMotion={reducedMotion}
@@ -183,12 +205,27 @@ interface PageProps {
   body: string;
   art: WelcomeArt;
   current: boolean;
+  /** The page in view or next to it: only these draw their trees. */
+  near: boolean;
+  /** The pages are moving: the trees hold still and the art moves as one picture. */
+  moving: boolean;
   offset: SharedValue<number>;
   width: number;
   reducedMotion: boolean;
 }
 
-function Page({ index, title, body, art, current, offset, width, reducedMotion }: PageProps) {
+function Page({
+  index,
+  title,
+  body,
+  art,
+  current,
+  near,
+  moving,
+  offset,
+  width,
+  reducedMotion,
+}: PageProps) {
   const theme = useTheme();
   const { height } = useWindowDimensions();
   const { isLargeText } = useFontScale();
@@ -240,34 +277,46 @@ function Page({ index, title, body, art, current, offset, width, reducedMotion }
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          entering={first ? enter(0) : undefined}
-          style={[{ alignItems: 'center' }, artStyle]}
-          // Decorative: an example tree, not anyone's. The words below carry the meaning.
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          pointerEvents="none"
-        >
-          <Float active={current && !reducedMotion}>
-            <Halo size={artWidth} />
-            <Art art={art} width={artWidth} active={current} />
-          </Float>
+        {/* The arrival animates a wrapper; the swipe animates the view inside it, so neither
+            overwrites the other. */}
+        <Animated.View entering={first ? enter(0) : undefined}>
+          <Animated.View
+            testID={`welcome-art-${index}`}
+            style={[{ alignItems: 'center' }, artStyle]}
+            renderToHardwareTextureAndroid={moving}
+            shouldRasterizeIOS={moving}
+            // Decorative: an example tree, not anyone's. The words below carry the meaning.
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            pointerEvents="none"
+          >
+            <Float active={current && !moving && !reducedMotion}>
+              <Halo size={artWidth} />
+              {near ? (
+                <Art art={art} width={artWidth} active={current && !moving} />
+              ) : (
+                <View style={{ width: artWidth, height: artWidth / theme.treeScene.aspectRatio }} />
+              )}
+            </Float>
+          </Animated.View>
         </Animated.View>
-        <Animated.View
-          entering={first ? enter(theme.motion.base) : undefined}
-          style={[{ gap: theme.space[3] }, textStyle]}
-        >
-          <Text
-            accessibilityRole="header"
-            style={[theme.type.display, { color: theme.colors.text.primary, textAlign: 'center' }]}
-          >
-            {title}
-          </Text>
-          <Text
-            style={[theme.type.body, { color: theme.colors.text.secondary, textAlign: 'center' }]}
-          >
-            {body}
-          </Text>
+        <Animated.View entering={first ? enter(theme.motion.base) : undefined}>
+          <Animated.View style={[{ gap: theme.space[3] }, textStyle]}>
+            <Text
+              accessibilityRole="header"
+              style={[
+                theme.type.display,
+                { color: theme.colors.text.primary, textAlign: 'center' },
+              ]}
+            >
+              {title}
+            </Text>
+            <Text
+              style={[theme.type.body, { color: theme.colors.text.secondary, textAlign: 'center' }]}
+            >
+              {body}
+            </Text>
+          </Animated.View>
         </Animated.View>
       </ScrollView>
     </View>

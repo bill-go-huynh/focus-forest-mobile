@@ -115,6 +115,35 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     }
   });
 
+  it('draws only the trees of the page in view and its neighbours, so swiping stays light', async () => {
+    openApp();
+    await screen.findByRole('header', { name: PAGES[0] });
+    // Page 1 (one tree) and page 2 (one tree); page 3's forest of three is not drawn yet.
+    expect(screen.getAllByTestId('tree-scene-art', { includeHiddenElements: true })).toHaveLength(
+      2,
+    );
+    act(() => swipeTo(2));
+    await screen.findByRole('header', { name: PAGES[2] });
+    // Pages 2, 3 (three trees) and 4.
+    expect(screen.getAllByTestId('tree-scene-art', { includeHiddenElements: true })).toHaveLength(
+      5,
+    );
+  });
+
+  it('moves the art as one still picture while the pages are dragged', async () => {
+    openApp();
+    await screen.findByRole('header', { name: PAGES[0] });
+    const art = () => screen.getByTestId('welcome-art-0', { includeHiddenElements: true });
+    // At rest the tree breathes, so it is drawn live.
+    expect(art().props.renderToHardwareTextureAndroid).toBe(false);
+    act(() => fireEvent(screen.getByTestId('welcome-pager'), 'scrollBeginDrag'));
+    // Dragging: the trees hold still and each page's art moves as one cached picture.
+    expect(art().props.renderToHardwareTextureAndroid).toBe(true);
+    expect(art().props.shouldRasterizeIOS).toBe(true);
+    act(() => swipeTo(0));
+    expect(art().props.renderToHardwareTextureAndroid).toBe(false);
+  });
+
   it('keeps its illustrations decorative and its words calm', async () => {
     openApp();
     await screen.findByRole('header', { name: PAGES[0] });
