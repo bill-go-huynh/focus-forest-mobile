@@ -7,8 +7,10 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
+import { WELCOME_TITLE } from '../test-utils/welcome';
 // This device had an account signed in, so a signed-out app opens on sign in (W.1).
-const SIGNED_OUT_HEADER = 'Welcome back';
+// Signed out, the welcome opens again (owner, 2026-10-22).
+const SIGNED_OUT_HEADER = WELCOME_TITLE;
 
 /**
  * M7.1 Your data (docs/11 Privacy; Phase 7 owner decision 3): download a copy of everything
@@ -152,10 +154,9 @@ describe('deleting the account (M7.1)', () => {
       body: { password: 'correct horse' },
     });
     await waitFor(async () =>
-      // The welcome flag is the device's, not the account's (W.1): it holds nothing about anyone.
+      // Only another account's data is left on the device.
       expect([...(await AsyncStorage.getAllKeys())].sort()).toEqual([
         'focus-forest/home/v1/someone-else',
-        'focus-forest/welcome/v1',
       ]),
     );
     const secureStore = jest.requireMock('expo-secure-store') as {

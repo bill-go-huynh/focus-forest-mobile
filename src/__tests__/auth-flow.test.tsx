@@ -8,7 +8,6 @@ import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { lightTheme } from '../theme';
 import { signUpFromWelcome, WELCOME_TITLE } from '../test-utils/welcome';
-import { WELCOME_KEY } from '../welcome/welcome-store';
 
 // Boundaries only: secure storage, the network, the device time zone, and the app config.
 const mockSecureStore = new Map<string, string>();
@@ -360,13 +359,6 @@ describe('sign in', () => {
     expect(await screen.findByTestId('tab-bar')).toBeOnTheScreen();
     expect(router.getPathname()).toBe('/');
     expect(authCalls().map((r) => r.url)).toEqual([`${API}/auth/sign-in`]);
-    // An account has signed in on this device: next time it opens on sign in (W.1).
-    await waitFor(async () =>
-      expect(JSON.parse((await AsyncStorage.getItem(WELCOME_KEY)) ?? 'null')).toEqual({
-        version: 1,
-        status: 'done',
-      }),
-    );
   });
 
   it('shows and announces wrong credentials, without revealing the password', async () => {

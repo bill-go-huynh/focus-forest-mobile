@@ -5,7 +5,6 @@ import { AccessibilityInfo, Dimensions } from 'react-native';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { avoidedWordProblems, renderedCopy } from '../test-utils/avoided-words';
-import { WELCOME_KEY } from '../welcome/welcome-store';
 
 // Boundaries only: secure storage (no saved session: the person is signed out) and the config.
 jest.mock('expo-secure-store', () => ({
@@ -49,6 +48,7 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     expect(page(1)).toBeOnTheScreen();
     expect(screen.queryByRole('header', { name: 'Create your account' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'I already have an account' })).toBeOnTheScreen();
   });
 
@@ -77,19 +77,21 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     expect(await screen.findByRole('header', { name: PAGES[1] })).toBeOnTheScreen();
   });
 
-  it('can skip to the last page', async () => {
-    openApp();
-    await screen.findByRole('header', { name: PAGES[0] });
-    fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
-    expect(await screen.findByRole('header', { name: PAGES[3] })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Get started' })).toBeOnTheScreen();
-  });
-
-  it('Get started opens sign up', async () => {
+  it('leads straight to sign up from any page', async () => {
     const router = openApp();
     await screen.findByRole('header', { name: PAGES[0] });
-    fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
-    fireEvent.press(await screen.findByRole('button', { name: 'Get started' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
+    expect(router.getPathname()).toBe('/sign-up');
+  });
+
+  it('Get started on the last page opens sign up, its one way there', async () => {
+    const router = openApp();
+    await screen.findByRole('header', { name: PAGES[0] });
+    act(() => swipeTo(PAGES.length - 1));
+    await screen.findByRole('header', { name: PAGES[PAGES.length - 1] });
+    expect(screen.queryByRole('button', { name: 'Create account' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Get started' }));
     expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
     expect(router.getPathname()).toBe('/sign-up');
   });
@@ -123,35 +125,12 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
   });
 });
 
-describe('the welcome is shown once per device', () => {
-  it('opens sign in instead, once an account has signed in on this device', async () => {
-    await AsyncStorage.setItem(WELCOME_KEY, JSON.stringify({ version: 1, status: 'done' }));
-    const router = openApp();
-    expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
-    expect(screen.queryByRole('header', { name: PAGES[0] })).toBeNull();
-    fireEvent.press(screen.getByRole('button', { name: 'Create an account' }));
-    expect(await screen.findByRole('header', { name: 'Create your account' })).toBeOnTheScreen();
-    expect(router.getPathname()).toBe('/sign-up');
-  });
-
-  it('keeps showing it to someone who has not signed in yet', async () => {
-    openApp();
-    await screen.findByRole('header', { name: PAGES[0] });
-    fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
-    fireEvent.press(await screen.findByRole('button', { name: 'Get started' }));
-    await screen.findByRole('header', { name: 'Create your account' });
-    // Looking is not signing in: the next launch still starts with the welcome.
-    expect(await AsyncStorage.getItem(WELCOME_KEY)).toBeNull();
-  });
-
-  it('shows it when the device storage cannot be read', async () => {
-    jest.spyOn(AsyncStorage, 'getItem').mockRejectedValue(new Error('storage unavailable'));
-    openApp();
-    expect(await screen.findByRole('header', { name: PAGES[0] })).toBeOnTheScreen();
-  });
-
-  it('ignores a stored value it does not understand', async () => {
-    await AsyncStorage.setItem(WELCOME_KEY, 'not json');
+describe('the welcome opens every signed-out launch (owner, 2026-10-22)', () => {
+  it('shows even where an account signed in before (the old once-per-device mark is ignored)', async () => {
+    await AsyncStorage.setItem(
+      'focus-forest/welcome/v1',
+      JSON.stringify({ version: 1, status: 'done' }),
+    );
     openApp();
     expect(await screen.findByRole('header', { name: PAGES[0] })).toBeOnTheScreen();
   });

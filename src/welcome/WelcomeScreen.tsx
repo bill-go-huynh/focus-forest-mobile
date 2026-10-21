@@ -112,9 +112,6 @@ export function WelcomeScreen() {
         >
           Focus Forest
         </Text>
-        {index < last ? (
-          <Button variant="tertiary" label="Skip" onPress={() => goTo(last)} />
-        ) : null}
       </View>
 
       <Animated.ScrollView
@@ -153,7 +150,15 @@ export function WelcomeScreen() {
       >
         <Dots offset={offset} width={width} index={index} />
         {index < last ? (
-          <Button variant="primary" label="Next" onPress={() => goTo(index + 1)} />
+          <>
+            <Button variant="primary" label="Next" onPress={() => goTo(index + 1)} />
+            {/* Straight to sign up from any page; on the last, Get started is the way. */}
+            <Button
+              variant="tertiary"
+              label="Create account"
+              onPress={() => router.push('/sign-up')}
+            />
+          </>
         ) : (
           <Button variant="primary" label="Get started" onPress={() => router.push('/sign-up')} />
         )}

@@ -7,8 +7,10 @@ import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { signInForTest } from '../test-utils/secure-store-mock';
+import { WELCOME_TITLE } from '../test-utils/welcome';
 // This device had an account signed in, so a signed-out app opens on sign in (W.1).
-const SIGNED_OUT_HEADER = 'Welcome back';
+// Signed out, the welcome opens again (owner, 2026-10-22).
+const SIGNED_OUT_HEADER = WELCOME_TITLE;
 
 /**
  * M6.1 Notification settings and delivery (spec §18, docs/02: reminders are invitations, the

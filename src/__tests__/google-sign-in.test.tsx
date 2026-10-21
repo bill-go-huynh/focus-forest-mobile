@@ -217,7 +217,8 @@ describe('a Google account on this device', () => {
     mockSecureStore.set(SESSION_KEY, JSON.stringify(googleSession()));
     openApp('/profile/settings');
     fireEvent.press(await screen.findByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
+    // Signed out, the welcome opens again (owner, 2026-10-22).
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(GoogleSignin.signOut).toHaveBeenCalled();
   });
 
@@ -229,7 +230,8 @@ describe('a Google account on this device', () => {
     fireEvent.changeText(screen.getByLabelText('Type DELETE to confirm'), 'DELETE');
     fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
 
-    expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
+    // Signed out, the welcome opens again (owner, 2026-10-22).
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     const deletion = requests.find((r) => r.method === 'DELETE');
     expect(deletion?.body).toEqual({ googleIdToken: GOOGLE_ID_TOKEN });
   });

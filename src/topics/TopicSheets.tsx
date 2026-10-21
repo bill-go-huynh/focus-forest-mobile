@@ -17,6 +17,7 @@ import {
   NEW_TOPIC_DEFAULTS,
   newTopicFields,
   openSuggestions,
+  TOPIC_NAME_SUGGESTIONS,
   pendingTopicStatus,
   topicChanges,
   topicDescriptionError,
@@ -56,11 +57,6 @@ export function CreateTopicSheet({
   const [nameError, setNameError] = useState<string | null>(null);
   const [notSaved, setNotSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { items } = usePickerTopics();
-  const suggestions = openSuggestions(
-    items.map((entry) => (entry.kind === 'confirmed' ? entry.topic.name : entry.name)),
-  );
-
   const changeName = (text: string) => {
     setName(text);
     if (text.trim() === '') setIcon(NEW_TOPIC_DEFAULTS.icon);
@@ -101,29 +97,15 @@ export function CreateTopicSheet({
           returnKeyType="done"
           onSubmitEditing={() => void create()}
         />
-        {suggestions.length > 0 ? (
-          <View style={{ gap: theme.space[2] }}>
-            <Text style={[theme.type.caption, { color: theme.colors.text.muted }]}>
-              Or start from a suggestion
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
-              {suggestions.map((suggestion) => (
-                <Chip
-                  key={suggestion.name}
-                  label={suggestion.name}
-                  accessibilityLabel={`Suggested name: ${suggestion.name}`}
-                  icon={() => (
-                    <TopicMark color={NEW_TOPIC_DEFAULTS.color} icon={suggestion.icon} size="sm" />
-                  )}
-                  selected={name.trim() === suggestion.name}
-                  onPress={() => {
-                    changeName(suggestion.name);
-                    setIcon(suggestion.icon);
-                  }}
-                />
-              ))}
-            </View>
-          </View>
+        {/* Only while open: the topics are read when the form is in use. */}
+        {visible ? (
+          <NameSuggestions
+            name={name}
+            onPick={(suggestion) => {
+              changeName(suggestion.name);
+              setIcon(suggestion.icon);
+            }}
+          />
         ) : null}
         {notSaved ? (
           <InlineStatus tone="attention" message={NOT_SAVED_ON_DEVICE} detail="Try again." live />
@@ -136,6 +118,43 @@ export function CreateTopicSheet({
         />
       </View>
     </Sheet>
+  );
+}
+
+/** Suggested names (docs/02), leaving out those the user already has; nothing when all are. */
+function NameSuggestions({
+  name,
+  onPick,
+}: {
+  name: string;
+  onPick: (suggestion: (typeof TOPIC_NAME_SUGGESTIONS)[number]) => void;
+}) {
+  const theme = useTheme();
+  const { items } = usePickerTopics();
+  const suggestions = openSuggestions(
+    items.map((entry) => (entry.kind === 'confirmed' ? entry.topic.name : entry.name)),
+  );
+  if (suggestions.length === 0) return null;
+  return (
+    <View style={{ gap: theme.space[2] }}>
+      <Text style={[theme.type.caption, { color: theme.colors.text.muted }]}>
+        Or start from a suggestion
+      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+        {suggestions.map((suggestion) => (
+          <Chip
+            key={suggestion.name}
+            label={suggestion.name}
+            accessibilityLabel={`Suggested name: ${suggestion.name}`}
+            icon={() => (
+              <TopicMark color={NEW_TOPIC_DEFAULTS.color} icon={suggestion.icon} size="sm" />
+            )}
+            selected={name.trim() === suggestion.name}
+            onPress={() => onPick(suggestion)}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
