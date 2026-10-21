@@ -28,6 +28,7 @@ import { NEW_TOPIC_DEFAULTS } from '../topics/topic-form';
 import { focusedText, formatCountdown, ringPercent, spokenTimeLeft } from './countdown';
 import { formatMinutes } from './duration';
 import { useWallClock } from './wall-clock';
+import { useHaptic } from '../haptics/haptics';
 
 type Notice = { message: string; detail?: string };
 
@@ -98,10 +99,14 @@ function RunningFocus({ timer }: { timer: TimerState }) {
   const [busy, setBusy] = useState(false);
   const paused = view.mode === 'paused';
 
-  // The plan or the pause limit was reached: store that end, at the instant it happened.
+  const haptic = useHaptic();
+  // The plan or the pause limit was reached: store that end, at the instant it happened. The
+  // one haptic a session has marks it (docs/04 §9), never anything while it runs.
   useEffect(() => {
-    if (view.mode === 'finished') void timers.refresh();
-  }, [view.mode, timers]);
+    if (view.mode !== 'finished') return;
+    haptic('complete');
+    void timers.refresh();
+  }, [view.mode, timers, haptic]);
 
   // Back never leaves a session running unseen: it asks to end it (the swipe is off).
   useEffect(

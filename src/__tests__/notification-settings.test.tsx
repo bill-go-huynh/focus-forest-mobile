@@ -238,6 +238,23 @@ describe('notification settings (M6.1)', () => {
     expect(patches()[3]).toEqual({ notifications: { dailyGoalReminder: { time: '18:45' } } });
   });
 
+  it('ticks as a reminder time moves, with Haptics on only (docs/04 §9)', async () => {
+    const selection = jest.requireMock<{ selectionAsync: jest.Mock }>(
+      'expo-haptics',
+    ).selectionAsync;
+    await openSettings();
+    fireEvent.press(screen.getByRole('switch', { name: 'Daily goal reminder' }));
+    fireEvent.press(
+      await screen.findByRole('button', { name: 'Daily goal reminder 15 minutes later' }),
+    );
+    expect(selection).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByRole('switch', { name: 'Haptics' }));
+    await waitFor(() => expect(patches().at(-1)).toEqual({ haptics: false }));
+    fireEvent.press(screen.getByRole('button', { name: 'Daily goal reminder 15 minutes earlier' }));
+    expect(selection).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps a time already chosen, and wraps around midnight', async () => {
     stored = makePreferences();
     stored.notifications.streakReminder = { enabled: false, time: '23:45' };

@@ -7,6 +7,7 @@ import { InlineStatus } from '../components/InlineStatus';
 import { SwitchRow } from '../components/SwitchRow';
 import { useTheme } from '../theme';
 import { REMINDER_CATEGORIES, shiftTime, type ReminderCategory } from './reminder-times';
+import { useHaptic } from '../haptics/haptics';
 
 const LABELS: Record<NotificationCategory, string> = {
   dailyGoalReminder: 'Daily goal reminder',
@@ -115,7 +116,9 @@ function ReminderTime({
   // update lands a tick later, so two quick presses would otherwise move from the same time.
   const [pending, setPending] = useState<{ from: string; to: string } | null>(null);
   const shown = pending && pending.from === time ? pending.to : time;
+  const haptic = useHaptic();
   const move = (step: 15 | -15) => {
+    haptic('select');
     const next = shiftTime(shown, step);
     setPending({ from: time, to: next });
     onChange(next);
