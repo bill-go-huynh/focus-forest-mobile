@@ -18,8 +18,35 @@ export const NEW_TOPIC_DEFAULTS = {
   description: null,
 } as const satisfies Omit<NewTopicFields, 'name'>;
 
-export function newTopicFields(name: string): NewTopicFields {
-  return { name, ...NEW_TOPIC_DEFAULTS };
+export function newTopicFields(
+  name: string,
+  icon: string = NEW_TOPIC_DEFAULTS.icon,
+): NewTopicFields {
+  return { name, ...NEW_TOPIC_DEFAULTS, icon };
+}
+
+/**
+ * Names offered when creating a topic (docs/02: topics are the user's own words; offer
+ * suggestions, never force categories), each with an icon from the curated set. A tap fills
+ * the name, which stays editable; nothing else depends on them.
+ */
+export const TOPIC_NAME_SUGGESTIONS = [
+  { name: 'Study', icon: 'school' },
+  { name: 'Reading', icon: 'book' },
+  { name: 'Coding', icon: 'code' },
+  { name: 'Writing', icon: 'pen' },
+  { name: 'Language', icon: 'language' },
+  { name: 'Work', icon: 'briefcase' },
+  { name: 'Music practice', icon: 'music-note' },
+  { name: 'Exercise', icon: 'run' },
+] as const;
+
+/** The suggestions no active or waiting topic already has (names compared as the API does). */
+export function openSuggestions(
+  taken: readonly string[],
+): (typeof TOPIC_NAME_SUGGESTIONS)[number][] {
+  const names = new Set(taken.map((name) => canonical(name).toLowerCase()));
+  return TOPIC_NAME_SUGGESTIONS.filter((s) => !names.has(s.name.toLowerCase()));
 }
 
 /** Trimmed and NFC, the way the API stores and compares text. */

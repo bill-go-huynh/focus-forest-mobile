@@ -12,9 +12,11 @@ import { TOPIC_ICONS } from '../components/topic-icons';
 import { useTheme } from '../theme';
 import { useUpdateTopic } from './queries';
 import type { QueuedTopicCreate } from './topic-create-queue';
-import { useTopicCreateQueue } from './topic-create-sync';
+import { usePickerTopics, useTopicCreateQueue } from './topic-create-sync';
 import {
+  NEW_TOPIC_DEFAULTS,
   newTopicFields,
+  openSuggestions,
   pendingTopicStatus,
   topicChanges,
   topicDescriptionError,
@@ -32,20 +34,33 @@ function useLast<T>(value: T | null): T | null {
 }
 
 /**
- * Create a topic: a name only (docs/02). The icon and color get the fixed defaults. It is
- * queued on the device first (M2.5), so it closes once stored, online or not, and the topic
- * shows at once as waiting to sync.
+ * Create a topic: a name only (docs/02). The icon and color get the fixed defaults, except
+ * that a suggested name brings its icon (kept while the name is edited, dropped once it is
+ * cleared). It is queued on the device first (M2.5), so it closes once stored, online or not,
+ * and the topic shows at once as waiting to sync.
  */
 export function CreateTopicSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const theme = useTheme();
   const queue = useTopicCreateQueue();
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState<string>(NEW_TOPIC_DEFAULTS.icon);
   const [nameError, setNameError] = useState<string | null>(null);
   const [notSaved, setNotSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { items } = usePickerTopics();
+  const suggestions = openSuggestions(
+    items.map((entry) => (entry.kind === 'confirmed' ? entry.topic.name : entry.name)),
+  );
+
+  const changeName = (text: string) => {
+    setName(text);
+    if (text.trim() === '') setIcon(NEW_TOPIC_DEFAULTS.icon);
+    if (nameError) setNameError(null);
+  };
 
   const close = () => {
     setName('');
+    setIcon(NEW_TOPIC_DEFAULTS.icon);
     setNameError(null);
     setNotSaved(false);
     onClose();
@@ -57,7 +72,7 @@ export function CreateTopicSheet({ visible, onClose }: { visible: boolean; onClo
     setNameError(error);
     if (error) return;
     setSaving(true);
-    const queued = await queue.enqueue(newTopicFields(name));
+    const queued = await queue.enqueue(newTopicFields(name, icon));
     setSaving(false);
     if (queued.ok) close();
     else setNotSaved(true);
@@ -69,15 +84,36 @@ export function CreateTopicSheet({ visible, onClose }: { visible: boolean; onClo
         <Input
           label="Name"
           value={name}
-          onChangeText={(text) => {
-            setName(text);
-            if (nameError) setNameError(null);
-          }}
+          onChangeText={changeName}
           error={nameError ?? undefined}
           helper="You can change its color later."
           returnKeyType="done"
           onSubmitEditing={() => void create()}
         />
+        {suggestions.length > 0 ? (
+          <View style={{ gap: theme.space[2] }}>
+            <Text style={[theme.type.caption, { color: theme.colors.text.muted }]}>
+              Or start from a suggestion
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+              {suggestions.map((suggestion) => (
+                <Chip
+                  key={suggestion.name}
+                  label={suggestion.name}
+                  accessibilityLabel={`Suggested name: ${suggestion.name}`}
+                  icon={() => (
+                    <TopicMark color={NEW_TOPIC_DEFAULTS.color} icon={suggestion.icon} size="sm" />
+                  )}
+                  selected={name.trim() === suggestion.name}
+                  onPress={() => {
+                    changeName(suggestion.name);
+                    setIcon(suggestion.icon);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
         {notSaved ? (
           <InlineStatus tone="attention" message={NOT_SAVED_ON_DEVICE} detail="Try again." live />
         ) : null}

@@ -364,6 +364,71 @@ describe('creating a topic (name only)', () => {
   });
 });
 
+describe('name suggestions (docs/02: offer suggestions, never force categories)', () => {
+  const suggestion = (name: string) =>
+    screen.queryByRole('button', { name: `Suggested name: ${name}` });
+
+  it('offers suggestions with their icons; a tap fills the name and Create sends its icon', async () => {
+    await openTopics();
+    await findRow('Reading');
+    await openCreate();
+    for (const name of [
+      'Study',
+      'Coding',
+      'Writing',
+      'Language',
+      'Work',
+      'Music practice',
+      'Exercise',
+    ]) {
+      expect(suggestion(name)).toBeOnTheScreen();
+    }
+    fireEvent.press(suggestion('Study')!);
+    expect(screen.getByLabelText('Name').props.value).toBe('Study');
+    expect(suggestion('Study')!.props.accessibilityState?.selected).toBe(true);
+    fireEvent.press(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(topicWrites('PUT')).toHaveLength(1));
+    expect(topicWrites('PUT')[0]?.body).toEqual({
+      name: 'Study',
+      icon: 'school',
+      color: 'topic.1',
+      description: null,
+    });
+  });
+
+  it('leaves out a suggestion that is already an active topic, whatever its case', async () => {
+    await openTopics();
+    await findRow('Reading');
+    await openCreate();
+    expect(suggestion('Reading')).toBeNull();
+    expect(suggestion('Study')).toBeOnTheScreen();
+  });
+
+  it("keeps the name the user's own: it can be edited, and the icon stays until the name is cleared", async () => {
+    await openTopics();
+    await findRow('Reading');
+    await openCreate();
+    fireEvent.press(suggestion('Coding')!);
+    fireEvent.changeText(screen.getByLabelText('Name'), 'Coding interviews');
+    expect(suggestion('Coding')!.props.accessibilityState?.selected).toBe(false);
+    fireEvent.press(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(topicWrites('PUT')).toHaveLength(1));
+    expect(topicWrites('PUT')[0]?.body).toMatchObject({ name: 'Coding interviews', icon: 'code' });
+  });
+
+  it('goes back to the default icon once the name is cleared and typed by hand', async () => {
+    await openTopics();
+    await findRow('Reading');
+    await openCreate();
+    fireEvent.press(suggestion('Work')!);
+    fireEvent.changeText(screen.getByLabelText('Name'), '');
+    fireEvent.changeText(screen.getByLabelText('Name'), 'Drawing');
+    fireEvent.press(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(topicWrites('PUT')).toHaveLength(1));
+    expect(topicWrites('PUT')[0]?.body).toMatchObject({ name: 'Drawing', icon: 'topic.default' });
+  });
+});
+
 describe('queued topics', () => {
   function queued(state: string, attempted: boolean) {
     return JSON.stringify({
