@@ -198,6 +198,38 @@ export function TreeScene({
   const traitStyle = useAnimatedStyle(() => ({ opacity: reveal.traits.value }));
   const outgoingStyle = useAnimatedStyle(() => ({ opacity: outgoingOpacity.value }));
 
+  // One object for as long as its parts are the same, so the memoized TreeArt is not redrawn
+  // when a parent re-renders (the Focus screen does every second).
+  const driftDistance = plan?.driftDistance ?? 0;
+  const artMotion = useMemo(
+    () => ({
+      canopy: canopyStyle,
+      canopyReveal: canopyRevealStyle,
+      back: backStyle,
+      main: mainStyle,
+      mainBlossoms: mainBlossomStyle,
+      mainTraits: mainTraitStyle,
+      front: frontStyle,
+      blossoms: blossomStyle,
+      traits: traitStyle,
+      drift: { clock, twinkle, distance: driftDistance },
+    }),
+    [
+      canopyStyle,
+      canopyRevealStyle,
+      backStyle,
+      mainStyle,
+      mainBlossomStyle,
+      mainTraitStyle,
+      frontStyle,
+      blossomStyle,
+      traitStyle,
+      clock,
+      twinkle,
+      driftDistance,
+    ],
+  );
+
   const sizeStyle: ViewStyle = {
     width: size === 'thumbnail' ? theme.treeScene.thumbnail : '100%',
     aspectRatio: theme.treeScene.aspectRatio,
@@ -227,23 +259,7 @@ export function TreeScene({
           </Animated.View>
         ) : null}
         <Animated.View style={[StyleSheet.absoluteFill, treeStyle]}>
-          <TreeArt
-            tree={tree}
-            lighting={lighting}
-            effects={size === 'hero'}
-            motion={{
-              canopy: canopyStyle,
-              canopyReveal: canopyRevealStyle,
-              back: backStyle,
-              main: mainStyle,
-              mainBlossoms: mainBlossomStyle,
-              mainTraits: mainTraitStyle,
-              front: frontStyle,
-              blossoms: blossomStyle,
-              traits: traitStyle,
-              drift: { clock, twinkle, distance: plan?.driftDistance ?? 0 },
-            }}
-          />
+          <TreeArt tree={tree} lighting={lighting} effects={size === 'hero'} motion={artMotion} />
         </Animated.View>
         <GardenDecoration decoration={garden.decoration} lighting={lighting} />
         <Animated.View style={[StyleSheet.absoluteFill, lightStyle]}>

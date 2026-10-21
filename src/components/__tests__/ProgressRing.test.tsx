@@ -220,6 +220,15 @@ describe('ProgressRing (docs/01 §8 → Progress indicators)', () => {
       );
     });
 
+    it('moves a tiny step at once instead of animating it (the Focus dial ticks every second)', () => {
+      const { rerender } = renderRing({ progress: 40 });
+      act(() => timing.finishAll());
+      const calls = timing.spy.mock.calls.length;
+      rerender(<ProgressRing progress={40.4} label="Daily goal" valueText="24 / 60 min" />);
+      expect(timing.spy.mock.calls.length).toBe(calls);
+      expect(arc().props.strokeDashoffset).toBeCloseTo(offsetFor(40.4));
+    });
+
     it('animates to the clamped value', () => {
       renderRing({ progress: 180 });
       expect(timing.spy).toHaveBeenCalledWith(

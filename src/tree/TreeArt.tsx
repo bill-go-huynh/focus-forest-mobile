@@ -28,6 +28,7 @@ import { GROUND_Y, TREE_VIEWBOX } from './signature/stages';
 import { speciesDefinition } from './species';
 import { ENVIRONMENT_PALETTE } from './species/palette';
 import type { TreeVisualState } from './visual-state';
+import { radius } from '../theme/tokens';
 
 /**
  * The drawn layers of one tree (docs/03 §7), back to front, each a full-size SVG in the scene's
@@ -515,12 +516,24 @@ function Particle({
       opacity: firefly && distance > 0 ? 0.55 + 0.45 * Math.sin((glow + phase) * TAU) : 1,
     };
   });
+  // A small round view where the particle is, not a scene-sized SVG for one dot: the scene has
+  // the view box's 5:6 proportions, so its share of the box is its share of the scene, and each
+  // frame moves a few pixels instead of a full layer.
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, style]}>
-      <Layer>
-        <Circle cx={particle.x} cy={particle.y} r={particle.r} fill={color} />
-      </Layer>
-    </Animated.View>
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          left: `${((particle.x - particle.r) / W) * 100}%`,
+          top: `${((particle.y - particle.r) / H) * 100}%`,
+          width: `${((2 * particle.r) / W) * 100}%`,
+          aspectRatio: 1,
+          borderRadius: radius.full,
+          backgroundColor: color,
+        },
+        style,
+      ]}
+    />
   );
 }
 

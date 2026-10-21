@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -41,6 +41,12 @@ export interface ProgressRingProps {
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+/**
+ * A change smaller than this (in percent) moves at once: the Focus dial gains about a tenth of
+ * a percent every second, and a 600 ms JS-thread animation for each would only cost frames.
+ */
+const STEP_WITHOUT_MOTION = 1;
+
 export function ProgressRing({
   progress,
   label,
@@ -61,11 +67,16 @@ export function ProgressRing({
   const [animated] = useState(() => new Animated.Value(reducedMotion ? target : 0));
   // Under reduced motion the ring shows the final state at once (docs/04 §8).
   const [shown, setShown] = useState(reducedMotion ? target : 0);
-  if (reducedMotion && shown !== target) setShown(target);
+  // The value the ring last came to rest on.
+  const settled = useRef(reducedMotion ? target : 0);
 
   useEffect(() => {
-    if (reducedMotion) {
+    const tiny = settled.current > 0 && Math.abs(target - settled.current) < STEP_WITHOUT_MOTION;
+    if (reducedMotion || tiny) {
+      animated.stopAnimation();
       animated.setValue(target);
+      settled.current = target;
+      setShown(target);
       return;
     }
     Animated.timing(animated, {
@@ -75,7 +86,9 @@ export function ProgressRing({
       // SVG stroke props are animated on the JS thread.
       useNativeDriver: false,
     }).start(({ finished }) => {
-      if (finished) setShown(target);
+      if (!finished) return;
+      settled.current = target;
+      setShown(target);
     });
   }, [target, reducedMotion, animated, theme.motion.progress, theme.easing.standard]);
 
