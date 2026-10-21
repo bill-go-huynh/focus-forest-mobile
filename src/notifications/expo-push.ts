@@ -49,29 +49,39 @@ export function showWhileOpen(focusing: () => boolean): void {
   });
 }
 
-/** The link a tap on a push carries (A6.1 `data.link`); null for the timer's own or no link. */
-function linkOf(response: Notifications.NotificationResponse): string | null {
+/** A tapped push: its link (A6.1 `data.link`) and the account it was for (`data.recipient`). */
+export interface PushTap {
+  link: string;
+  /** Null for a push sent before the API named its recipient. */
+  recipient: string | null;
+}
+
+/** What a tap on a push carries; null for the timer's own or no link. */
+function tapOf(response: Notifications.NotificationResponse): PushTap | null {
   if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return null;
   const data = response.notification.request.content.data as Record<string, unknown> | null;
-  if (!data || data.kind === 'focus-timer') return null;
-  return typeof data.link === 'string' ? data.link : null;
+  if (!data || data.kind === 'focus-timer' || typeof data.link !== 'string') return null;
+  return {
+    link: data.link,
+    recipient: typeof data.recipient === 'string' ? data.recipient : null,
+  };
 }
 
 /**
- * Calls `listener` with the link of each tapped push: while the app runs, and once for the tap
+ * Calls `listener` with each tapped push: while the app runs, and once for the tap
  * that launched it (read, then cleared). The timer's own taps are left to the timer (M2.12).
  * Returns the unsubscribe.
  */
-export function onPushTap(listener: (link: string) => void): () => void {
+export function onPushTap(listener: (tap: PushTap) => void): () => void {
   const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    const link = linkOf(response);
-    if (link !== null) listener(link);
+    const tap = tapOf(response);
+    if (tap !== null) listener(tap);
   });
   void Notifications.getLastNotificationResponseAsync()
     .then((response) => {
-      const link = response ? linkOf(response) : null;
-      if (link === null) return;
-      listener(link);
+      const tap = response ? tapOf(response) : null;
+      if (tap === null) return;
+      listener(tap);
       return Notifications.clearLastNotificationResponseAsync();
     })
     .catch(() => undefined);

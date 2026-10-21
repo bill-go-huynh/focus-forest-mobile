@@ -124,7 +124,7 @@ export {
   type CollectionSection,
   type UnlockHint,
 } from './collection';
-export { createQueryClient } from './query-client';
+export { createQueryClient, followAppState } from './query-client';
 export {
   archiveTopic,
   createTopic,

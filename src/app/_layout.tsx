@@ -8,6 +8,7 @@ import {
   ApiProvider,
   createApi,
   createQueryClient,
+  followAppState,
   readApiBaseUrl,
   secureTokenStore,
   useApi,
@@ -57,6 +58,7 @@ import {
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
+  useEffect(followAppState, []);
   // The base URL is read on first request, so a missing EXPO_PUBLIC_API_URL fails requests
   // with a ConfigurationError instead of crashing the app shell.
   const [api] = useState(() =>

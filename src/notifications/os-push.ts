@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 import { osNotificationsSupported, type NotificationEnvironment } from './os-timer-notifications';
 import type { PushAdapter } from './push-registration';
+import type { PushTap } from './expo-push';
 
 type ExpoPush = typeof import('./expo-push');
 
@@ -43,7 +44,7 @@ export const devicePlatform = (): 'ios' | 'android' =>
 
 /** `onPushTap`, where supported; none in Expo Go on Android. Returns the unsubscribe. */
 export function onOsPushTap(
-  listener: (link: string) => void,
+  listener: (tap: PushTap) => void,
   environment?: NotificationEnvironment,
 ): () => void {
   if (!osNotificationsSupported(environment)) return () => undefined;

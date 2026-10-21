@@ -622,14 +622,22 @@ describe('notification taps and links (M6.2; docs/05 §4)', () => {
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('button', { name: 'Start Focus' });
     await act(async () =>
-      tapNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' }),
+      tapNotification({
+        link: `/together/room/${ROOM_ID}`,
+        category: 'focusRoomInvite',
+        recipient: ME_ID,
+      }),
     );
     await screen.findByRole('header', { name: 'Morning study' });
     expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
   });
 
   it('opens the link of the notification that launched the app, with a way back', async () => {
-    launchFromNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' });
+    launchFromNotification({
+      link: `/together/room/${ROOM_ID}`,
+      category: 'focusRoomInvite',
+      recipient: ME_ID,
+    });
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('header', { name: 'Morning study' });
     expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
@@ -643,7 +651,11 @@ describe('notification taps and links (M6.2; docs/05 §4)', () => {
       deleteItemAsync: (key: string) => Promise<void>;
     };
     await secureStore.deleteItemAsync('focus-forest.session');
-    launchFromNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' });
+    launchFromNotification({
+      link: `/together/room/${ROOM_ID}`,
+      category: 'focusRoomInvite',
+      recipient: ME_ID,
+    });
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('header', { name: WELCOME_TITLE });
     fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
@@ -651,6 +663,64 @@ describe('notification taps and links (M6.2; docs/05 §4)', () => {
     fireEvent.changeText(screen.getByLabelText('Email'), 'mai@example.com');
     fireEvent.changeText(screen.getByLabelText('Password'), 'correct horse');
     fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    await screen.findByRole('header', { name: 'Morning study' });
+    expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
+  });
+
+  async function signInAfterLaunch() {
+    const secureStore = jest.requireMock('expo-secure-store') as {
+      deleteItemAsync: (key: string) => Promise<void>;
+    };
+    await secureStore.deleteItemAsync('focus-forest.session');
+    const router = renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('header', { name: WELCOME_TITLE });
+    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    await screen.findByRole('header', { name: 'Welcome back' });
+    fireEvent.changeText(screen.getByLabelText('Email'), 'mai@example.com');
+    fireEvent.changeText(screen.getByLabelText('Password'), 'correct horse');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    await screen.findByRole('button', { name: 'Start Focus' });
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 200)));
+    return router;
+  }
+
+  it('opens Home, not the link, when another account signs in after a tap', async () => {
+    launchFromNotification({
+      link: `/together/room/${ROOM_ID}`,
+      category: 'focusRoomInvite',
+      recipient: 'someone-else',
+    });
+    const router = await signInAfterLaunch();
+    expect(router.getPathname()).toBe('/');
+    expect(screen.queryByRole('header', { name: 'Morning study' })).toBeNull();
+  });
+
+  it('does not keep a link that names no account for whoever signs in next', async () => {
+    launchFromNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' });
+    const router = await signInAfterLaunch();
+    expect(router.getPathname()).toBe('/');
+  });
+
+  it('opens Home for a tap meant for another account', async () => {
+    const router = renderApp(appRoutes, { initialUrl: '/together' });
+    await shows('Focus rooms');
+    await act(async () =>
+      tapNotification({
+        link: `/together/room/${ROOM_ID}`,
+        category: 'focusRoomInvite',
+        recipient: 'someone-else',
+      }),
+    );
+    await screen.findByRole('button', { name: 'Start Focus' });
+    expect(router.getPathname()).toBe('/');
+  });
+
+  it('still opens a link that names no account, tapped while signed in', async () => {
+    const router = renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('button', { name: 'Start Focus' });
+    await act(async () =>
+      tapNotification({ link: `/together/room/${ROOM_ID}`, category: 'focusRoomInvite' }),
+    );
     await screen.findByRole('header', { name: 'Morning study' });
     expect(router.getPathname()).toBe(`/together/room/${ROOM_ID}`);
   });

@@ -1,4 +1,5 @@
-import { QueryClient } from '@tanstack/react-query';
+import { focusManager, QueryClient } from '@tanstack/react-query';
+import { AppState } from 'react-native';
 
 import { HttpError, NetworkError } from './errors';
 
@@ -22,4 +23,19 @@ export function createQueryClient(): QueryClient {
       mutations: { retry: false },
     },
   });
+}
+
+/**
+ * Coming back to the app counts as focus, so what is on screen is read again (owner,
+ * 2026-10-21): changes made while away show, and a screen that failed tries again. Only queries
+ * on screen and older than their `staleTime` are read. Returns the undo.
+ */
+export function followAppState(): () => void {
+  focusManager.setEventListener((setFocused) => {
+    const subscription = AppState.addEventListener('change', (state) =>
+      setFocused(state === 'active'),
+    );
+    return () => subscription.remove();
+  });
+  return () => focusManager.setEventListener(() => undefined);
 }
