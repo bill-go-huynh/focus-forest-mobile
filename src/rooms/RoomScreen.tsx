@@ -14,7 +14,8 @@ import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { useSessionRules } from '../focus/session-rules';
 import { useTheme } from '../theme';
 import { useActiveTimer, useActiveTimerStore } from '../timer/ActiveTimerProvider';
-import { useRecentTopics } from '../topics/queries';
+import { usePickerTopics } from '../topics/topic-create-sync';
+import { CreateTopicSheet } from '../topics/TopicSheets';
 import {
   roomKeys,
   useCompleteRoom,
@@ -102,7 +103,9 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
   const { user } = useSession();
   const userId = user?.id ?? null;
   const link = useRoomLink();
-  const topics = useRecentTopics();
+  // Every active topic, those still waiting to sync included, so one made here can be chosen.
+  const topics = usePickerTopics();
+  const [creatingTopic, setCreatingTopic] = useState(false);
   const rules = useSessionRules();
   const timers = useActiveTimerStore();
   const { status: timerStatus, timer } = useActiveTimer();
@@ -250,16 +253,31 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
               <Text style={[theme.type.label, { color: theme.colors.text.primary }]}>
                 Your topic
               </Text>
+              {/* Each person focuses on their own topic, which their tree counts (SO-125): one
+                  without any makes it here, inline (docs/02), and it is chosen at once. */}
+              {topics.recent.data && topics.items.length === 0 ? (
+                <Muted>Add a topic for this session to get ready.</Muted>
+              ) : null}
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
-                {(topics.data ?? []).map((topic) => (
-                  <Chip
-                    key={topic.id}
-                    label={topic.name}
-                    selected={chosenTopic === topic.id}
-                    onPress={() => setTopicId(topic.id)}
-                  />
-                ))}
+                {topics.items.map((entry) => {
+                  const id = entry.kind === 'confirmed' ? entry.topic.id : entry.id;
+                  const name = entry.kind === 'confirmed' ? entry.topic.name : entry.name;
+                  return (
+                    <Chip
+                      key={id}
+                      label={name}
+                      selected={chosenTopic === id}
+                      onPress={() => setTopicId(id)}
+                    />
+                  );
+                })}
+                <Chip label="New topic" selected={false} onPress={() => setCreatingTopic(true)} />
               </View>
+              <CreateTopicSheet
+                visible={creatingTopic}
+                onClose={() => setCreatingTopic(false)}
+                onCreated={setTopicId}
+              />
               <Button
                 variant="primary"
                 label="I'm ready"

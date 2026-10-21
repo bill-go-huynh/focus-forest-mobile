@@ -21,6 +21,7 @@ import {
   makeVisitedProfile,
   makeWarning,
 } from '../test-utils/social';
+import { KAI, makeRoom, ROOM_ID } from '../test-utils/rooms';
 import { treeDto } from '../test-utils/trees';
 
 jest.mock(
@@ -44,6 +45,11 @@ function socialApi() {
   const kai = makeSummary({ id: KAI_ID, username: 'kai', displayName: 'Kai' });
   const state = {
     offline: false,
+    /** Follows and reactions are refused as too many (A7.2 `rate_limited`). */
+    limited: false,
+    /** The room the user is in (A5.4 `GET /rooms/current`). */
+    room: null as ReturnType<typeof makeRoom> | null,
+    left: [] as string[],
     username: 'mai' as string | null,
     following: [makeSummary({}, { following: true, followedBy: true })],
     followers: [
@@ -121,7 +127,21 @@ function socialApi() {
       );
       return { status: 200, body: { items, nextCursor: null } };
     }
+    if (pathname === '/rooms/current') return { status: 200, body: { room: state.room } };
+    const leave = /^\/rooms\/([^/]+)\/leave$/.exec(pathname);
+    if (leave && method === 'POST' && state.room) {
+      state.left.push(leave[1]!);
+      const left = { ...state.room, you: null };
+      state.room = null;
+      return { status: 200, body: left };
+    }
     const follow = /^\/me\/following\/([^/]+)$/.exec(pathname);
+    if (state.limited && method === 'PUT' && (follow || pathname.includes('/reactions/'))) {
+      return {
+        status: 429,
+        body: { statusCode: 429, message: 'Too many attempts.', code: 'rate_limited' },
+      };
+    }
     if (follow && state.profile) {
       const following = method === 'PUT';
       state.following = following ? [makeSummary({}, { following: true, followedBy: true })] : [];
@@ -377,6 +397,33 @@ describe("a person's profile (A5.2: their tree is the hero, within their privacy
     expect(calls(`/me/following/${LINH_ID}`).map(([m]) => m)).toEqual(['PUT', 'DELETE']);
   });
 
+  it('says so calmly when a follow is refused as too many, and changes nothing', async () => {
+    server.state.profile = makeVisitedProfile({ following: false, followedBy: true });
+    server.state.limited = true;
+    await openPerson();
+    fireEvent.press(screen.getByRole('button', { name: 'Follow' }));
+    await shows("You've followed a lot of people just now. Try again in a little while.");
+    expect(screen.getByText('@linh · Follows you')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Follow' })).toBeOnTheScreen();
+
+    server.state.limited = false;
+    fireEvent.press(screen.getByRole('button', { name: 'Follow' }));
+    await shows('@linh · Friends');
+    expect(
+      screen.queryByText("You've followed a lot of people just now. Try again in a little while."),
+    ).toBeNull();
+  });
+
+  it('stays quiet when a follow fails offline (owner, 2026-10-21)', async () => {
+    server.state.profile = makeVisitedProfile({ following: false, followedBy: true });
+    await openPerson();
+    server.state.offline = true;
+    fireEvent.press(screen.getByRole('button', { name: 'Follow' }));
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 200)));
+    expect(screen.queryByText(/Try again/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Follow' })).toBeOnTheScreen();
+  });
+
   it('shows only what their privacy allows, and says some of it is private', async () => {
     server.state.profile = makeVisitedProfile(
       { following: false, followedBy: false },
@@ -407,6 +454,15 @@ describe("a person's profile (A5.2: their tree is the hero, within their privacy
       ['PUT', `/users/${LINH_ID}/reactions/sparkles?target=tree%3A2026-10`, undefined],
       ['DELETE', `/users/${LINH_ID}/reactions/sparkles?target=tree%3A2026-10`, undefined],
     ]);
+  });
+
+  it('says so calmly when a reaction is refused as too many', async () => {
+    await openPerson();
+    const bar = await screen.findByTestId('reactions-tree:2026-10');
+    server.state.limited = true;
+    fireEvent.press(within(bar).getByRole('button', { name: 'Sparkles, 0' }));
+    await shows("You've sent a lot of reactions just now. Try again in a little while.");
+    expect(within(bar).getByRole('button', { name: 'Sparkles, 0' })).toBeOnTheScreen();
   });
 
   it('reacts to a showcase badge from its sheet', async () => {
@@ -454,6 +510,42 @@ describe("a person's profile (A5.2: their tree is the hero, within their privacy
     fireEvent.press(screen.getByRole('button', { name: 'Block Linh' }));
     await until(() => router.getPathname() !== `/together/${LINH_ID}`);
     expect(calls(`/me/blocks/${LINH_ID}`)).toEqual([['PUT', `/me/blocks/${LINH_ID}`, undefined]]);
+  });
+
+  describe('someone in the same focus room (SO-62)', () => {
+    const blockLinh = async () => {
+      const router = await openPerson();
+      fireEvent.press(screen.getByRole('button', { name: 'Block' }));
+      await settleSheetTransitions();
+      fireEvent.press(screen.getByRole('button', { name: 'Block Linh' }));
+      return router;
+    };
+
+    it('asks whether to stay in the room, and stays', async () => {
+      server.state.room = makeRoom();
+      const router = await blockLinh();
+      await shows('Linh is in your focus room');
+      fireEvent.press(screen.getByRole('button', { name: 'Stay in the room' }));
+      await until(() => router.getPathname() !== `/together/${LINH_ID}`);
+      expect(server.state.left).toEqual([]);
+    });
+
+    it('leaves the room when asked', async () => {
+      server.state.room = makeRoom();
+      const router = await blockLinh();
+      await shows('Linh is in your focus room');
+      fireEvent.press(screen.getByRole('button', { name: 'Leave the room' }));
+      await until(() => server.state.left.length === 1);
+      expect(server.state.left).toEqual([ROOM_ID]);
+      await until(() => router.getPathname() !== `/together/${LINH_ID}`);
+    });
+
+    it("asks nothing when they are not in the user's room", async () => {
+      server.state.room = makeRoom({ others: [{ ...KAI, state: 'ready' }] });
+      const router = await blockLinh();
+      await until(() => router.getPathname() !== `/together/${LINH_ID}`);
+      expect(screen.queryByText('Linh is in your focus room')).toBeNull();
+    });
   });
 
   it('reports with a category and optional words', async () => {

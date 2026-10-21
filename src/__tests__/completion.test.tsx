@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, screen } from 'expo-router/testing-library';
+import { router as expoRouter } from 'expo-router';
+import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import { AccessibilityInfo } from 'react-native';
 
 import { NetworkError, type FocusSession, type Topic } from '../api';
@@ -406,6 +407,35 @@ describe('the note', () => {
     renderApp(appRoutes, { initialUrl: '/' });
     await until(() => server.sessions.get(SESSION_ID)?.note === 'Chapter 4');
     await until(() => sessionCalls('PATCH').length === 1);
+    expect(await noteItems()).toEqual([]);
+  });
+
+  it('is kept when the screen is left by Back without Save or Done (owner, 2026-10-21)', async () => {
+    await storeTimer(endedEarly());
+    server.state.offline = true;
+    renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('button', { name: /Start Focus|Resume focus/ });
+    act(() => expoRouter.push(`/completion/${SESSION_ID}`));
+    await screen.findByRole('header', { name: 'Focus session finished' });
+    fireEvent.changeText(noteInput(), '  Chapter 4  ');
+
+    act(() => expoRouter.back());
+    await until(() => screen.queryByRole('header', { name: 'Focus session finished' }) === null);
+    await waitFor(async () =>
+      expect(await noteItems()).toEqual([expect.objectContaining({ note: 'Chapter 4' })]),
+    );
+  });
+
+  it('leaves nothing behind on Back when nothing was typed', async () => {
+    await storeTimer(endedEarly());
+    server.state.offline = true;
+    renderApp(appRoutes, { initialUrl: '/' });
+    await screen.findByRole('button', { name: /Start Focus|Resume focus/ });
+    act(() => expoRouter.push(`/completion/${SESSION_ID}`));
+    await screen.findByRole('header', { name: 'Focus session finished' });
+    act(() => expoRouter.back());
+    await until(() => screen.queryByRole('header', { name: 'Focus session finished' }) === null);
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 100)));
     expect(await noteItems()).toEqual([]);
   });
 

@@ -39,7 +39,16 @@ function useLast<T>(value: T | null): T | null {
  * cleared). It is queued on the device first (M2.5), so it closes once stored, online or not,
  * and the topic shows at once as waiting to sync.
  */
-export function CreateTopicSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function CreateTopicSheet({
+  visible,
+  onClose,
+  onCreated,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  /** Hears the new topic's id once it is stored on the device, before the sheet closes. */
+  onCreated?: (topicId: string) => void;
+}) {
   const theme = useTheme();
   const queue = useTopicCreateQueue();
   const [name, setName] = useState('');
@@ -74,8 +83,10 @@ export function CreateTopicSheet({ visible, onClose }: { visible: boolean; onClo
     setSaving(true);
     const queued = await queue.enqueue(newTopicFields(name, icon));
     setSaving(false);
-    if (queued.ok) close();
-    else setNotSaved(true);
+    if (queued.ok) {
+      onCreated?.(queued.item.id);
+      close();
+    } else setNotSaved(true);
   };
 
   return (

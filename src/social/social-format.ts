@@ -1,4 +1,4 @@
-import type { Person, ReactionKind } from '../api';
+import { HttpError, NetworkError, type Person, type ReactionKind } from '../api';
 
 /**
  * Words for Social (docs/02 Social, Words we use): quiet and positive. Nothing here compares a
@@ -69,4 +69,18 @@ export function receivedTargetLabel(target: string): string {
   if (tree) return `On your ${monthYear({ year: Number(tree[1]), month: Number(tree[2]) })} tree`;
   if (target.startsWith('badge:')) return 'On one of your badges';
   return 'On your profile';
+}
+
+/**
+ * Why a follow or a reaction did not go through, in calm words; null when it says nothing. A
+ * lost connection stays quiet (owner, 2026-10-21): the control simply comes back as it was.
+ */
+export function socialRefusal(error: unknown, what: 'follow' | 'reaction'): string | null {
+  if (!error || error instanceof NetworkError) return null;
+  if (error instanceof HttpError && error.code === 'rate_limited') {
+    return what === 'follow'
+      ? "You've followed a lot of people just now. Try again in a little while."
+      : "You've sent a lot of reactions just now. Try again in a little while.";
+  }
+  return "That didn't go through. Please try again.";
 }

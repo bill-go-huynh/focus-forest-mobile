@@ -19,7 +19,7 @@ import {
   type NewRoom,
   type Room,
 } from '../api';
-import { readRoomLink } from './room-links';
+import { clearRoomLink, readRoomLink } from './room-links';
 
 export const roomKeys = {
   all: ['rooms'] as const,
@@ -126,6 +126,29 @@ export function useStartRoom(roomId: string) {
 export function useLeaveRoom(roomId: string) {
   const { client } = useApi();
   return useRoomChange(() => leaveRoom(client, roomId));
+}
+
+/**
+ * Leaves a room from outside it (SO-62: after blocking someone in it), forgetting this device's
+ * link to it as leaving from the room does.
+ */
+export function useLeaveRoomById() {
+  const { client } = useApi();
+  const { user } = useSession();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? null;
+  return useMutation({
+    mutationFn: (roomId: string) => leaveRoom(client, roomId),
+    onSuccess: async (room: Room) => {
+      queryClient.setQueryData(roomKeys.room(room.id), room);
+      if (userId) {
+        await clearRoomLink(userId);
+        queryClient.setQueryData(roomKeys.link(userId), null);
+      }
+      void queryClient.invalidateQueries({ queryKey: roomKeys.current }).catch(() => undefined);
+      void queryClient.invalidateQueries({ queryKey: roomKeys.lobbies }).catch(() => undefined);
+    },
+  });
 }
 
 export function useCompleteRoom(roomId: string) {

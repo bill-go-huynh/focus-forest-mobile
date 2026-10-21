@@ -71,6 +71,8 @@ const roomSockets = () => FakeSocket.all.filter((s) => s.url.endsWith('/rooms/li
  */
 function roomsApi() {
   const state = {
+    /** The user's active topics. */
+    topics: [TOPIC] as ReturnType<typeof makeTopic>[],
     room: makeRoom() as ReturnType<typeof makeRoom> | null,
     lobbies: [makeRoom({ you: null, others: [{ ...KAI, host: true, state: 'ready' }] })],
     current: null as ReturnType<typeof makeRoom> | null,
@@ -100,7 +102,13 @@ function roomsApi() {
       };
     if (pathname === '/session-rules')
       return { status: 200, body: { version: 1, minValidMinutes: 5, maxPauseMinutes: 30 } };
-    if (pathname === '/me/topics') return { status: 200, body: [TOPIC] };
+    if (pathname === '/me/topics') return { status: 200, body: state.topics };
+    const createTopic = /^\/me\/topics\/([^/]+)$/.exec(pathname);
+    if (createTopic && method === 'PUT') {
+      const created = makeTopic({ ...(body as object), id: createTopic[1]! });
+      state.topics = [...state.topics, created];
+      return { status: 201, body: created };
+    }
     if (pathname === '/me/home') {
       const home: HomeResponse = { ...makeHome(), tree: treeDto({ stage: 'sprout' }) };
       return { status: 200, body: home };
@@ -349,6 +357,29 @@ describe('the lobby (docs/02 Focus Together: quick to get ready, no chat)', () =
       topicId: TOPIC.id,
       sessionId: null,
     });
+  });
+
+  it('asks for a topic when the user has none, and creates one right there (SO-125)', async () => {
+    server.state.topics = [];
+    await openRoom();
+    await shows('Add a topic for this session to get ready.');
+    expect(screen.getByRole('button', { name: "I'm ready" })).toBeDisabled();
+    fireEvent.press(screen.getByRole('button', { name: 'New topic' }));
+    fireEvent.changeText(await screen.findByLabelText('Name'), 'Thesis');
+    fireEvent.press(screen.getByRole('button', { name: 'Create' }));
+    // The new topic is chosen for this room at once.
+    await until(() => screen.queryByLabelText('Name') === null);
+    const chip = await screen.findByRole('button', { name: /^Thesis/ });
+    expect(chip).toBeSelected();
+    fireEvent.press(screen.getByRole('button', { name: "I'm ready" }));
+    await shows('Mai Anh (you) · Host · Ready');
+  });
+
+  it('offers a new topic beside the ones the user has', async () => {
+    await openRoom();
+    expect(await screen.findByRole('button', { name: 'Thesis' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'New topic' })).toBeOnTheScreen();
+    expect(screen.queryByText('Add a topic for this session to get ready.')).toBeNull();
   });
 
   it('lets the host start with the people who are ready, and explains a refusal', async () => {

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
@@ -215,6 +215,22 @@ function CompletionContent({
     setSavedHere(true);
     return true;
   };
+
+  // Leaving by Back (or a swipe) without Save or Done keeps what was typed (owner, 2026-10-21):
+  // it is stored on the device as Save would, without waiting. A note that breaks the rules is
+  // not stored; nothing typed leaves nothing.
+  const navigation = useNavigation();
+  const keepOnLeave = useRef(() => undefined as void);
+  useEffect(() => {
+    keepOnLeave.current = () => {
+      if (draft === null || canonicalNote(draft) === savedNote || noteError(draft) || !user) return;
+      void notes.save(user.id, sessionId, draft);
+    };
+  });
+  useEffect(
+    () => navigation.addListener('beforeRemove', () => keepOnLeave.current()),
+    [navigation],
+  );
 
   // The highlight is offered for the note the server has, as it reads on screen: never before
   // the server knows the session, for a note still waiting on the device, or while one is typed.

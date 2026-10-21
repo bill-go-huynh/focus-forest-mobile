@@ -3,9 +3,11 @@ import { useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
 import { HttpError, type EarnedBadge, type VisitedProfile } from '../api';
+import { useCurrentRoom, useLeaveRoomById } from '../rooms/queries';
 import { Button, DestructiveButton } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { Confirmation } from '../components/Confirmation';
+import { InlineStatus } from '../components/InlineStatus';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { Screen } from '../components/Screen';
@@ -18,7 +20,7 @@ import { toTreeVisualState } from '../tree/visual-state';
 import { useBlock, useFollow, useVisitedProfile } from './queries';
 import { ReactionBar } from './ReactionBar';
 import { ReportSheet } from './ReportSheet';
-import { personName, relationshipLine, treeTarget } from './social-format';
+import { personName, relationshipLine, socialRefusal, treeTarget } from './social-format';
 
 const MINUTE = 60_000;
 
@@ -67,11 +69,20 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
   const blockChange = useBlock();
   const [badge, setBadge] = useState<EarnedBadge | null>(null);
   const [confirmBlock, setConfirmBlock] = useState(false);
+  // SO-62: blocking ends follows and invitations, not a room both are in; the user chooses.
+  const currentRoom = useCurrentRoom();
+  const leaveRoom = useLeaveRoomById();
+  const [sharedRoom, setSharedRoom] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
   const { user } = profile;
   const name = personName(user);
   const line = relationshipLine(user);
   const somethingHidden = Object.values(user.visible).some((visible) => !visible);
+
+  const leaveProfile = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/together');
+  };
 
   const doBlock = () => {
     setConfirmBlock(false);
@@ -79,8 +90,12 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
       { userId, on: true },
       {
         onSuccess: () => {
-          if (router.canGoBack()) router.back();
-          else router.replace('/together');
+          void currentRoom.refetch().then(({ data }) => {
+            const room = data?.room ?? null;
+            if (room?.you && room.participants.some((place) => place.user.id === userId)) {
+              setSharedRoom(room.id);
+            } else leaveProfile();
+          });
         },
       },
     );
@@ -95,6 +110,13 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
         disabled={followChange.isPending}
         onPress={() => followChange.mutate(!user.relationship.following)}
       />
+      {socialRefusal(followChange.error, 'follow') ? (
+        <InlineStatus
+          tone="attention"
+          message={socialRefusal(followChange.error, 'follow')!}
+          live
+        />
+      ) : null}
       {user.bio ? <Body>{user.bio}</Body> : null}
 
       {profile.currentTree ? (
@@ -165,6 +187,22 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
         destructive
         onConfirm={doBlock}
         onCancel={() => setConfirmBlock(false)}
+      />
+      <Confirmation
+        visible={sharedRoom !== null}
+        title={`${name} is in your focus room`}
+        message={`You blocked ${name}, so they can't follow you, invite you, or react to you. Blocking doesn't remove anyone from a room. Do you want to stay in the room?`}
+        confirmLabel="Leave the room"
+        cancelLabel="Stay in the room"
+        onConfirm={() => {
+          const roomId = sharedRoom;
+          setSharedRoom(null);
+          if (roomId) leaveRoom.mutate(roomId, { onSettled: leaveProfile });
+        }}
+        onCancel={() => {
+          setSharedRoom(null);
+          leaveProfile();
+        }}
       />
       <ReportSheet
         visible={reporting}
