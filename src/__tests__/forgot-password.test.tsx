@@ -83,7 +83,7 @@ const type = (label: string, text: string) =>
 async function openForgot() {
   const router = renderApp(appRoutes, { initialUrl: '/' });
   await screen.findByRole('header', { name: WELCOME_TITLE });
-  fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
   await screen.findByRole('header', { name: 'Welcome back' });
   type('Email', 'mai@example.com');
   fireEvent.press(screen.getByRole('button', { name: 'Forgot password?' }));

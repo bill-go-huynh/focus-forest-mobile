@@ -129,7 +129,7 @@ describe('Continue with Google (W.2)', () => {
     googleAnswer = () => ({ status: 200, body: { ...googleSession(), created: false } });
     const router = openApp();
     await screen.findByRole('header', { name: WELCOME_TITLE });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     continueWithGoogle();
 

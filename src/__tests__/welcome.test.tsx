@@ -49,7 +49,8 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     expect(screen.queryByRole('header', { name: 'Create your account' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Create account' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'I already have an account' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'I already have an account' })).toBeNull();
   });
 
   it('walks the pages with Next, one at a time, and ends on Get started', async () => {
@@ -99,9 +100,19 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
   it('leads straight to sign in from any page', async () => {
     const router = openApp();
     await screen.findByRole('header', { name: PAGES[0] });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeOnTheScreen();
     expect(router.getPathname()).toBe('/sign-in');
+  });
+
+  it('keeps Sign in at the top of every page, the last included', async () => {
+    openApp();
+    await screen.findByRole('header', { name: PAGES[0] });
+    for (let i = 0; i < PAGES.length; i += 1) {
+      act(() => swipeTo(i));
+      await screen.findByRole('header', { name: PAGES[i] });
+      expect(screen.getAllByRole('button', { name: 'Sign in' })).toHaveLength(1);
+    }
   });
 
   it('keeps its illustrations decorative and its words calm', async () => {

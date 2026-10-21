@@ -215,7 +215,7 @@ describe('existing users', () => {
   it('never see onboarding on sign-in, and their default goal is not saved for them', async () => {
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('header', { name: WELCOME_TITLE });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     type('Email', 'mai@example.com');
     type('Password', 'correct horse');
@@ -309,7 +309,7 @@ describe('durable onboarding state', () => {
     );
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('header', { name: WELCOME_TITLE });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     type('Email', 'mai@example.com');
     type('Password', 'correct horse');

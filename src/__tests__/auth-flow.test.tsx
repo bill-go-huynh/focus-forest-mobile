@@ -345,7 +345,7 @@ describe('sign in', () => {
   async function openSignIn() {
     const router = openApp();
     await screen.findByRole('header', { name: WELCOME_TITLE });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     return router;
   }

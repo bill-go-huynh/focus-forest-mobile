@@ -97,8 +97,10 @@ export function WelcomeScreen() {
       <View
         style={{
           flexDirection: 'row',
+          flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
+          columnGap: theme.space[3],
           paddingTop: top + theme.space[2],
           paddingHorizontal: theme.space[5],
           minHeight: top + theme.control.minHeight,
@@ -112,6 +114,8 @@ export function WelcomeScreen() {
         >
           Focus Forest
         </Text>
+        {/* Someone with an account finds it where apps keep it, on every page, in one tap. */}
+        <Button variant="tertiary" label="Sign in" onPress={() => router.push('/sign-in')} />
       </View>
 
       <Animated.ScrollView
@@ -162,11 +166,6 @@ export function WelcomeScreen() {
         ) : (
           <Button variant="primary" label="Get started" onPress={() => router.push('/sign-up')} />
         )}
-        <Button
-          variant="tertiary"
-          label="I already have an account"
-          onPress={() => router.push('/sign-in')}
-        />
       </View>
     </Animated.View>
   );

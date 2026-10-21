@@ -689,7 +689,7 @@ describe('notification taps and links (M6.2; docs/05 §4)', () => {
     });
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('header', { name: WELCOME_TITLE });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     fireEvent.changeText(screen.getByLabelText('Email'), 'mai@example.com');
     fireEvent.changeText(screen.getByLabelText('Password'), 'correct horse');
@@ -705,7 +705,7 @@ describe('notification taps and links (M6.2; docs/05 §4)', () => {
     await secureStore.deleteItemAsync('focus-forest.session');
     const router = renderApp(appRoutes, { initialUrl: '/' });
     await screen.findByRole('header', { name: WELCOME_TITLE });
-    fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     await screen.findByRole('header', { name: 'Welcome back' });
     fireEvent.changeText(screen.getByLabelText('Email'), 'mai@example.com');
     fireEvent.changeText(screen.getByLabelText('Password'), 'correct horse');
