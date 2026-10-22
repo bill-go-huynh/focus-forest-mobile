@@ -18,9 +18,10 @@ import { useTopicIdentity } from '../topics/topic-create-sync';
 import { toTreeVisualState, TreeScene } from '../tree';
 import { traitLook } from '../tree/signature/trait-decorations';
 import { knownTrait } from '../tree/visual-state';
-import { stageHint } from './presentation';
+import { fullyGrownLine, stageHint } from './presentation';
 import { useCurrentTree, useHome } from './queries';
 import { useSceneTimeOfDay } from './use-scene-time';
+import { SectionCard } from '../components/SectionCard';
 
 const MINUTE = 60_000;
 
@@ -73,6 +74,11 @@ export function TreeDetailsScreen() {
       <Text style={[theme.type.headline, { color: theme.colors.text.primary }]}>
         {stageHint(treeState.progress.stage, treeState.progress.progressToNextStage)}
       </Text>
+      {treeState.status === 'growing' && fullyGrownLine(treeState.progress) ? (
+        <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
+          {fullyGrownLine(treeState.progress)}
+        </Text>
+      ) : null}
       {/* The month's species (M4.2), and the way to change it while the server says it is open. */}
       {species.data ? (
         <View style={{ gap: theme.space[2], alignItems: 'flex-start' }}>
@@ -99,15 +105,9 @@ export function TreeDetailsScreen() {
         </Text>
       )}
 
-      <View style={{ gap: theme.space[2] }}>
-        <Text
-          accessibilityRole="header"
-          style={[theme.type.headline, { color: theme.colors.text.primary }]}
-        >
-          Milestones
-        </Text>
+      <SectionCard title="Milestones">
         <TraitList ids={treeState.traits.map((trait) => trait.id)} style={body} />
-      </View>
+      </SectionCard>
 
       <StartFocus variant="secondary" />
     </Screen>
@@ -128,13 +128,7 @@ function MonthStats({
   const body = [theme.type.body, { color: theme.colors.text.primary }];
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
   return (
-    <View style={{ gap: theme.space[2] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        This month
-      </Text>
+    <SectionCard title="This month">
       <Text style={body}>{`${formatFocused(stats.focusedMinutes * MINUTE)} focused`}</Text>
       <Text style={body}>{plural(stats.sessionCount, 'session')}</Text>
       <Text style={body}>{plural(stats.activeDays, 'active day')}</Text>
@@ -144,7 +138,7 @@ function MonthStats({
         <Text style={body}>{`Current streak: ${plural(streak, 'day')}`}</Text>
       ) : null}
       {topTopic !== null ? <Text style={body}>{`Top topic: ${topTopic}`}</Text> : null}
-    </View>
+    </SectionCard>
   );
 }
 

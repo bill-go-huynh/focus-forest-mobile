@@ -45,6 +45,7 @@ import {
   weekTitle,
 } from './insights-format';
 import { useHeatmap, useMonthInsights, useRecords, useWeekInsights } from './queries';
+import { SectionCard } from '../components/SectionCard';
 
 type MonthRef = { year: number; month: number };
 type Period =
@@ -202,19 +203,15 @@ export function InsightsScreen() {
       {showYear ? (
         <YearHeatmap onMonth={goMonth} />
       ) : (
-        <Button variant="secondary" label="Show your year" onPress={() => setShowYear(true)} />
+        <SectionCard title="Your year">
+          <Button variant="secondary" label="Show your year" onPress={() => setShowYear(true)} />
+        </SectionCard>
       )}
 
-      <View style={{ gap: theme.space[3] }}>
-        <Text
-          accessibilityRole="header"
-          style={[theme.type.headline, { color: theme.colors.text.primary }]}
-        >
-          Focus history
-        </Text>
+      <SectionCard title="Focus history">
         <HistoryFilterBar data={data} filters={filters} onChange={setFilters} wrap={isLargeText} />
         <HistoryContent filters={toHistoryFilters(filters)} />
-      </View>
+      </SectionCard>
     </Screen>
   );
 }
@@ -285,52 +282,79 @@ function PeriodInsights({
   return (
     <>
       {stale ? <InlineStatus tone="info" message="Showing the numbers last loaded." /> : null}
-      <Text
-        testID="insights-summary"
-        accessible
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        {narrative(title, summary, data.period.current)}
-      </Text>
-      {laterSessions ? (
-        <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
-          Insights include sessions synced later. Your archived tree stays as it was saved.
+      <SectionCard>
+        <Text
+          testID="insights-summary"
+          accessible
+          style={[theme.type.headline, { color: theme.colors.text.primary }]}
+        >
+          {narrative(title, summary, data.period.current)}
         </Text>
-      ) : null}
-      <DayPattern days={data.days} onDay={onDay} />
-      <Group title="Focus" lines={[...lines, ...highlights]} style={body} />
-      <Group title="Goals" lines={goals} style={body} />
-      <Group title="Rest and streak" lines={rest} style={body} />
-      {data.newRecords.length > 0 ? (
-        <Group
-          title="New bests"
-          lines={data.newRecords.map(
-            (record) => `New this ${isWeek ? 'week' : 'month'}: ${recordValue(record)}`,
-          )}
-          style={body}
-        />
-      ) : null}
-      {data.topics.length > 0 ? (
-        <View testID="insights-topics" style={{ gap: theme.space[1] }}>
-          <Text
-            accessibilityRole="header"
-            style={[theme.type.headline, { color: theme.colors.text.primary }]}
-          >
-            Topics
+        {laterSessions ? (
+          <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
+            Insights include sessions synced later. Your archived tree stays as it was saved.
           </Text>
-          {data.topics.map((topic) => (
-            <ListRow
-              key={topic.topicId}
-              title={topic.name}
-              subtitle={topicLine(topic)}
-              leading={() => <TopicMark color={topic.color} icon={topic.icon} />}
-              onPress={() => onTopic(topic)}
-              accessibilityHint="Shows this topic's sessions in the history below."
-            />
-          ))}
-        </View>
-      ) : null}
+        ) : null}
+        <DayPattern days={data.days} onDay={onDay} />
+      </SectionCard>
+      <SectionCard title="Details">
+        <Group title="Focus" lines={[...lines, ...highlights]} style={body} />
+        <Group title="Goals" lines={goals} style={body} />
+        <Group title="Rest and streak" lines={rest} style={body} />
+        {data.newRecords.length > 0 ? (
+          <Group
+            title="New bests"
+            lines={data.newRecords.map(
+              (record) => `New this ${isWeek ? 'week' : 'month'}: ${recordValue(record)}`,
+            )}
+            style={body}
+          />
+        ) : null}
+      </SectionCard>
+      {data.topics.length > 0 ? <TopicsCard topics={data.topics} onTopic={onTopic} /> : null}
     </>
+  );
+}
+
+/** How many topics show before "Show all" (owner, 2026-10-22: long lists stay short). */
+const TOPICS_PREVIEW = 5;
+
+function TopicsCard({
+  topics,
+  onTopic,
+}: {
+  topics: readonly TopicInsight[];
+  onTopic: (topic: TopicInsight) => void;
+}) {
+  const [all, setAll] = useState(false);
+  const shown = all ? topics : topics.slice(0, TOPICS_PREVIEW);
+  return (
+    <SectionCard
+      title="Topics"
+      testID="insights-topics"
+      footer={
+        topics.length > TOPICS_PREVIEW && !all ? (
+          <Button
+            variant="tertiary"
+            label={`Show all ${topics.length} topics`}
+            onPress={() => setAll(true)}
+          />
+        ) : undefined
+      }
+    >
+      <View>
+        {shown.map((topic) => (
+          <ListRow
+            key={topic.topicId}
+            title={topic.name}
+            subtitle={topicLine(topic)}
+            leading={() => <TopicMark color={topic.color} icon={topic.icon} />}
+            onPress={() => onTopic(topic)}
+            accessibilityHint="Shows this topic's sessions in the history below."
+          />
+        ))}
+      </View>
+    </SectionCard>
   );
 }
 
@@ -413,13 +437,7 @@ function Records({ query }: { query: ReturnType<typeof useRecords> }) {
   const theme = useTheme();
   const body = [theme.type.body, { color: theme.colors.text.primary }];
   return (
-    <View testID="insights-records" style={{ gap: theme.space[2] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        Personal records
-      </Text>
+    <SectionCard title="Personal records" testID="insights-records">
       {query.data === undefined ? (
         query.isError ? (
           <InlineStatus
@@ -446,7 +464,7 @@ function Records({ query }: { query: ReturnType<typeof useRecords> }) {
           </View>
         ))
       )}
-    </View>
+    </SectionCard>
   );
 }
 
@@ -473,13 +491,7 @@ function YearHeatmap({ onMonth }: { onMonth: (month: MonthRef) => void }) {
   }
   const totals = cellTotals(heatmap.data.days);
   return (
-    <View style={{ gap: theme.space[3] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        Your year
-      </Text>
+    <SectionCard title="Your year">
       <Text style={[theme.type.body, { color: theme.colors.text.primary }]}>
         {`Over the last year: ${plural(totals.activeDays, 'active day')}, ${plural(totals.restDays, 'rest day')}, daily goal met on ${plural(totals.goalMet, 'day')}.`}
       </Text>
@@ -520,7 +532,7 @@ function YearHeatmap({ onMonth }: { onMonth: (month: MonthRef) => void }) {
             </Pressable>
           );
         })}
-    </View>
+    </SectionCard>
   );
 }
 
