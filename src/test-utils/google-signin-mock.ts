@@ -24,6 +24,14 @@ const success: Answer = async () => ({
 });
 let answer: Answer = success;
 let playServices = true;
+/**
+ * Like the native library, the account chosen last is remembered until sign-out: `signIn` then
+ * answers it again without showing the chooser. `chooserShown` counts the choosers shown.
+ */
+let remembered: unknown = null;
+let chooserShown = 0;
+/** How many account choosers were shown since the last reset. */
+export const googleChoosersShown = () => chooserShown;
 
 export const statusCodes = {
   SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
@@ -43,8 +51,17 @@ export const googleSignInMock = {
       }
       return true;
     }),
-    signIn: jest.fn(() => answer()),
-    signOut: jest.fn(async () => null),
+    signIn: jest.fn(async () => {
+      if (remembered) return remembered;
+      chooserShown += 1;
+      const response = await answer();
+      if ((response as { type?: string }).type === 'success') remembered = response;
+      return response;
+    }),
+    signOut: jest.fn(async () => {
+      remembered = null;
+      return null;
+    }),
   },
   statusCodes,
   isSuccessResponse: (response: { type: string }) => response.type === 'success',
@@ -67,5 +84,7 @@ export function setPlayServicesAvailable(available: boolean): void {
 export function resetGoogleSignInMock(): void {
   answer = success;
   playServices = true;
+  remembered = null;
+  chooserShown = 0;
   for (const fn of Object.values(googleSignInMock.GoogleSignin)) fn.mockClear();
 }

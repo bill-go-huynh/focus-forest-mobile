@@ -9,6 +9,7 @@ import { defaultGoals } from '../test-utils/consistency';
 import { makeHome } from '../test-utils/core-loop';
 import {
   GOOGLE_ID_TOKEN,
+  googleChoosersShown,
   nextGoogleSignIn,
   setPlayServicesAvailable,
 } from '../test-utils/google-signin-mock';
@@ -61,6 +62,7 @@ const googleSession = (n = 1) =>
 
 let requests: FakeRequest[];
 let googleAnswer: () => { status: number; body?: unknown } | Error;
+let deleteAnswer: () => { status: number; body?: unknown };
 function serve() {
   const net = fakeFetch((request) => {
     const { pathname } = new URL(request.url);
@@ -69,7 +71,7 @@ function serve() {
     if (pathname === '/me/home') return { status: 200, body: makeHome() };
     if (pathname === '/me/goals') return { status: 200, body: defaultGoals() };
     if (pathname === '/me/equipment') return { status: 200, body: makeEquipment() };
-    if (pathname === '/me' && request.method === 'DELETE') return { status: 204 };
+    if (pathname === '/me' && request.method === 'DELETE') return deleteAnswer();
     return { status: 404, body: nestError(404, 'Not Found') };
   });
   requests = net.requests;
@@ -84,6 +86,7 @@ beforeEach(async () => {
   mockSecureStore.clear();
   await AsyncStorage.clear();
   googleAnswer = () => ({ status: 200, body: { ...googleSession(), created: true } });
+  deleteAnswer = () => ({ status: 204 });
   serve();
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
   jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation();
@@ -171,6 +174,29 @@ describe('Continue with Google (W.2)', () => {
     expect(screen.queryByTestId('tab-bar')).toBeNull();
   });
 
+  it('shows the account chooser again after a refusal, so another account can be picked', async () => {
+    googleAnswer = () => ({
+      status: 409,
+      body: {
+        ...nestError(
+          409,
+          'This email already has a Focus Forest account. Sign in with your password.',
+        ),
+        code: 'email_has_password',
+      },
+    });
+    openApp();
+    await signUpFromWelcome();
+    continueWithGoogle();
+    await screen.findByText(
+      'This email already has a Focus Forest account. Sign in with your password.',
+    );
+    googleAnswer = () => ({ status: 200, body: { ...googleSession(), created: false } });
+    continueWithGoogle();
+    expect(await screen.findByTestId('tab-bar')).toBeOnTheScreen();
+    expect(googleChoosersShown()).toBe(2);
+  });
+
   it('explains when Google cannot be used on this device', async () => {
     setPlayServicesAvailable(false);
     openApp();
@@ -234,5 +260,24 @@ describe('a Google account on this device', () => {
     expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     const deletion = requests.find((r) => r.method === 'DELETE');
     expect(deletion?.body).toEqual({ googleIdToken: GOOGLE_ID_TOKEN });
+  });
+
+  it('lets another Google account be picked after the wrong one, when deleting', async () => {
+    deleteAnswer = () => ({
+      status: 403,
+      body: { ...nestError(403, 'Not this account.'), code: 'google_account_mismatch' },
+    });
+    mockSecureStore.set(SESSION_KEY, JSON.stringify(googleSession()));
+    openApp('/profile/delete-account');
+    await screen.findByRole('header', { name: 'Delete account' });
+    fireEvent.changeText(screen.getByLabelText('Type DELETE to confirm'), 'DELETE');
+    fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+    await screen.findByText(
+      'That Google account is not the one you sign in with. Nothing was deleted.',
+    );
+    deleteAnswer = () => ({ status: 204 });
+    fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+    expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
+    expect(googleChoosersShown()).toBe(2);
   });
 });

@@ -35,11 +35,16 @@ function configure(): boolean {
   return true;
 }
 
-/** Opens Google's chooser and answers the chosen account's ID token. */
+/**
+ * Opens Google's chooser and answers the chosen account's ID token. The account chosen last is
+ * forgotten first: Google would otherwise answer it again without asking, so after a refusal
+ * (say, an email that has a password account) every retry would fail the same way.
+ */
 export async function requestGoogleIdToken(): Promise<GoogleIdTokenResult> {
   if (!configure()) return { kind: 'unavailable' };
   try {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    await GoogleSignin.signOut().catch(() => undefined);
     const response = await GoogleSignin.signIn();
     if (isCancelledResponse(response)) return { kind: 'cancelled' };
     const idToken = response.data.idToken;
