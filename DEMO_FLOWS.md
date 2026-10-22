@@ -18,12 +18,14 @@ Ký hiệu: **📱** làm trên điện thoại · **💻** làm trên admin (la
 
 ---
 
-## 1. Giới thiệu và đăng nhập
+## 1. Người dùng mới, rồi chuyển sang tài khoản demo
 
 - 📱 Mở app → 4 trang giới thiệu. Vuốt qua.
 - 🗣 "Đây là app hẹn giờ tập trung. Mỗi tháng tập trung nuôi một cái cây, các tháng thành khu rừng."
-- 📱 Bấm **Sign in** ở góc trên → **Continue with Google** → chọn Gmail demo.
-- **Thấy:** vào thẳng tài khoản đã có lịch sử, không phải đăng ký lại.
+- 📱 **Create account** bằng một email bất kỳ → **Thấy:** Home với cây hạt giống của tháng này, chưa có lịch sử.
+- 🗣 "Đây là trải nghiệm ngày đầu. Để xem app sau vài tháng dùng, em chuyển sang một tài khoản đã có sẵn dữ liệu."
+- 📱 Profile → Settings → **Sign out** → **Sign in** ở góc trên → **Continue with Google** → chọn Gmail demo.
+- **Thấy:** vào thẳng tài khoản đã có lịch sử. Từ đây tới hết buổi chỉ dùng tài khoản này.
 
 ## 2. Lễ trồng cây và recap tháng trước
 
@@ -49,13 +51,13 @@ Ký hiệu: **📱** làm trên điện thoại · **💻** làm trên admin (la
 ## 5. Phần thưởng sau một phiên (admin giả lập phiên vừa xong)
 
 - 📱 Để app ở Home.
-- 💻 Demo → **Change an account**: Account = Bill, Minutes = 25 → **Add a finished session**.
+- 💻 Demo → thẻ **Tree and streak** → **Add a finished session** (sẵn 25 phút).
 - **Thấy (vài giây sau, không cần chạm):** cây lớn lên **Mature Tree**, badge **50 Hours** kèm cây Phong, chuỗi thành **7 ngày** kèm cây Thông, máy rung.
 - 🗣 "Phần thưởng chỉ đến sau khi xong phiên, không bao giờ trong lúc đang tập trung."
 
 ## 6. Ngày nghỉ và chuỗi ngày
 
-- 💻 **Make today a rest day** (Bill).
+- 💻 **Make today a rest day**.
 - **Thấy:** Home đổi thành "Rest day today · your … streak is kept".
 - 🗣 "Ngày nghỉ là chính thức: tối đa 2 ngày mỗi tuần mà không mất chuỗi. Cây không bao giờ chết, vắng lâu thì chỉ 'nghỉ yên'."
 
@@ -67,7 +69,7 @@ Ký hiệu: **📱** làm trên điện thoại · **💻** làm trên admin (la
 ## 8. Bạn bè
 
 - 📱 Tab **Together** → thẻ **Your people**: Following / Followers (5 người theo dõi).
-- 💻 **Friend reacts to the forest** (chọn Linh).
+- 💻 **A friend reacts to the forest** (mỗi lần bấm là một bạn khác: Linh, Mai, Khoa).
 - **Thấy:** thẻ **Reactions** có reaction mới ngay.
 - 📱 Bấm vào một người → xem cây và khu rừng của họ, thả cảm xúc.
 - 🗣 "Chỉ có cảm xúc tích cực, không bình luận, không so sánh."
@@ -88,7 +90,7 @@ Ký hiệu: **📱** làm trên điện thoại · **💻** làm trên admin (la
 ## 11. Thông báo
 
 - 📱 Khoá máy.
-- 💻 **Send a notification now** → **Monthly recap ready** → **Send now**.
+- 💻 Thẻ **Send a notification now** → bấm **Monthly recap ready** (mỗi loại thông báo là một nút).
 - **Thấy:** thông báo đến trong vài giây; chạm vào thì mở đúng màn recap.
 - 🗣 "Không gửi khi đang tập trung, và có giới hạn mỗi ngày để không làm phiền."
 
