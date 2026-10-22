@@ -1,11 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { HttpError, type EarnedBadge, type VisitedProfile } from '../api';
+import { BadgeMark } from '../progression/BadgeMark';
 import { useCurrentRoom, useLeaveRoomById } from '../rooms/queries';
 import { Button, DestructiveButton } from '../components/Button';
-import { Chip } from '../components/Chip';
 import { Confirmation } from '../components/Confirmation';
 import { InlineStatus } from '../components/InlineStatus';
 import { EmptyState } from '../components/EmptyState';
@@ -156,14 +156,20 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
           {showcase.length > 0 ? (
             <View style={{ gap: theme.space[2] }}>
               <Header>Badges</Header>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[4] }}>
                 {showcase.map((item) => (
-                  <Chip
+                  <Pressable
                     key={item.id}
-                    label={item.name}
-                    selected={false}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.name}
                     onPress={() => setBadge(item)}
-                  />
+                    style={{ alignItems: 'center', gap: theme.space[1] }}
+                  >
+                    <BadgeMark badge={item} />
+                    <Text style={[theme.type.caption, { color: theme.colors.text.secondary }]}>
+                      {item.name}
+                    </Text>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -187,7 +193,8 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
         onRequestClose={() => setBadge(null)}
       >
         {badge ? (
-          <View style={{ gap: theme.space[3] }}>
+          <View style={{ gap: theme.space[3], alignItems: 'center' }}>
+            <BadgeMark badge={badge} size="reveal" />
             <Body>{badge.description}</Body>
             <ReactionBar userId={userId} target={`badge:${badge.id}`} />
           </View>
