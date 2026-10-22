@@ -60,17 +60,19 @@ export function EventsSection() {
   const items = events.data?.items ?? [];
   if (items.length === 0) return null;
   return (
-    <View style={{ gap: theme.space[2] }}>
-      <Header>Events</Header>
-      {items.map((event) => (
-        <ListRow
-          key={event.id}
-          title={event.name}
-          subtitle={`${phaseLine(event)}${event.joined ? ' · Joined' : ''}`}
-          onPress={() => router.push(`/together/events/${event.id}`)}
-        />
-      ))}
-    </View>
+    <Card>
+      <View style={{ gap: theme.space[3] }}>
+        <Header>Events</Header>
+        {items.map((event) => (
+          <ListRow
+            key={event.id}
+            title={event.name}
+            subtitle={`${phaseLine(event)}${event.joined ? ' · Joined' : ''}`}
+            onPress={() => router.push(`/together/events/${event.id}`)}
+          />
+        ))}
+      </View>
+    </Card>
   );
 }
 

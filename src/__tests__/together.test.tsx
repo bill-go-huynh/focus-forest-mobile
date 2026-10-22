@@ -318,6 +318,50 @@ describe('the Together tab (docs/05 §1: Following in Phase 11)', () => {
     expect(screen.getByText('On your October 2026 tree')).toBeOnTheScreen();
   });
 
+  it('shows the first five people, with everyone a tap away (owner, 2026-10-22)', async () => {
+    const many = Array.from({ length: 8 }, (_, i) =>
+      makeSummary(
+        {
+          id: `0190a000-0000-7000-8000-0000000c00${i}`,
+          username: `friend${i + 1}`,
+          displayName: `Friend ${i + 1}`,
+        },
+        { following: true, followedBy: true },
+      ),
+    );
+    server.state.following = many;
+    const router = await openTogether();
+    await shows('Friend 1');
+    expect(screen.getByText('Friend 5')).toBeOnTheScreen();
+    expect(screen.queryByText('Friend 6')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'See everyone you follow' }));
+    await screen.findByRole('header', { name: 'Following' });
+    expect(router.getPathname()).toBe('/together/people/following');
+    for (let i = 1; i <= 8; i += 1) expect(screen.getByText(`Friend ${i}`)).toBeOnTheScreen();
+  });
+
+  it('needs no See all when everyone already shows', async () => {
+    await openTogether();
+    await shows('Linh');
+    expect(screen.queryByRole('button', { name: 'See everyone you follow' })).toBeNull();
+  });
+
+  it('shows the three newest reactions, and the rest on request', async () => {
+    server.state.received = Array.from({ length: 5 }, (_, i) => ({
+      id: `r${i}`,
+      reaction: 'heart',
+      target: 'forest',
+      createdAt: `2026-10-08T1${i}:00:00.000Z`,
+      from: makeSummary({ id: KAI_ID, username: `kai${i}`, displayName: `Kai ${i}` }),
+    }));
+    await openTogether();
+    await shows('Kai 0 sent ❤️');
+    expect(screen.getByText('Kai 2 sent ❤️')).toBeOnTheScreen();
+    expect(screen.queryByText('Kai 3 sent ❤️')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Show all 5 reactions' }));
+    expect(screen.getByText('Kai 4 sent ❤️')).toBeOnTheScreen();
+  });
+
   it('says calmly when the list cannot load', async () => {
     server.state.offline = true;
     await openTogether();

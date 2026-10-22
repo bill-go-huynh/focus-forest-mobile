@@ -13,6 +13,7 @@ import TogetherLayout, {
 } from '../app/(tabs)/together/_layout';
 import TogetherScreen from '../app/(tabs)/together/index';
 import SearchRoute from '../app/(tabs)/together/search';
+import PeopleRoute from '../app/(tabs)/together/people/[list]';
 import PersonRoute from '../app/(tabs)/together/[userId]/index';
 import VisitedForestRoute from '../app/(tabs)/together/[userId]/forest';
 import RoomRoute from '../app/(tabs)/together/room/[roomId]';
@@ -57,6 +58,7 @@ export const appRoutes = {
   '(tabs)/together/_layout': { default: TogetherLayout, unstable_settings: togetherSettings },
   '(tabs)/together/index': TogetherScreen,
   '(tabs)/together/search': SearchRoute,
+  '(tabs)/together/people/[list]': PeopleRoute,
   '(tabs)/together/[userId]/index': PersonRoute,
   '(tabs)/together/[userId]/forest': VisitedForestRoute,
   '(tabs)/together/room/[roomId]': RoomRoute,

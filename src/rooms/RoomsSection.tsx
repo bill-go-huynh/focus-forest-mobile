@@ -12,6 +12,7 @@ import { Sheet } from '../components/Sheet';
 import { useTheme } from '../theme';
 import { useCreateRoom, useCurrentRoom, useJoinRoom, useLobbies } from './queries';
 import { RoomInvitesList } from './RoomInvites';
+import { Card } from '../components/Card';
 
 const DURATIONS = [15, 25, 50, 90] as const;
 const SIZES = [2, 4, 6, 10] as const;
@@ -52,43 +53,45 @@ export function RoomsSection() {
   const others = (lobbies.data?.items ?? []).filter((room) => room.id !== mine?.id);
 
   return (
-    <View style={{ gap: theme.space[2] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        Focus rooms
-      </Text>
-      {/* Invitations from friends to rooms still gathering (M6.2). */}
-      <RoomInvitesList />
-      {mine ? (
-        <ListRow
-          title={`You're in ${mine.name}`}
-          subtitle="Open the room"
-          onPress={() => open(mine)}
+    <Card>
+      <View style={{ gap: theme.space[3] }}>
+        <Text
+          accessibilityRole="header"
+          style={[theme.type.headline, { color: theme.colors.text.primary }]}
+        >
+          Focus rooms
+        </Text>
+        {/* Invitations from friends to rooms still gathering (M6.2). */}
+        <RoomInvitesList />
+        {mine ? (
+          <ListRow
+            title={`You're in ${mine.name}`}
+            subtitle="Open the room"
+            onPress={() => open(mine)}
+          />
+        ) : null}
+        {others.map((room) => (
+          <ListRow
+            key={room.id}
+            title={room.name}
+            subtitle={`${room.durationMinutes} minutes, ${room.participants.length} of ${room.maxParticipants}${room.topic ? ` · ${room.topic}` : ''}`}
+            disabled={join.isPending}
+            onPress={() => join.mutate({ roomId: room.id }, { onSuccess: open })}
+          />
+        ))}
+        {join.isError ? <FormMessage message={describeJoinError(join.error)} /> : null}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+          <Button variant="secondary" label="Create a room" onPress={() => setSheet('create')} />
+          <Button variant="tertiary" label="Join with a code" onPress={() => setSheet('code')} />
+        </View>
+        <CreateRoomSheet
+          visible={sheet === 'create'}
+          onClose={() => setSheet(null)}
+          onCreated={open}
         />
-      ) : null}
-      {others.map((room) => (
-        <ListRow
-          key={room.id}
-          title={room.name}
-          subtitle={`${room.durationMinutes} minutes, ${room.participants.length} of ${room.maxParticipants}${room.topic ? ` · ${room.topic}` : ''}`}
-          disabled={join.isPending}
-          onPress={() => join.mutate({ roomId: room.id }, { onSuccess: open })}
-        />
-      ))}
-      {join.isError ? <FormMessage message={describeJoinError(join.error)} /> : null}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
-        <Button variant="secondary" label="Create a room" onPress={() => setSheet('create')} />
-        <Button variant="tertiary" label="Join with a code" onPress={() => setSheet('code')} />
+        <JoinCodeSheet visible={sheet === 'code'} onClose={() => setSheet(null)} onJoined={open} />
       </View>
-      <CreateRoomSheet
-        visible={sheet === 'create'}
-        onClose={() => setSheet(null)}
-        onCreated={open}
-      />
-      <JoinCodeSheet visible={sheet === 'code'} onClose={() => setSheet(null)} onJoined={open} />
-    </View>
+    </Card>
   );
 }
 
