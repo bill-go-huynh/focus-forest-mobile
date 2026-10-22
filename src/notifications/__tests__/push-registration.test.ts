@@ -15,7 +15,7 @@ function setup({
   answer = { status: 'granted', canAskAgain: true } as NotificationPermission,
   token = TOKEN as string | null,
 } = {}) {
-  const state = { permission, answer, token, requests: 0, fail: false };
+  const state = { permission, answer, token, requests: 0, fail: false, failToken: false };
   const adapter: PushAdapter = {
     permission: async () => state.permission,
     requestPermission: async () => {
@@ -23,7 +23,10 @@ function setup({
       state.permission = state.answer;
       return state.permission;
     },
-    token: async () => state.token,
+    token: async () => {
+      if (state.failToken) throw new Error('no push token');
+      return state.token;
+    },
   };
   const calls: string[] = [];
   const api: PushDevicesApi = {
@@ -113,5 +116,13 @@ describe('PushRegistration (M6.1)', () => {
     app.state.fail = true;
     await expect(app.push.unregister()).resolves.toBeUndefined();
     expect(app.report).toHaveBeenCalledWith({ code: 'unregister_failed' });
+  });
+
+  it('says whether the push token or the server failed, so a log tells them apart', async () => {
+    const app = setup({ permission: { status: 'granted', canAskAgain: true } });
+    app.state.failToken = true;
+    await app.push.enable();
+    expect(app.report).toHaveBeenCalledWith({ code: 'token_failed' });
+    expect(app.report).not.toHaveBeenCalledWith({ code: 'register_failed' });
   });
 });

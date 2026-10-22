@@ -92,9 +92,16 @@ export class PushRegistration {
   }
 
   private async register(): Promise<void> {
+    // Two steps, two codes: the OS or Expo gave no token, or the server could not be reached.
+    let token: string | null;
     try {
-      const token = await this.options.adapter.token();
-      if (!token) return;
+      token = await this.options.adapter.token();
+    } catch {
+      this.options.report({ code: 'token_failed' });
+      return;
+    }
+    if (!token) return;
+    try {
       await this.options.api.register(token, {
         platform: this.options.platform,
         appVersion: this.options.appVersion,
