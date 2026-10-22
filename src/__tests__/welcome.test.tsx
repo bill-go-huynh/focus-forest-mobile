@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
-import { AccessibilityInfo, Dimensions } from 'react-native';
+import { AccessibilityInfo, Dimensions, StyleSheet } from 'react-native';
 
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
 import { avoidedWordProblems, renderedCopy } from '../test-utils/avoided-words';
+import { WELCOME_PAGES } from '../welcome/welcome-pages';
 
 // Boundaries only: secure storage (no saved session: the person is signed out) and the config.
 jest.mock('expo-secure-store', () => ({
@@ -13,6 +14,18 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async () => undefined),
   deleteItemAsync: jest.fn(async () => undefined),
 }));
+// The scenes the welcome draws, with the props it gave them.
+const mockScenes: { motion?: string; tree: { stage: string } }[] = [];
+jest.mock('../tree/TreeScene', () => {
+  const actual = jest.requireActual('../tree/TreeScene');
+  return {
+    ...actual,
+    TreeScene: (props: { motion?: string; tree: { stage: string } }) => {
+      mockScenes.push(props);
+      return actual.TreeScene(props);
+    },
+  };
+});
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: { expoConfig: { version: '0.1.0' } },
@@ -26,6 +39,7 @@ const PAGES = [
 ];
 
 beforeEach(async () => {
+  mockScenes.length = 0;
   process.env.EXPO_PUBLIC_API_URL = 'https://api.example.com';
   await AsyncStorage.clear();
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
@@ -136,18 +150,21 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     expect(trees()).toBe(6);
   });
 
-  it('moves the art as one still picture while the pages are dragged', async () => {
+  it('shows still pictures: no tree moves, and the art neither slides nor fades (owner, 2026-10-22)', async () => {
     openApp();
     await screen.findByRole('header', { name: PAGES[0] });
-    const art = () => screen.getByTestId('welcome-art-0', { includeHiddenElements: true });
-    // At rest the tree breathes, so it is drawn live.
-    expect(art().props.renderToHardwareTextureAndroid).toBe(false);
-    act(() => fireEvent(screen.getByTestId('welcome-pager'), 'scrollBeginDrag'));
-    // Dragging: the trees hold still and each page's art moves as one cached picture.
-    expect(art().props.renderToHardwareTextureAndroid).toBe(true);
-    expect(art().props.shouldRasterizeIOS).toBe(true);
-    act(() => swipeTo(0));
-    expect(art().props.renderToHardwareTextureAndroid).toBe(false);
+    expect(mockScenes.length).toBeGreaterThan(0);
+    expect(mockScenes.every((scene) => scene.motion === 'still')).toBe(true);
+    // The first page shows its grown tree at once, not a growing sequence.
+    const grown = (WELCOME_PAGES[0]!.art as { stages: readonly { stage: string }[] }).stages.at(
+      -1,
+    )!;
+    expect(mockScenes[0]!.tree.stage).toBe(grown.stage);
+    const style = StyleSheet.flatten(
+      screen.getByTestId('welcome-art-0', { includeHiddenElements: true }).props.style,
+    ) as { transform?: unknown; opacity?: unknown };
+    expect(style.transform).toBeUndefined();
+    expect(style.opacity).toBeUndefined();
   });
 
   it('keeps its illustrations decorative and its words calm', async () => {
