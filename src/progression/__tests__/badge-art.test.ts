@@ -21,7 +21,6 @@ const CATALOG = [
   ['weekend-warrior', 'time_based', 'common'],
   ['focus-together-first', 'social', 'common'],
   ['focus-buddy', 'social', 'common'],
-  ['community-contributor', 'social', 'rare'],
 ] as const;
 
 const art = ([artworkId, category, rarity]: readonly [string, string, string]) =>
@@ -38,7 +37,7 @@ describe('badge art (ART.2)', () => {
   it('draws every seeded badge with its own emblem, never the fallback leaf', () => {
     for (const entry of CATALOG) expect(art(entry).emblem).not.toBe('leaf');
     const families = new Set(CATALOG.map((entry) => art(entry).emblem));
-    expect(families.size).toBe(9);
+    expect(families.size).toBe(8);
   });
 
   it('tells the tiers of one family apart (more rings, more stones)', () => {

@@ -153,6 +153,15 @@
   },
   "pushes": [
     {
+      "title": "lukas invited you to focus",
+      "body": "The room \"Morning focus\" is gathering. Join if you have time.",
+      "data": {
+        "link": "/together/room/00000000-0000-4000-8000-0000000006b4",
+        "category": "focusRoomInvite",
+        "recipient": "00000000-0000-4000-8000-0000000006a1"
+      }
+    },
+    {
       "title": "lukas invited you to a challenge",
       "body": "Take a look together, if you'd like.",
       "data": {

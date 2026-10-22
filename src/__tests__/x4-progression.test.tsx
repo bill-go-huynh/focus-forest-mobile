@@ -94,10 +94,11 @@ describe('X4: Progression screens from the API’s real answers', () => {
 
   it('Collection Book: counts, owned art, locked silhouettes with honest hints', async () => {
     renderApp(appRoutes, { initialUrl: '/collection' });
-    // Trees: 6 of 9. Badges: 6 of 15, with the two Focus Together badges A5.4 made earnable and
-    // the three time-based ones and Community Contributor (owner decision 2026-10-15).
+    // Trees: 6 of 9. Badges: 6 of 14, with the two Focus Together badges A5.4 made earnable and
+    // the three time-based ones (owner decision 2026-10-15); Community Contributor went with the
+    // Community Tree (2026-10-22).
     await until(() => screen.queryAllByText('6 of 9 in your collection').length === 1);
-    expect(screen.getByText('6 of 15 in your collection')).toBeOnTheScreen();
+    expect(screen.getByText('6 of 14 in your collection')).toBeOnTheScreen();
     expect(screen.getByText('4 of 5 in your collection')).toBeOnTheScreen();
     expect(
       screen.getByRole('button', { name: 'Golden Sakura, not yet in your collection' }),

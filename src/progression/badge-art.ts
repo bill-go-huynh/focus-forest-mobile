@@ -157,21 +157,7 @@ const pair: Emblem = (c) => [
   fill(circle(48, 40, 4.5), c.glow),
 ];
 
-/** A broad shared tree with seeds around it: helped a Community Tree grow. */
-const shared: Emblem = (c) => [
-  line('M48 76 V54', c.stem, 4),
-  fill(
-    'M48 24 C64 24 74 34 74 46 C74 56 64 60 48 60 C32 60 22 56 22 46 C22 34 32 24 48 24 Z',
-    c.leaf,
-  ),
-  fill('M42 30 C50 28 58 32 60 38 C52 36 46 36 40 40 Z', c.leafLight, 0.8),
-  fill(circle(18, 70, 2.6), c.glow),
-  fill(circle(30, 78, 2.6), c.glow),
-  fill(circle(66, 78, 2.6), c.glow),
-  fill(circle(78, 70, 2.6), c.glow),
-];
-
-/** A blossom on a tied ribbon: an event keepsake. */
+/** A blossom on a tied ribbon: a seasonal keepsake. */
 const ribbon: Emblem = (c) => [
   fill('M41 58 L36 78 L42 74 L46 80 L48 60 Z', c.ribbon),
   fill('M55 58 L60 78 L54 74 L50 80 L48 60 Z', c.ribbonShade),
@@ -205,7 +191,6 @@ const EMBLEMS = {
   weekend,
   together,
   pair,
-  shared,
   ribbon,
   seed,
   leaf,
@@ -228,7 +213,6 @@ function emblemFor(artworkId: string, category: string): { kind: EmblemKind; tie
   if (artworkId === 'weekend-warrior') return { kind: 'weekend', tier: 1 };
   if (artworkId === 'focus-together-first') return { kind: 'together', tier: 1 };
   if (artworkId === 'focus-buddy') return { kind: 'pair', tier: 1 };
-  if (artworkId === 'community-contributor') return { kind: 'shared', tier: 1 };
   if (category === 'event') return { kind: 'ribbon', tier: 1 };
   if (category === 'rare') return { kind: 'seed', tier: 1 };
   return { kind: 'leaf', tier: 1 };
