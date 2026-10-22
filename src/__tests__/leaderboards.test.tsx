@@ -148,7 +148,7 @@ describe('Leaderboards in Together (docs/05 → Leaderboards)', () => {
     fireEvent.press(await screen.findByRole('button', { name: /^Leaderboards/ }));
     await screen.findByRole('header', { name: 'Leaderboards' });
     expect(router.getPathname()).toBe('/together/leaderboards');
-    await shows(/· Linh ·/);
+    await shows('Linh');
     expect(boardRequests()).toEqual(['?scope=friends&period=weekly']);
     expect(screen.getByRole('button', { name: 'Friends' })).toBeSelected();
     expect(screen.getByRole('button', { name: 'This week' })).toBeSelected();
@@ -183,9 +183,9 @@ describe("a board (a plain list; fair scores; the user's own row highlighted)", 
     });
     await openBoard();
     fireEvent.press(await screen.findByRole('button', { name: 'Global' }));
-    await shows(/· 700$/);
+    await shows('700');
     fireEvent.press(screen.getByRole('button', { name: 'This month' }));
-    await shows(/· 300$/);
+    await shows('300');
     expect(boardRequests()).toEqual([
       '?scope=friends&period=weekly',
       '?scope=global&period=weekly',
@@ -199,7 +199,7 @@ describe("a board (a plain list; fair scores; the user's own row highlighted)", 
       you: row(51, ME, 121, true),
     });
     await openBoard();
-    await shows(/· Linh ·/);
+    await shows('Linh');
     expect(screen.getByTestId('leaderboard-you').props.accessibilityLabel).toBe(
       'Rank 51, Mai Anh, you, 121',
     );
