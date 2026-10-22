@@ -188,6 +188,18 @@ function GrassTufts({ mound, seed, color }: { mound: Ellipse; seed: number; colo
   );
 }
 
+/**
+ * Where the tree sways from, as a share of its box. The array form keeps fractional percents:
+ * React Native's string parser reads only whole numbers, so "45.83% 83.33%" would crash.
+ */
+export function pivotOrigin(
+  pivot: { x: number; y: number },
+  width: number,
+  height: number,
+): [string, string, number] {
+  return [`${(pivot.x / width) * 100}%`, `${(pivot.y / height) * 100}%`, 0];
+}
+
 export const TreeArt = memo(function TreeArt({
   tree,
   lighting,
@@ -226,9 +238,7 @@ export const TreeArt = memo(function TreeArt({
   const url = (id: string) => `url(#${id})`;
   const bark = barkVolume(colors.bark);
   const c = composition;
-  const pivot: ViewStyle = {
-    transformOrigin: `${(c.pivot.x / W) * 100}% ${(c.pivot.y / H) * 100}%`,
-  };
+  const pivot: ViewStyle = { transformOrigin: pivotOrigin(c.pivot, W, H) };
   const leaf = (accent: boolean) => url(accent ? leafId.accent : leafId.main);
   const density = speciesDefinition(c.species).bloomDensity ?? SINGLE_FLOWER;
   const fixedTraits = c.traits.filter((mark) => mark.anchor !== 'canopy');

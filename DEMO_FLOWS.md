@@ -2,6 +2,8 @@
 
 Thay cho danh sách test dài (`MANUAL_TEST_CASES.md`, giữ lại để tra khi cần). Đây là **các flow để trình bày cho mentor**, theo thứ tự. Mỗi flow mất 1–3 phút. Đi lần lượt; vấp chỗ nào thì ghi số flow và bước đó để sửa.
 
+Trên điện thoại chỉ đăng nhập **một tài khoản** (Gmail demo). Bạn bè (Mai, Khoa, Linh) do admin điều khiển bằng nút bấm, không cần đăng nhập vào họ.
+
 Ký hiệu: **📱** làm trên điện thoại · **💻** làm trên admin (laptop) · **🗣** câu nói gợi ý.
 
 ---
