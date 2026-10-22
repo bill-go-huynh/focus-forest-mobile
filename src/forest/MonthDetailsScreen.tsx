@@ -13,6 +13,7 @@ import { toTreeVisualState, TreeScene } from '../tree';
 import { formatMinutes, monthTitle } from './forest-format';
 import { RestingMarker } from './ForestScreen';
 import { useTreeDetails } from './queries';
+import { SectionCard } from '../components/SectionCard';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -50,7 +51,6 @@ function Details({ details }: { details: TreeDetails }) {
     [details],
   );
   const body = [theme.type.body, { color: theme.colors.text.primary }];
-  const header = [theme.type.headline, { color: theme.colors.text.primary }];
 
   if (details.kind === 'resting') {
     return (
@@ -77,10 +77,7 @@ function Details({ details }: { details: TreeDetails }) {
   return (
     <Screen title={monthTitle(details)} safeTop={false}>
       {tree ? <TreeScene tree={tree} /> : null}
-      <View style={{ gap: theme.space[2] }}>
-        <Text accessibilityRole="header" style={header}>
-          The month
-        </Text>
+      <SectionCard title="The month">
         <Text style={body}>{`${formatMinutes(stats.focusedMinutes)} focused`}</Text>
         <Text style={body}>{plural(stats.sessionCount, 'session')}</Text>
         <Text style={body}>{plural(stats.activeDays, 'active day')}</Text>
@@ -90,25 +87,19 @@ function Details({ details }: { details: TreeDetails }) {
         ) : null}
         <Text style={body}>{`Daily goals met: ${stats.dailyGoalsMet}`}</Text>
         <Text style={body}>{`Weekly goals met: ${stats.weeklyGoalsMet}`}</Text>
-      </View>
+      </SectionCard>
       {highlightedNotes.length > 0 ? (
-        <View style={{ gap: theme.space[2] }}>
-          <Text accessibilityRole="header" style={header}>
-            Highlighted notes
-          </Text>
+        <SectionCard title="Highlighted notes">
           {highlightedNotes.map((note) => (
             <Text key={note.sessionId} style={body}>
               {note.note}
             </Text>
           ))}
-        </View>
+        </SectionCard>
       ) : null}
       {/* The month's badges, as frozen at archive (M4.1); none shows nothing. */}
       {badges.length > 0 ? (
-        <View style={{ gap: theme.space[2] }}>
-          <Text accessibilityRole="header" style={header}>
-            Badges earned
-          </Text>
+        <SectionCard title="Badges earned">
           {badges.map((badge) => (
             <View
               key={badge.id}
@@ -118,7 +109,7 @@ function Details({ details }: { details: TreeDetails }) {
               <Text style={[body, { flexShrink: 1 }]}>{badge.name}</Text>
             </View>
           ))}
-        </View>
+        </SectionCard>
       ) : null}
       {/* Events arrive in a later phase: nothing is shown while there are none. */}
       {events.length > 0 ? <Text style={body}>{plural(events.length, 'event')}</Text> : null}

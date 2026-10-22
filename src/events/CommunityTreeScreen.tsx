@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, type ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 
 import { HttpError, type CommunityTree } from '../api';
 import { Button } from '../components/Button';
@@ -15,6 +15,7 @@ import { TreeScene } from '../tree/TreeScene';
 import { toTreeVisualState, type TreeVisualState } from '../tree/visual-state';
 import { groupedNumber, stageName } from './event-format';
 import { useCommunityCelebrated, useCommunityTree } from './queries';
+import { SectionCard } from '../components/SectionCard';
 
 /** The community stages on the same stage framework and renderer (docs/03 §10). */
 const SCENE_STAGE: Record<
@@ -108,7 +109,6 @@ export function CommunityTreeScreen() {
 }
 
 function CommunityView({ tree }: { tree: CommunityTree }) {
-  const theme = useTheme();
   const celebrated = useCommunityCelebrated(tree.eventId);
   const scene = useMemo(() => sceneTree(tree), [tree]);
   // The highest stage still to celebrate, named; every one listed is marked seen together.
@@ -129,19 +129,13 @@ function CommunityView({ tree }: { tree: CommunityTree }) {
         <Muted>{`You added ${groupedNumber(tree.yourMinutes)} minutes`}</Muted>
       ) : null}
 
-      <View style={{ gap: theme.space[1] }}>
-        <Text
-          accessibilityRole="header"
-          style={[theme.type.headline, { color: theme.colors.text.primary }]}
-        >
-          Milestones
-        </Text>
+      <SectionCard title="Milestones">
         {tree.milestones.map((milestone) => (
           <Body key={milestone.stage}>
             {`${stageName(milestone.stage)} · ${groupedNumber(milestone.thresholdMinutes)} minutes${milestone.reached ? ' · Reached' : ''}`}
           </Body>
         ))}
-      </View>
+      </SectionCard>
 
       <Modal
         visible={highest !== null}
