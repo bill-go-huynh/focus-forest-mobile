@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, screen } from 'expo-router/testing-library';
+import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import { AccessibilityInfo, Dimensions } from 'react-native';
 
 import { renderApp } from '../test-utils/render-app';
@@ -115,19 +115,25 @@ describe('welcome (docs/02 Onboarding: the concept before account creation)', ()
     }
   });
 
-  it('draws only the trees of the page in view and its neighbours, so swiping stays light', async () => {
+  it('draws the trees ahead only once a page has settled, and keeps those it drew', async () => {
+    const trees = () =>
+      screen.queryAllByTestId('tree-scene-art', { includeHiddenElements: true }).length;
     openApp();
     await screen.findByRole('header', { name: PAGES[0] });
-    // Page 1 (one tree) and page 2 (one tree); page 3's forest of three is not drawn yet.
-    expect(screen.getAllByTestId('tree-scene-art', { includeHiddenElements: true })).toHaveLength(
-      2,
-    );
-    act(() => swipeTo(2));
-    await screen.findByRole('header', { name: PAGES[2] });
-    // Pages 2, 3 (three trees) and 4.
-    expect(screen.getAllByTestId('tree-scene-art', { includeHiddenElements: true })).toHaveLength(
-      5,
-    );
+    // Page 1 and page 2; page 3's forest of three is not drawn yet.
+    expect(trees()).toBe(2);
+    act(() => swipeTo(1));
+    await screen.findByRole('header', { name: PAGES[1] });
+    // Not at the very moment the page lands: a moment later.
+    expect(trees()).toBe(2);
+    await waitFor(() => expect(trees()).toBe(5));
+    act(() => swipeTo(3));
+    await screen.findByRole('header', { name: PAGES[3] });
+    await waitFor(() => expect(trees()).toBe(6));
+    // Back to the start: nothing is torn down.
+    act(() => swipeTo(0));
+    await screen.findByRole('header', { name: PAGES[0] });
+    expect(trees()).toBe(6);
   });
 
   it('moves the art as one still picture while the pages are dragged', async () => {

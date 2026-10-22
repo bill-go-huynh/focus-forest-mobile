@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ScrollView,
   Text,
@@ -41,9 +41,10 @@ import { WELCOME_PAGES, type WelcomeArt } from './welcome-pages';
  * pages, and the art floats gently. Under reduced motion every movement becomes a crossfade.
  * Only the page in view animates its tree and is read by a screen reader.
  *
- * Kept light while the pages move (owner, 2026-10-22: swiping felt heavy): only the page in
- * view and its neighbours draw their trees, and while the pages move the trees hold still and
- * each page's art moves as one cached picture instead of being redrawn every frame.
+ * Kept light while the pages move (owner, 2026-10-22: swiping felt heavy): a page's trees are
+ * drawn only once a neighbouring page has settled (never at the moment a page lands) and are
+ * kept from then on, and while the pages move the trees hold still and each page's art moves
+ * as one cached picture instead of being redrawn every frame.
  */
 
 /** How far the art lags behind its page, and the words lead it, as a share of the width. */
@@ -71,10 +72,22 @@ export function WelcomeScreen() {
   const pager = useAnimatedRef<Animated.ScrollView>();
   const offset = useSharedValue(0);
   const [index, setIndex] = useState(0);
+  const last = WELCOME_PAGES.length - 1;
   // True while the pages move (a drag, its fling, or Next).
   const [moving, setMoving] = useState(false);
+  // The pages whose trees are drawn: the first two, then each settled page's neighbours.
+  const [drawn, setDrawn] = useState<ReadonlySet<number>>(() => new Set([0, 1]));
+  useEffect(() => {
+    const ahead = [index - 1, index, index + 1].filter((i) => i >= 0 && i <= last);
+    if (ahead.every((i) => drawn.has(i))) return undefined;
+    // After the landing has played, so drawing a tree never costs the swipe a frame.
+    const timer = setTimeout(
+      () => setDrawn((now) => new Set([...now, ...ahead])),
+      theme.motion.base,
+    );
+    return () => clearTimeout(timer);
+  }, [index, drawn, last, theme.motion.base]);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const last = WELCOME_PAGES.length - 1;
   useEffect(
     () => () => {
       if (settleTimer.current) clearTimeout(settleTimer.current);
@@ -158,7 +171,7 @@ export function WelcomeScreen() {
             body={page.body}
             art={page.art}
             current={i === index}
-            near={Math.abs(i - index) <= 1}
+            near={drawn.has(i)}
             moving={moving}
             offset={offset}
             width={width}
@@ -205,7 +218,7 @@ interface PageProps {
   body: string;
   art: WelcomeArt;
   current: boolean;
-  /** The page in view or next to it: only these draw their trees. */
+  /** Whether this page draws its trees yet (see `drawn`). */
   near: boolean;
   /** The pages are moving: the trees hold still and the art moves as one picture. */
   moving: boolean;
@@ -214,7 +227,8 @@ interface PageProps {
   reducedMotion: boolean;
 }
 
-function Page({
+/** Memoized: a settled page changes only its own props, so the other pages are not redrawn. */
+const Page = memo(function Page({
   index,
   title,
   body,
@@ -321,7 +335,7 @@ function Page({
       </ScrollView>
     </View>
   );
-}
+});
 
 /** The art floats up and down very slowly while its page is in view. */
 function Float({ active, children }: { active: boolean; children: ReactNode }) {

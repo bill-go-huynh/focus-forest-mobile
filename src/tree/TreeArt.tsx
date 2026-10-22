@@ -840,12 +840,12 @@ function SpeciesEffectArt({
 }
 
 /** The scene light over everything (docs/03 §7 layer 19): warmth follows vitality. */
+/**
+ * The scene's light: one flat color over all of it, so a plain view, not an SVG. Its opacity
+ * drifts every frame, and a view is far cheaper to fade than a scene-sized drawing.
+ */
 export function LightOverlay({ color, opacity }: SceneColors['light']) {
-  return (
-    <Layer>
-      <Rect x={0} y={0} width={W} height={H} fill={color} opacity={opacity} />
-    </Layer>
-  );
+  return <View style={[StyleSheet.absoluteFill, { backgroundColor: color, opacity }]} />;
 }
 
 /** Placeholder milestone decorations (docs/10 §2): small, distinct, recognizable objects. */
