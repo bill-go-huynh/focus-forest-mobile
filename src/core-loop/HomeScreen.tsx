@@ -21,7 +21,13 @@ import { useGardenEnvironment, useSpecies } from '../species/queries';
 import { choiceOpen } from '../species/species-format';
 import { SPECIES_SCREEN_TITLE } from '../species/SpeciesScreen';
 import { MomentCaption } from './MomentCaption';
-import { dailyGoalLine, streakLine, weekLine, weeklyGoalLine } from './presentation';
+import {
+  dailyGoalLine,
+  fullyGrownLine,
+  streakLine,
+  weekLine,
+  weeklyGoalLine,
+} from './presentation';
 import { useHome } from './queries';
 import { useCelebrationPresenter, type Presented } from './use-celebration';
 import { GOAL_REACHED_TEXT, useGoalReached } from './use-goal-met';
@@ -95,7 +101,16 @@ export function HomeScreen() {
             onRetry={() => void query.refetch()}
           />
         )}
-        {presented?.moment ? <MomentCaption moment={presented.moment} /> : null}
+        {presented?.moment ? (
+          <MomentCaption moment={presented.moment} />
+        ) : homeTree?.status === 'growing' && fullyGrownLine(homeTree.progress) ? (
+          // A fully grown tree: what more focus still does (owner, 2026-10-22).
+          <Text
+            style={[theme.type.body, { color: theme.colors.text.secondary, textAlign: 'center' }]}
+          >
+            {fullyGrownLine(homeTree.progress)}
+          </Text>
+        ) : null}
         {presented?.unlock && presented.revealed ? (
           <BadgeUnlock moment={presented.unlock} reveal />
         ) : null}

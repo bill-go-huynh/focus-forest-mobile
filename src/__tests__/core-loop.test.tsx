@@ -305,6 +305,37 @@ describe('Home', () => {
     expect(screen.getByText('This week: 3 h 20 min focused')).toBeOnTheScreen();
   });
 
+  it('says what still grows once the tree is fully grown (owner, 2026-10-22)', async () => {
+    const tree = server.state.home.tree!;
+    server.state.home = {
+      ...server.state.home,
+      tree: {
+        ...tree,
+        progress: {
+          ...tree.progress,
+          stage: 'final_form',
+          stageNumber: 7,
+          progressToNextStage: null,
+          fullness: { level: 5, maxLevel: 5 },
+          blossoms: { level: 3, maxLevel: 7 },
+          richness: { tier: 2, maxTier: 5 },
+        },
+      },
+    };
+    await openHome();
+    expect(
+      await screen.findByText(
+        'Your tree is fully grown. Now focus makes it richer and daily goals open blossoms.',
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  it('says nothing of the kind while the tree is still growing', async () => {
+    await openHome();
+    await treeImage();
+    expect(screen.queryByText(/fully grown/)).toBeNull();
+  });
+
   it('shows a rest day instead of the streak line', async () => {
     server.state.home = { ...server.state.home, rest: { ...server.state.home.rest, today: true } };
     await openHome();

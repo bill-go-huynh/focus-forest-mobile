@@ -1,4 +1,10 @@
-import type { DailyProgress, GrowthResult, HomeResponse, WeeklyProgress } from '../api/core-loop';
+import type {
+  DailyProgress,
+  GrowthResult,
+  HomeResponse,
+  TreeProgress,
+  WeeklyProgress,
+} from '../api/core-loop';
 import { formatFocused } from '../history/history-format';
 import { stageName } from '../tree/describe-tree';
 import { traitLook } from '../tree/signature/trait-decorations';
@@ -157,4 +163,27 @@ export function stageHint(stage: string, progress: number | null): string {
   return progress >= 0.75
     ? `${name} · almost a ${stageName(next)}`
     : `${name} · growing toward ${stageName(next)}`;
+}
+
+/**
+ * Once the tree reaches Final Form it stops getting bigger (docs/03 §5), and people may read
+ * that as "more focus does nothing" (owner, 2026-10-22). This says what still grows, from the
+ * server's levels: richness from focus, the canopy from active days, blossoms from daily goals.
+ * Null before Final Form.
+ */
+export function fullyGrownLine(progress: TreeProgress): string | null {
+  if (progress.stage !== 'final_form') return null;
+  const still = [
+    progress.richness.tier < progress.richness.maxTier ? 'focus makes it richer' : null,
+    progress.fullness.level < progress.fullness.maxLevel ? 'active days fill its canopy' : null,
+    progress.blossoms.level < progress.blossoms.maxLevel ? 'daily goals open blossoms' : null,
+  ].filter((part): part is string => part !== null);
+  if (still.length === 0) {
+    return 'Your tree is fully grown, rich and in full bloom. Each day you return keeps your streak.';
+  }
+  const list =
+    still.length === 1
+      ? still[0]
+      : `${still.slice(0, -1).join(', ')}${still.length > 2 ? ',' : ''} and ${still.at(-1)}`;
+  return `Your tree is fully grown. Now ${list}.`;
 }

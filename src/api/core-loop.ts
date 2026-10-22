@@ -29,6 +29,8 @@ export const treeProgressSchema = z.object({
   richness: z.object({ tier: count, maxTier: count }),
 });
 
+export type TreeProgress = z.infer<typeof treeProgressSchema>;
+
 export const treeTraitSchema = z.object({ id: z.string().min(1), earnedAt: instant });
 
 /** A monthly tree (TreeStateDto). Vitality is null exactly for an archived tree. */

@@ -3,6 +3,7 @@ import { makeGrowth, makeHome, withWeeklyGoal } from '../../test-utils/core-loop
 import {
   dailyGoalLine,
   growthMoment,
+  fullyGrownLine,
   stageHint,
   streakLine,
   weekLine,
@@ -161,5 +162,45 @@ describe('Home lines', () => {
     expect(stageHint('growing_tree', 0.8)).toBe('Growing Tree · almost a Mature Tree');
     expect(stageHint('final_form', null)).toBe('Final Form');
     expect(stageHint('sapling', 0.5)).toBe('Your tree');
+  });
+});
+
+describe('fullyGrownLine (a tree that stopped getting bigger, owner 2026-10-22)', () => {
+  const progress = (
+    stage: string,
+    { richness = 0, fullness = 3, blossoms = 2 }: Record<string, number> = {},
+  ) => ({
+    stage,
+    stageNumber: 7,
+    progressToNextStage: null,
+    growthMinutes: 1800,
+    fullness: { level: fullness, maxLevel: 5 },
+    blossoms: { level: blossoms, maxLevel: 7 },
+    richness: { tier: richness, maxTier: 5 },
+  });
+
+  it('says nothing before Final Form', () => {
+    expect(fullyGrownLine(progress('blooming_tree'))).toBeNull();
+  });
+
+  it('names what still grows: richness, the canopy, and blossoms', () => {
+    expect(fullyGrownLine(progress('final_form'))).toBe(
+      'Your tree is fully grown. Now focus makes it richer, active days fill its canopy, and daily goals open blossoms.',
+    );
+  });
+
+  it('leaves out what is already full', () => {
+    expect(fullyGrownLine(progress('final_form', { richness: 5, fullness: 5 }))).toBe(
+      'Your tree is fully grown. Now daily goals open blossoms.',
+    );
+    expect(fullyGrownLine(progress('final_form', { richness: 5, blossoms: 7 }))).toBe(
+      'Your tree is fully grown. Now active days fill its canopy.',
+    );
+  });
+
+  it('says the tree is complete when everything is full', () => {
+    expect(fullyGrownLine(progress('final_form', { richness: 5, fullness: 5, blossoms: 7 }))).toBe(
+      'Your tree is fully grown, rich and in full bloom. Each day you return keeps your streak.',
+    );
   });
 });
