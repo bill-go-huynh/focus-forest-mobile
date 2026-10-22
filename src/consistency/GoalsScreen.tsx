@@ -50,6 +50,7 @@ import {
   useSetWeeklyGoal,
   useStreak,
 } from './queries';
+import { SectionCard } from '../components/SectionCard';
 
 type Status = { tone: 'neutral' | 'attention'; message: string } | null;
 
@@ -100,18 +101,6 @@ export function GoalsScreen() {
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  const theme = useTheme();
-  return (
-    <Text
-      accessibilityRole="header"
-      style={[theme.type.headline, { color: theme.colors.text.primary }]}
-    >
-      {title}
-    </Text>
-  );
-}
-
 function StatusLine({ status }: { status: Status }) {
   return status ? <InlineStatus tone={status.tone} message={status.message} live /> : null;
 }
@@ -136,8 +125,7 @@ function DailyGoalSection({ goals }: { goals: Goals }) {
   };
 
   return (
-    <View testID="goals-daily" style={{ gap: theme.space[3] }}>
-      <SectionHeader title="Daily goal" />
+    <SectionCard title="Daily goal" testID="goals-daily">
       <Text style={[theme.type.title, { color: theme.colors.text.primary }]}>
         {`${formatGoalMinutes(daily.minutes)} a day`}
       </Text>
@@ -164,7 +152,7 @@ function DailyGoalSection({ goals }: { goals: Goals }) {
       >
         <StatusLine status={status} />
       </DailyGoalPicker>
-    </View>
+    </SectionCard>
   );
 }
 
@@ -191,8 +179,7 @@ function WeeklyGoalSection({ goals }: { goals: Goals }) {
   };
 
   return (
-    <View testID="goals-weekly" style={{ gap: theme.space[3] }}>
-      <SectionHeader title="Weekly goal" />
+    <SectionCard title="Weekly goal" testID="goals-weekly">
       {goal ? (
         <Text style={[theme.type.headline, { color: theme.colors.text.primary }]}>
           {weeklyGoalText(goal)}
@@ -251,7 +238,7 @@ function WeeklyGoalSection({ goals }: { goals: Goals }) {
         }}
         onCancel={() => setConfirmEnd(false)}
       />
-    </View>
+    </SectionCard>
   );
 }
 
@@ -399,8 +386,7 @@ function RestDaysSection({
   };
 
   return (
-    <View testID="goals-rest" style={{ gap: theme.space[3] }}>
-      <SectionHeader title="Rest days" />
+    <SectionCard title="Rest days" testID="goals-rest">
       <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
         {
           "A rest day keeps your streak and your tree's vitality. If you focus on a rest day, it still counts, and the day stays a rest day."
@@ -419,7 +405,7 @@ function RestDaysSection({
         </Text>
       )}
       <StatusLine status={status} />
-    </View>
+    </SectionCard>
   );
 }
 
@@ -492,8 +478,7 @@ function StreakSection({ streak }: { streak: Streak }) {
   const body = [theme.type.body, { color: theme.colors.text.primary }];
   const { reached, next } = streak.milestones;
   return (
-    <View testID="goals-streak" style={{ gap: theme.space[2] }}>
-      <SectionHeader title="Streak" />
+    <SectionCard title="Streak" testID="goals-streak">
       <Text style={body}>{streakDaysText('Current streak', streak.current)}</Text>
       <Text style={body}>{streakDaysText('Longest streak', streak.longest)}</Text>
       <Text style={body}>{streakTodayText(streak.today, streak.current)}</Text>
@@ -505,7 +490,7 @@ function StreakSection({ streak }: { streak: Streak }) {
         One focus session a day keeps a streak. The daily goal is separate.
       </Text>
       <RecoveryOffer streak={streak} />
-    </View>
+    </SectionCard>
   );
 }
 

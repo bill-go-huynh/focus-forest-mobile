@@ -13,6 +13,7 @@ import { LifetimeStats } from '../../../profile/LifetimeStats';
 import { ProfileShowcase } from '../../../progression/ProfileShowcase';
 import { FramedAvatar } from '../../../species/FramedAvatar';
 import { useTheme } from '../../../theme';
+import { SectionCard } from '../../../components/SectionCard';
 
 /**
  * Profile (docs/05 §3): the user's identity from A4, then lifetime progress (A3.5), the badge
@@ -61,30 +62,34 @@ export default function ProfileScreen() {
             <Text style={[theme.type.caption, { color: theme.colors.text.secondary }]}>
               {formatJoinDate(profile.joinDate, profile.timezone)}
             </Text>
+            <View style={{ alignItems: 'flex-start' }}>
+              <Button variant="secondary" label="Edit profile" onPress={openEdit} />
+            </View>
           </View>
         </Card>
       )}
-      {profile ? <Button variant="primary" label="Edit profile" onPress={openEdit} /> : null}
       {/* The identity's small forest vignette (docs/05 §3), once a tree was archived. */}
       <ForestVignette />
       {/* Lifetime progress (A3.5), under the identity; the join date stays in the card. */}
       <LifetimeStats />
       <ProfileShowcase onOpen={() => router.push('/profile/achievements')} />
-      <ListRow
-        title="Goals and rest days"
-        onPress={() => router.push('/profile/goals')}
-        accessibilityHint="Opens your daily and weekly goals, rest days, and streak."
-      />
-      <ListRow
-        title="Topics"
-        onPress={() => router.push('/profile/topics')}
-        accessibilityHint="Opens your topics, to create, edit, archive, or restore them."
-      />
-      <ListRow
-        title="Settings"
-        onPress={() => router.push('/profile/settings')}
-        accessibilityHint="Opens theme, sound, motion, and notification settings."
-      />
+      <SectionCard>
+        <ListRow
+          title="Goals and rest days"
+          onPress={() => router.push('/profile/goals')}
+          accessibilityHint="Opens your daily and weekly goals, rest days, and streak."
+        />
+        <ListRow
+          title="Topics"
+          onPress={() => router.push('/profile/topics')}
+          accessibilityHint="Opens your topics, to create, edit, archive, or restore them."
+        />
+        <ListRow
+          title="Settings"
+          onPress={() => router.push('/profile/settings')}
+          accessibilityHint="Opens theme, sound, motion, and notification settings."
+        />
+      </SectionCard>
     </Screen>
   );
 }

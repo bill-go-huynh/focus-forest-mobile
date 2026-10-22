@@ -8,6 +8,7 @@ import { SwitchRow } from '../components/SwitchRow';
 import { useTheme } from '../theme';
 import { REMINDER_CATEGORIES, shiftTime, type ReminderCategory } from './reminder-times';
 import { useHaptic } from '../haptics/haptics';
+import { SectionCard } from '../components/SectionCard';
 
 const LABELS: Record<NotificationCategory, string> = {
   dailyGoalReminder: 'Daily goal reminder',
@@ -62,13 +63,7 @@ export function NotificationSettings({
   const theme = useTheme();
   if (categories.length === 0) return null;
   return (
-    <View style={{ gap: theme.space[2] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        Notifications
-      </Text>
+    <SectionCard title="Notifications">
       {blockedBySystem ? (
         <InlineStatus
           tone="attention"
@@ -98,7 +93,7 @@ export function NotificationSettings({
           </View>
         );
       })}
-    </View>
+    </SectionCard>
   );
 }
 

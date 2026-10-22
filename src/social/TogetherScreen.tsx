@@ -86,9 +86,9 @@ export function TogetherScreen() {
       <RoomsSection />
       <ChallengesSection />
       <EventsSection />
-      <SectionCard title="Leaderboards">
+      <SectionCard>
         <ListRow
-          title="See the leaderboards"
+          title="Leaderboards"
           subtitle="Friends first, fair scores, opt-in"
           onPress={() => router.push('/together/leaderboards')}
         />

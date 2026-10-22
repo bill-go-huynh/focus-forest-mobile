@@ -161,7 +161,8 @@ describe('Profile (A4: GET /me/profile)', () => {
       .getByTestId('profile-card')
       .findAll((node) => String(node.type) === 'Text')
       .map((node) => node.props.children);
-    expect(lines).toEqual(['Mai Anh', 'Joined September 2026']);
+    // Edit profile sits in the identity card (owner, 2026-10-22).
+    expect(lines).toEqual(['Mai Anh', 'Joined September 2026', 'Edit profile']);
   });
 
   it('keeps Settings reachable from Profile', async () => {

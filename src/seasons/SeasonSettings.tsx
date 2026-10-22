@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { Chip } from '../components/Chip';
 import { useTheme } from '../theme';
 import { useSeason, useSetHemisphere } from './queries';
+import { SectionCard } from '../components/SectionCard';
 
 const HEMISPHERE = { north: 'Northern', south: 'Southern' } as const;
 
@@ -25,13 +26,7 @@ export function SeasonSettings() {
   const chosen = hemisphereSource === 'set' ? hemisphere : null;
 
   return (
-    <View style={{ gap: theme.space[2] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        Seasons
-      </Text>
+    <SectionCard title="Seasons">
       <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
         {`${HEMISPHERE[hemisphere]} hemisphere, ${source}`}
       </Text>
@@ -56,6 +51,6 @@ export function SeasonSettings() {
           />
         ))}
       </View>
-    </View>
+    </SectionCard>
   );
 }

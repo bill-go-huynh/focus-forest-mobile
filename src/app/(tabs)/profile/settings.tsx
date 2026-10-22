@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Share, Text, View } from 'react-native';
+import { Share, View } from 'react-native';
 
 import { useSystemReducedMotion } from '../../../accessibility';
 import {
@@ -30,6 +30,7 @@ import {
 import { SUGGESTED_TIMES, type ReminderCategory } from '../../../preferences/reminder-times';
 import { SeasonSettings } from '../../../seasons/SeasonSettings';
 import { useTheme, type ThemePreference } from '../../../theme';
+import { SectionCard } from '../../../components/SectionCard';
 
 const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -264,17 +265,7 @@ export default function SettingsScreen() {
   );
 }
 
+/** One group of settings, in a card (owner, 2026-10-22: one card per part). */
 function Section({ title, children }: { title: string; children: ReactNode }) {
-  const theme = useTheme();
-  return (
-    <View style={{ gap: theme.space[2] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        {title}
-      </Text>
-      {children}
-    </View>
-  );
+  return <SectionCard title={title}>{children}</SectionCard>;
 }

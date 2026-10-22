@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { ListRow } from '../components/ListRow';
+import { SectionCard } from '../components/SectionCard';
 import { useTheme } from '../theme';
 import { BadgeMark } from './BadgeMark';
 import { useBadges } from './queries';
@@ -15,7 +16,7 @@ export function ProfileShowcase({ onOpen }: { onOpen: () => void }) {
   const { data } = useBadges();
   if (!data || data.items.length === 0) return null;
   return (
-    <View style={{ gap: theme.space[3] }}>
+    <SectionCard title="Badges">
       {data.showcase.length > 0 ? (
         <View
           testID="profile-showcase"
@@ -39,6 +40,6 @@ export function ProfileShowcase({ onOpen }: { onOpen: () => void }) {
         onPress={onOpen}
         accessibilityHint="Opens your badges, your showcase, and achievements in progress."
       />
-    </View>
+    </SectionCard>
   );
 }

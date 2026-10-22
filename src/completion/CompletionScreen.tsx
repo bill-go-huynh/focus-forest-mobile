@@ -23,6 +23,7 @@ import { useTopicIdentity } from '../topics/topic-create-sync';
 import { NEW_TOPIC_DEFAULTS } from '../topics/topic-form';
 import { CompletionGrowth } from './CompletionGrowth';
 import { NoteHighlight } from './NoteHighlight';
+import { SectionCard } from '../components/SectionCard';
 
 const MINUTE = 60_000;
 const UNKNOWN_TOPIC_NAME = 'Focus topic';
@@ -272,7 +273,7 @@ function CompletionContent({
       {/* One line of mission or challenge progress, once the server knows the session (M5.3–M5.4). */}
       {known.kind === 'server' ? <CompletionLine results={known.session.events ?? null} /> : null}
 
-      <View style={{ gap: theme.space[3] }}>
+      <SectionCard>
         <Input
           label="Note"
           value={value}
@@ -289,7 +290,7 @@ function CompletionContent({
         {known.kind === 'server' && server ? (
           <NoteHighlight session={server} available={highlightable} />
         ) : null}
-      </View>
+      </SectionCard>
 
       <Button
         variant="primary"

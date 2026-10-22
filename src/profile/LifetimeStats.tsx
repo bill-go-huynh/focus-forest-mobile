@@ -1,10 +1,11 @@
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 
 import { InlineStatus } from '../components/InlineStatus';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { formatFocused } from '../history/history-format';
 import { useLifetimeStats } from '../insights/queries';
 import { useTheme } from '../theme';
+import { SectionCard } from '../components/SectionCard';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -35,13 +36,7 @@ export function LifetimeStats() {
   const { focusedMilliseconds, sessionCount, currentStreak, longestStreak, archivedTreeCount } =
     stats.data;
   return (
-    <View testID="profile-lifetime" style={{ gap: theme.space[1] }}>
-      <Text
-        accessibilityRole="header"
-        style={[theme.type.headline, { color: theme.colors.text.primary }]}
-      >
-        Lifetime
-      </Text>
+    <SectionCard title="Lifetime" testID="profile-lifetime">
       {sessionCount === 0 ? (
         <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
           Your lifetime focus starts with your first session.
@@ -55,6 +50,6 @@ export function LifetimeStats() {
           <Text style={body}>{plural(archivedTreeCount, 'monthly tree')}</Text>
         </>
       )}
-    </View>
+    </SectionCard>
   );
 }

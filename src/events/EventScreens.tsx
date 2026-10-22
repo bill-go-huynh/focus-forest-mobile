@@ -24,6 +24,7 @@ import {
 } from './event-format';
 import { useLeaderboard } from '../leaderboards/queries';
 import { useEvent, useEvents, useJoinEvent } from './queries';
+import { SectionCard } from '../components/SectionCard';
 
 /**
  * Home's one quiet event card (docs/05 Home: at most one, below the tree and its progress). It
@@ -146,15 +147,13 @@ function EventView({ event }: { event: EventInfo }) {
         />
       ) : null}
 
-      <View style={{ gap: theme.space[1] }}>
-        <Header>Missions</Header>
+      <SectionCard title="Missions">
         {event.missions.map((mission) => (
           <Body key={mission.id}>{missionLine(mission)}</Body>
         ))}
-      </View>
+      </SectionCard>
 
-      <View style={{ gap: theme.space[2] }}>
-        <Header>Milestones</Header>
+      <SectionCard title="Milestones">
         {event.milestones.map((milestone) => {
           const rewards = rewardsLine(milestone);
           return (
@@ -164,26 +163,30 @@ function EventView({ event }: { event: EventInfo }) {
             </View>
           );
         })}
-      </View>
+      </SectionCard>
 
-      {board.data ? (
-        <ListRow
-          title="Leaderboard"
-          subtitle={board.data.teams ? 'People and teams' : 'People'}
-          onPress={() =>
-            router.push({
-              pathname: '/together/leaderboards',
-              params: { scope: 'event', eventId: event.id },
-            })
-          }
-        />
-      ) : null}
-      {event.communityTree ? (
-        <ListRow
-          title="Community Tree"
-          subtitle={`${groupedNumber(event.communityTree.totalMinutes)} minutes together${event.communityTree.stage ? ` · ${stageName(event.communityTree.stage)}` : ''}`}
-          onPress={() => router.push(`/together/community/${event.id}`)}
-        />
+      {board.data || event.communityTree ? (
+        <SectionCard title="Together">
+          {board.data ? (
+            <ListRow
+              title="Leaderboard"
+              subtitle={board.data.teams ? 'People and teams' : 'People'}
+              onPress={() =>
+                router.push({
+                  pathname: '/together/leaderboards',
+                  params: { scope: 'event', eventId: event.id },
+                })
+              }
+            />
+          ) : null}
+          {event.communityTree ? (
+            <ListRow
+              title="Community Tree"
+              subtitle={`${groupedNumber(event.communityTree.totalMinutes)} minutes together${event.communityTree.stage ? ` · ${stageName(event.communityTree.stage)}` : ''}`}
+              onPress={() => router.push(`/together/community/${event.id}`)}
+            />
+          ) : null}
+        </SectionCard>
       ) : null}
     </Screen>
   );
