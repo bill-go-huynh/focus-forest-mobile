@@ -14,7 +14,6 @@ import { SectionCard } from '../components/SectionCard';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { useProfile } from '../profile';
 import { ChallengesSection } from '../challenges/ChallengesSection';
-import { EventsSection } from '../events/EventScreens';
 import { RoomsSection } from '../rooms/RoomsSection';
 import { useTheme } from '../theme';
 import {
@@ -85,7 +84,6 @@ export function TogetherScreen() {
       </SectionCard>
       <RoomsSection />
       <ChallengesSection />
-      <EventsSection />
       <SectionCard>
         <ListRow
           title="Leaderboards"

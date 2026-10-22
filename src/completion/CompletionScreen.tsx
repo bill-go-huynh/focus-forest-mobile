@@ -15,7 +15,7 @@ import { useCompletionReceiptsSnapshot } from '../sessions/CompletionReceiptsPro
 import { useSessionNotes, useSessionNotesSnapshot } from '../sessions/SessionNotesProvider';
 import { useSessionOutboxSnapshot } from '../sessions/SessionOutboxProvider';
 import { canonicalNote, noteError } from '../sessions/session-note';
-import { CompletionLine } from '../events/CompletionLine';
+import { CompletionChallengeLine } from '../challenges/CompletionChallengeLine';
 import { useTheme } from '../theme';
 import { useActiveTimer } from '../timer/ActiveTimerProvider';
 import { focusedMillisecondsOf } from '../timer/submission';
@@ -270,8 +270,8 @@ function CompletionContent({
         sessionId={sessionId}
         session={known.kind === 'server' ? known.session : null}
       />
-      {/* One line of mission or challenge progress, once the server knows the session (M5.3–M5.4). */}
-      {known.kind === 'server' ? <CompletionLine results={known.session.events ?? null} /> : null}
+      {/* One line of challenge progress, once the server knows the session (M5.4). */}
+      {known.kind === 'server' ? <CompletionChallengeLine /> : null}
 
       <SectionCard>
         <Input

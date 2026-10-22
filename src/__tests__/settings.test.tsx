@@ -102,7 +102,6 @@ describe('Settings (A5: GET /me/preferences)', () => {
     expect(screen.getByRole('button', { name: 'System' })).toBeSelected();
     expect(screen.getByRole('button', { name: 'Light' })).not.toBeSelected();
     expect(screen.getByRole('switch', { name: 'Sound' })).toBeChecked();
-    expect(screen.getByRole('switch', { name: 'Haptics' })).toBeChecked();
     expect(screen.getByRole('switch', { name: 'Reduce motion' })).not.toBeChecked();
     expect(requests.find((r) => r.url === PREFERENCES_URL)).toMatchObject({
       method: 'GET',
@@ -230,19 +229,19 @@ describe('theme (applies to the whole app at once)', () => {
   });
 });
 
-describe('sound and haptics (stored only; behavior arrives in Phase 2)', () => {
+describe('sound and motion switches (each saved on its own)', () => {
   it('saves each switch on its own, keeping the other settings', async () => {
     await openSettings();
     fireEvent.press(screen.getByRole('switch', { name: 'Sound' }));
     await waitFor(() => expect(patches()).toHaveLength(1));
     expect(patches()[0]!.body).toEqual({ sound: false });
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Sound' })).not.toBeChecked());
-    expect(screen.getByRole('switch', { name: 'Haptics' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Reduce motion' })).not.toBeChecked();
 
-    fireEvent.press(screen.getByRole('switch', { name: 'Haptics' }));
+    fireEvent.press(screen.getByRole('switch', { name: 'Reduce motion' }));
     await waitFor(() => expect(patches()).toHaveLength(2));
-    expect(patches()[1]!.body).toEqual({ haptics: false });
-    expect(stored).toMatchObject({ sound: false, haptics: false, theme: 'system' });
+    expect(patches()[1]!.body).toEqual({ reducedMotion: true });
+    expect(stored).toMatchObject({ sound: false, reducedMotion: true, theme: 'system' });
   });
 
   it('keeps quick successive changes: an earlier answer never undoes a later switch', async () => {
@@ -255,23 +254,27 @@ describe('sound and haptics (stored only; behavior arrives in Phase 2)', () => {
     });
     await openSettings();
     fireEvent.press(screen.getByRole('switch', { name: 'Sound' }));
-    fireEvent.press(screen.getByRole('switch', { name: 'Haptics' }));
+    fireEvent.press(screen.getByRole('switch', { name: 'Reduce motion' }));
     await settle();
 
     // Changes are saved one after another, so they reach the server in order.
     expect(patches()).toHaveLength(1);
     await act(async () => releases.shift()?.());
     await waitFor(() => expect(patches()).toHaveLength(2));
-    // The first answer (sound off, haptics still on) must not undo the pending haptics change.
+    // The first answer (sound off, motion not reduced) must not undo the pending motion change.
     await settle();
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Haptics' })).not.toBeChecked());
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: 'Reduce motion' })).toBeChecked(),
+    );
     expect(screen.getByRole('switch', { name: 'Sound' })).not.toBeChecked();
 
     await act(async () => releases.shift()?.());
     await settle();
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Haptics' })).not.toBeChecked());
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: 'Reduce motion' })).toBeChecked(),
+    );
     expect(screen.getByRole('switch', { name: 'Sound' })).not.toBeChecked();
-    expect(stored).toMatchObject({ sound: false, haptics: false });
+    expect(stored).toMatchObject({ sound: false, reducedMotion: true });
   });
 
   it('restores only the failed switch when a save fails', async () => {
@@ -299,7 +302,7 @@ describe('flipping a switch on the device (no double flip)', () => {
   const flipNative = (name: string, value: boolean) =>
     fireEvent(nativeSwitch(name), 'change', { nativeEvent: { value } });
 
-  it.each(['Sound', 'Haptics', 'Reduce motion'])(
+  it.each(['Sound', 'Reduce motion'])(
     '%s: the switch shows the new value in the same frame as the flip',
     async (name) => {
       await openSettings();
@@ -360,13 +363,13 @@ describe('reduced motion (M2: system OR app setting)', () => {
   });
 });
 
-describe('notifications (docs/12: each phase adds its categories; M6.1 delivers all ten)', () => {
+describe('notifications (docs/12: each phase adds its categories; M6.1 delivers all eight)', () => {
   it('shows the Notifications section (details in notification-settings.test.tsx)', async () => {
     await openSettings();
     expect(screen.getByRole('header', { name: 'Notifications' })).toBeOnTheScreen();
     expect(
-      screen.getAllByRole('switch', { name: /reminder|invite|badge|recap|event|challenge/i }),
-    ).toHaveLength(10);
+      screen.getAllByRole('switch', { name: /reminder|invite|badge|recap|challenge/i }),
+    ).toHaveLength(8);
   });
 
   it('never asks for notification permission on opening, and never sends one', async () => {

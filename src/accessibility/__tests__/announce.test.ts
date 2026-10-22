@@ -4,7 +4,7 @@ import { announce } from '../announce';
 
 afterEach(() => jest.restoreAllMocks());
 
-describe('announce (docs/11: no information only through motion or haptics)', () => {
+describe('announce (docs/11: no information only through motion)', () => {
   it('sends the message to the screen reader and returns it for the visible caption', () => {
     const spy = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation();
 

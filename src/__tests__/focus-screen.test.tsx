@@ -62,7 +62,7 @@ function handler({ url }: FakeRequest) {
   // Reduced motion: the progress ring shows each value at once. Its motion has its own tests;
   // here it would restart every tick and run its frames between this file's steps.
   if (pathname === '/me/preferences')
-    return { status: 200, body: makePreferences({ reducedMotion: !motion, haptics }) };
+    return { status: 200, body: makePreferences({ reducedMotion: !motion }) };
   if (pathname === '/session-rules')
     return { status: 200, body: { version: 1, minValidMinutes: 5, maxPauseMinutes: 30 } };
   if (pathname === '/me/topics') return { status: 200, body: [reading] };
@@ -80,8 +80,6 @@ let clock = 0;
 let motion = false;
 /** Whether the server answers Home, so Focus can show this month's tree. */
 let homeKnown = true;
-/** The user's Haptics setting. */
-let haptics = true;
 let T0 = 0;
 let appState: ReturnType<typeof mockAppState>;
 
@@ -100,7 +98,6 @@ beforeEach(async () => {
   clock = T0;
   motion = false;
   homeKnown = true;
-  haptics = true;
   jest.spyOn(deviceClock, 'now').mockImplementation(() => clock);
   appState = mockAppState();
 });
@@ -752,44 +749,5 @@ describe("this month's tree on Focus (docs/05: a dim, calm scene)", () => {
     await openFocus();
     expect(screen.getByText('24:00')).toBeOnTheScreen();
     expect(screen.getByRole('progressbar', { name: 'Session progress' })).toBeOnTheScreen();
-  });
-});
-
-describe('the completion signal (docs/04 §9, docs/11)', () => {
-  const hapticsMock = () =>
-    jest.requireMock<{ impactAsync: jest.Mock; selectionAsync: jest.Mock }>('expo-haptics');
-
-  it('gives one soft haptic when the session reaches its end on screen, none while it runs', async () => {
-    await storeTimer(timerState());
-    await openFocus();
-    clock = T0 + 10 * MINUTE;
-    await timeLeft();
-    expect(hapticsMock().impactAsync).not.toHaveBeenCalled();
-
-    clock = T0 + 25 * MINUTE + SECOND;
-    await shows('Focus session finished');
-    expect(hapticsMock().impactAsync).toHaveBeenCalledTimes(1);
-    expect(hapticsMock().impactAsync).toHaveBeenCalledWith('soft');
-  });
-
-  it('stays still when the session is ended early', async () => {
-    await storeTimer(timerState());
-    await openFocus();
-    clock = T0 + 3 * MINUTE;
-    fireEvent.press(screen.getByRole('button', { name: 'End session' }));
-    const confirm = await screen.findAllByRole('button', { name: 'End session' });
-    fireEvent.press(confirm[confirm.length - 1]!);
-    await shows('Focus session finished');
-    expect(hapticsMock().impactAsync).not.toHaveBeenCalled();
-  });
-
-  it('stays still with Haptics off', async () => {
-    haptics = false;
-    await storeTimer(timerState());
-    await openFocus();
-    await sleep(100);
-    clock = T0 + 25 * MINUTE + SECOND;
-    await shows('Focus session finished');
-    expect(hapticsMock().impactAsync).not.toHaveBeenCalled();
   });
 });

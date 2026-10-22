@@ -53,7 +53,6 @@ describe('release assets (R7.1)', () => {
       'species',
       'badges',
       'collection',
-      'community-tree',
     ]);
     expect(releaseBlockers([{ ...RELEASE_ASSETS[0]!, status: 'final' }])).toEqual([]);
   });

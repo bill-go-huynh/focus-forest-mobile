@@ -88,9 +88,6 @@ export function DeleteAccountScreen() {
           Your sessions, notes, trees, rewards, and friends are erased from Focus Forest right away.
           This cannot be undone.
         </Text>
-        <Text style={body}>
-          Minutes you gave to a Community Tree stay in its total, without your name.
-        </Text>
         <Text style={body}>You can download a copy of your data first, from Settings.</Text>
         {withGoogle ? (
           <Text style={body}>Google asks you to confirm it is your account.</Text>

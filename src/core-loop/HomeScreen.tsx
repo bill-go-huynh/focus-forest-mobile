@@ -10,7 +10,6 @@ import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { StartFocus } from '../focus/StartFocus';
 import { useCeremonyTrigger } from '../forest/use-ceremony-trigger';
-import { HomeEventCard } from '../events/EventScreens';
 import { useSeason } from '../seasons/queries';
 import { SeasonalOverlay } from '../tree/SeasonalOverlay';
 import { useTheme } from '../theme';
@@ -123,9 +122,6 @@ export function HomeScreen() {
       <StartFocus quickTopics={home?.recentTopics ?? []} />
 
       {home ? <HomeProgress home={home} live={query.data?.home ?? null} ready={focused} /> : null}
-
-      {/* At most one quiet event card, below the tree and its progress (docs/05 Home). */}
-      {home?.event ? <HomeEventCard card={home.event} /> : null}
 
       {tree ? (
         <Button variant="tertiary" label="Tree details" onPress={() => router.push('/tree')} />

@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, screen } from '@testing-library/react-native';
 
 import { mockControlledTiming } from '../../test-utils/animation';
-import { HapticsProvider } from '../../haptics/haptics';
 import { renderWithProviders } from '../../test-utils/render';
 import { DurationSheet, type DurationSheetProps } from '../DurationSheet';
 
@@ -221,38 +220,5 @@ describe('DurationSheet: the session minimum', () => {
     fireEvent.changeText(minutesField(), '10');
     confirm();
     expect(onConfirm).toHaveBeenCalledWith(10);
-  });
-});
-
-describe('DurationSheet: haptics (docs/04 §9: a light tick on pickers)', () => {
-  const selection = () =>
-    jest.requireMock<{ selectionAsync: jest.Mock }>('expo-haptics').selectionAsync;
-  const openWithHaptics = (enabled: boolean) =>
-    renderWithProviders(
-      <HapticsProvider enabled={enabled}>
-        <DurationSheet
-          visible
-          initialMinutes={15}
-          confirmLabel="Continue"
-          onConfirm={jest.fn()}
-          onCancel={jest.fn()}
-        />
-      </HapticsProvider>,
-    );
-
-  it('ticks when the choice changes, not when it stays', () => {
-    openWithHaptics(true);
-    fireEvent.press(option('25 min'));
-    expect(selection()).toHaveBeenCalledTimes(1);
-    fireEvent.press(option('25 min'));
-    expect(selection()).toHaveBeenCalledTimes(1);
-    fireEvent.press(option('Custom'));
-    expect(selection()).toHaveBeenCalledTimes(2);
-  });
-
-  it('stays still with Haptics off', () => {
-    openWithHaptics(false);
-    fireEvent.press(option('25 min'));
-    expect(selection()).not.toHaveBeenCalled();
   });
 });

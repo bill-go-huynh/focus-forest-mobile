@@ -107,7 +107,6 @@ describe('TreeScene', () => {
       return circles;
     };
     expect(count('sakura')).toBeGreaterThan(count('signature') + 10);
-    expect(count('shared-blossom')).toBeGreaterThan(count('sakura'));
   });
 
   it('adds the paper grain to a hero scene only, never to a forest thumbnail', () => {

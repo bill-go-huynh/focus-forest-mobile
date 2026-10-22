@@ -13,7 +13,6 @@ import {
 import { unlockMoment, type UnlockMoment } from '../progression/unlocks';
 import { motion } from '../theme/tokens';
 import { growthMoment, type GrowthMoment } from './presentation';
-import { useHaptic } from '../haptics/haptics';
 
 interface Shown {
   userId: string;
@@ -74,7 +73,6 @@ export function useCelebrationPresenter({
   const { user } = useSession();
   const store = useCelebrationStore();
   const celebrations = useCelebrations();
-  const haptic = useHaptic();
   const [shown, setShown] = useState<Shown | null>(null);
   const [revealAt, setRevealAt] = useState<{ key: string; at: number } | null>(null);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -117,11 +115,9 @@ export function useCelebrationPresenter({
     const duration =
       shown.moment && tree ? (scene.current?.react(reactionFor(shown.moment, tree)) ?? 0) : 0;
     if (shown.moment) announce(shown.moment.caption);
-    // A new stage or trait is a milestone (docs/04 §9); plain growth and blossoms stay still.
-    if (shown.moment?.kind === 'stage' || shown.moment?.kind === 'trait') haptic('milestone');
     void store.consume(shown.userId, shown.sessionIds);
     setRevealAt({ key, at: Date.now() + duration });
-  }, [shown, key, tree, scene, store, haptic]);
+  }, [shown, key, tree, scene, store]);
 
   // The unlock comes once the tree's reaction is over. Kept apart from playing, so a re-render
   // meanwhile (a new Home answer) reschedules it instead of losing it.
@@ -132,7 +128,6 @@ export function useCelebrationPresenter({
       () => {
         setRevealedKey(revealAt.key);
         if (unlock) {
-          haptic('milestone');
           announce(unlock.caption);
           if (unlock.line) announce(unlock.line);
         }
@@ -140,7 +135,7 @@ export function useCelebrationPresenter({
       Math.max(0, revealAt.at - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [revealAt, key, revealedKey, unlock, haptic]);
+  }, [revealAt, key, revealedKey, unlock]);
 
   // Once revealed (and read), the next sequence may follow: one at a time, never stacked.
   useEffect(() => {

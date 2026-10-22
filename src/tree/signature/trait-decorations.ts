@@ -24,10 +24,6 @@ export interface TraitLook {
   name: string;
 }
 
-/** Every event leaves the same keepsake: events change, the tree's language does not (docs/10). */
-const EVENT_LOOK: TraitLook = { decoration: 'event-ribbon', name: 'an event keepsake' };
-
 export function traitLook(trait: KnownTrait): TraitLook | null {
-  if (trait.family === 'event') return EVENT_LOOK;
   return Object.hasOwn(TRAIT_LOOKS, trait.id) ? TRAIT_LOOKS[trait.id]! : null;
 }

@@ -20,18 +20,18 @@ describe('the Collection Book contract (A4.4)', () => {
     expect(golden).toMatchObject({ owned: false, unlock: { type: 'achievement', target: 30000 } });
   });
 
-  it('keeps a hint with hidden progress, and event and season hints', () => {
+  it('keeps a hint with hidden progress and a season hint; an event hint (removed) reads as none', () => {
     const hidden = { ...GOLDEN_SAKURA_ITEM, unlock: achievementHint({ current: null }) };
     const event = {
       ...GOLDEN_SAKURA_ITEM,
       id: 'lantern-festival',
-      unlock: { type: 'event' as const },
+      unlock: { type: 'event' } as never,
     };
     const season = { ...GOLDEN_SAKURA_ITEM, id: 'winter', unlock: { type: 'season' as const } };
     const parsed = collectionSchema.parse(makeCollection({ species: [hidden, event, season] }));
     expect(parsed.sections[0]!.items.map((item) => item.unlock)).toEqual([
       expect.objectContaining({ current: null }),
-      { type: 'event' },
+      null,
       { type: 'season' },
     ]);
   });

@@ -6,7 +6,7 @@ import type { ApiClient } from './client';
  * GET /me/collection (A4.4): the Collection Book, derived by the server on every read. Owned
  * items stay forever; an unowned item is listed only when it can really be obtained now, with a
  * structured hint. Rarity, source, status, category, and type are strings: later phases add
- * content (events, seasons) and an older app must still read it. Sections and item kinds this
+ * content (seasons) and an older app must still read it. Sections and item kinds this
  * version does not know are left out, a hint it cannot phrase is read as none.
  */
 
@@ -15,7 +15,7 @@ const count = z.number().int().nonnegative();
 
 const KNOWN_SECTIONS = ['species', 'badges', 'cosmetics'] as const;
 const KNOWN_ITEMS = ['species', 'badge', 'cosmetic'] as const;
-const KNOWN_HINTS = ['achievement', 'event', 'season'] as const;
+const KNOWN_HINTS = ['achievement', 'season'] as const;
 
 const isOneOf = (known: readonly string[]) => (value: string) => known.includes(value);
 
@@ -31,7 +31,6 @@ export const unlockHintSchema = z.discriminatedUnion('type', [
     /** Null when the achievement keeps its progress hidden. */
     current: count.nullable(),
   }),
-  z.object({ type: z.literal('event') }),
   z.object({ type: z.literal('season') }),
 ]);
 export type UnlockHint = z.infer<typeof unlockHintSchema>;

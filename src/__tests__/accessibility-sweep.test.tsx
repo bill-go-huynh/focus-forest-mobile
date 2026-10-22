@@ -36,7 +36,6 @@ const id = (value: unknown) => (value as { id: string }).id;
 const FRIEND = id(x5.friendProfile.user);
 const ROOM = id(x5.roomJoined);
 const CHALLENGE = id(x5.challengeCreated);
-const EVENT = id(x5.event);
 const SESSION = id(x3.sessionFirst);
 
 /** Answers by path, from the contracts; anything else is a 404 the screen shows calmly. */
@@ -80,9 +79,6 @@ const ANSWERS: [RegExp, unknown][] = [
   [/^\/rooms$/, x5.lobbies],
   [/^\/rooms\/current$/, { room: x5.roomJoined }],
   [/^\/rooms\/[^/]+$/, x5.roomJoined],
-  [/^\/events$/, x5.events],
-  [/^\/events\/[^/]+$/, x5.event],
-  [/^\/events\/[^/]+\/community-tree$/, x5.community],
   [/^\/me\/season$/, x5.season],
   [/^\/leaderboards$/, x5.boardFriends],
   [/^\/me\/room-invites$/, x6.roomInvites],
@@ -109,8 +105,6 @@ const ROUTES = [
   `/together/room/${ROOM}`,
   '/together/challenges/new',
   `/together/challenges/${CHALLENGE}`,
-  `/together/events/${EVENT}`,
-  `/together/community/${EVENT}`,
   '/together/leaderboards',
   '/profile',
   '/profile/edit',

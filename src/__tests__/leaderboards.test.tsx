@@ -3,7 +3,6 @@ import { fireEvent, screen, within } from 'expo-router/testing-library';
 import type { HomeResponse } from '../api';
 import { fakeFetch, nestError, type FakeRequest } from '../test-utils/api';
 import { makeCurrentTree, makeHome } from '../test-utils/core-loop';
-import { EVENT_ID, makeEvent } from '../test-utils/events';
 import { makePreferences } from '../test-utils/preferences';
 import { renderApp } from '../test-utils/render-app';
 import { appRoutes } from '../test-utils/routes';
@@ -47,7 +46,6 @@ function makeBoard(
     optedIn?: boolean;
     rows?: ReturnType<typeof row>[];
     you?: ReturnType<typeof row> | null;
-    teams?: unknown;
   } = {},
 ) {
   const rows = overrides.rows ?? [row(1, LINH, 607), row(2, ME, 450, true), row(2, KAI, 450)];
@@ -61,7 +59,6 @@ function makeBoard(
     optedIn: overrides.optedIn ?? true,
     rows,
     you: overrides.you === undefined ? (rows.find((r) => r.you) ?? null) : overrides.you,
-    teams: overrides.teams ?? null,
   };
 }
 
@@ -73,7 +70,6 @@ function boardsApi() {
   const state = {
     boards: {} as Record<string, unknown>,
     fallback: makeBoard() as unknown,
-    eventBoard: null as unknown,
   };
   const handler = ({ url }: FakeRequest): Reply => {
     const { pathname, searchParams } = new URL(url);
@@ -108,22 +104,7 @@ function boardsApi() {
     if (pathname === '/rooms/current') return { status: 200, body: { room: null } };
     if (pathname === '/me/challenges')
       return { status: 200, body: { current: [], invitations: [], finished: [] } };
-    if (pathname === '/events') return { status: 200, body: { items: [] } };
-    if (pathname === `/events/${EVENT_ID}`) return { status: 200, body: makeEvent() };
-    if (pathname === `/events/${EVENT_ID}/community-tree`)
-      return {
-        status: 404,
-        body: { ...nestError(404, 'No tree.'), code: 'community_tree_not_found' },
-      };
     if (pathname === '/leaderboards') {
-      if (searchParams.get('scope') === 'event') {
-        if (!state.eventBoard)
-          return {
-            status: 404,
-            body: { ...nestError(404, 'No board.'), code: 'leaderboard_not_found' },
-          };
-        return { status: 200, body: state.eventBoard };
-      }
       const key = `${searchParams.get('scope')}/${searchParams.get('period')}`;
       return { status: 200, body: state.boards[key] ?? state.fallback };
     }
@@ -244,39 +225,5 @@ describe("a board (a plain list; fair scores; the user's own row highlighted)", 
     fireEvent.press(screen.getByRole('button', { name: 'Privacy settings' }));
     await screen.findByRole('header', { name: 'Privacy' });
     expect(router.getPathname()).toBe('/profile/privacy');
-  });
-});
-
-describe('event boards (docs/05 Events: event leaderboard)', () => {
-  it('opens from an event that has one, with team ranks', async () => {
-    server.state.eventBoard = makeBoard({
-      scope: 'event',
-      kind: 'event',
-      rows: [row(1, LINH, 850)],
-      teams: [
-        { id: 'oaks', name: 'Oaks', rank: 1, score: 425, members: 2 },
-        { id: 'pines', name: 'Pines', rank: 2, score: 283, members: 1 },
-      ],
-    });
-    const router = renderApp(appRoutes, { initialUrl: `/together/events/${EVENT_ID}` });
-    fireEvent.press(await screen.findByRole('button', { name: /^Leaderboard/ }));
-    await screen.findByRole('header', { name: 'Leaderboards' });
-    expect(router.getPathname()).toBe('/together/leaderboards');
-    await shows('Teams');
-    expect(boardRequests()).toContain('?scope=event&eventId=autumn-study');
-    expect(
-      within(screen.getByTestId('leaderboard-teams'))
-        .getAllByTestId('leaderboard-team')
-        .map((t) => t.props.accessibilityLabel),
-    ).toEqual(['Rank 1, Oaks, 425, 2 people', 'Rank 2, Pines, 283, 1 person']);
-    // The event's window is its period: no week or month to choose.
-    expect(screen.queryByRole('button', { name: 'This week' })).toBeNull();
-  });
-
-  it('offers no board for an event without one', async () => {
-    renderApp(appRoutes, { initialUrl: `/together/events/${EVENT_ID}` });
-    await screen.findByRole('header', { name: 'Autumn Study' });
-    await until(() => boardRequests().length === 1);
-    expect(screen.queryByRole('button', { name: /^Leaderboard/ })).toBeNull();
   });
 });

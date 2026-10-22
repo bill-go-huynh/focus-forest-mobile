@@ -104,7 +104,6 @@ export const SIGNATURE_PALETTE = {
     seedpod: '#B49461',
     'heartwood-ring': '#C9A27A',
     'golden-leaf': '#E8C25A',
-    'event-ribbon': '#C96F5B',
   } as const satisfies Record<Decoration, string>,
 } as const;
 

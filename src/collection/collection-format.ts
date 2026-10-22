@@ -57,8 +57,6 @@ export function hintOf(item: CollectionItem): HintText | null {
         label: hint.name,
       };
     }
-    case 'event':
-      return { text: 'Comes from an event.', progress: null, ratio: 0, label: item.name };
     case 'season':
       return { text: 'Comes with a season.', progress: null, ratio: 0, label: item.name };
   }

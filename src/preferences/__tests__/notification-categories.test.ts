@@ -11,8 +11,6 @@ describe('notification categories shown in Settings (docs/12: each phase adds it
       'dailyGoalReminder',
       'scheduledFocusReminder',
       'streakReminder',
-      'eventStart',
-      'eventEndingSoon',
       'friendInvite',
       'focusRoomInvite',
       'challengeUpdate',
@@ -36,8 +34,6 @@ describe('notification categories shown in Settings (docs/12: each phase adds it
       friendInvite: 11,
       focusRoomInvite: 12,
       challengeUpdate: 13,
-      eventStart: 14,
-      eventEndingSoon: 14,
     });
   });
 
@@ -45,7 +41,7 @@ describe('notification categories shown in Settings (docs/12: each phase adds it
     expect(visibleNotificationCategories(1)).toEqual([]);
   });
 
-  it('shows all ten now that Notifications (legacy 18, macro Phase 6) delivers them (M6.1)', () => {
+  it('shows all eight now that Notifications (legacy 18, macro Phase 6) delivers them (M6.1)', () => {
     expect(CURRENT_PHASE).toBe(18);
     expect(visibleNotificationCategories()).toEqual(NOTIFICATION_CATEGORIES);
   });

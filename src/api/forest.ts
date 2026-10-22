@@ -85,8 +85,6 @@ export const archivedStatsSchema = z.object({
 /** A note highlighted for its month, as it read at archive. Private: the owner only. */
 const highlightedNoteSchema = z.object({ sessionId: z.string(), note: z.string() });
 
-// Events (Phase 5) arrive later: kept as data, shown only when present.
-const futureList = z.array(z.unknown());
 /** A4.2: owned badges earned in the month's window, copied at archive and never regenerated. */
 const monthBadges = z.array(earnedBadgeSchema);
 
@@ -99,7 +97,6 @@ export const treeDetailsSchema = z.discriminatedUnion('kind', [
     stats: archivedStatsSchema,
     highlightedNotes: z.array(highlightedNoteSchema),
     badges: monthBadges,
-    events: futureList,
   }),
   z.object({ kind: z.literal('growing'), ...monthRef, ...currentTreeSchema.shape }),
   z.object({ kind: z.literal('resting'), ...monthRef }),
@@ -124,7 +121,6 @@ export const recapSchema = z.object({
   ),
   highlightedNotes: z.array(highlightedNoteSchema),
   badges: monthBadges,
-  events: futureList,
   ceremonySeenAt: instant.nullable(),
   recapSeenAt: instant.nullable(),
 });

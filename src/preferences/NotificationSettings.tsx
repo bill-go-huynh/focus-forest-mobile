@@ -7,15 +7,12 @@ import { InlineStatus } from '../components/InlineStatus';
 import { SwitchRow } from '../components/SwitchRow';
 import { useTheme } from '../theme';
 import { REMINDER_CATEGORIES, shiftTime, type ReminderCategory } from './reminder-times';
-import { useHaptic } from '../haptics/haptics';
 import { SectionCard } from '../components/SectionCard';
 
 const LABELS: Record<NotificationCategory, string> = {
   dailyGoalReminder: 'Daily goal reminder',
   scheduledFocusReminder: 'Scheduled focus reminder',
   streakReminder: 'Streak reminder',
-  eventStart: 'Event starts',
-  eventEndingSoon: 'Event ending soon',
   friendInvite: 'Friend invites',
   focusRoomInvite: 'Focus room invites',
   challengeUpdate: 'Challenge updates',
@@ -28,12 +25,10 @@ const DESCRIPTIONS: Record<NotificationCategory, string> = {
   dailyGoalReminder: 'At a time you choose, if today’s goal is still open.',
   scheduledFocusReminder: 'At a time you choose, to start your planned focus.',
   streakReminder: 'At a time you choose, on days without focus yet.',
-  eventStart: 'When an event begins.',
-  eventEndingSoon: 'Two days before an event you joined ends.',
   friendInvite: 'When a friend invites you to a challenge.',
   focusRoomInvite: 'When a friend invites you to a focus room.',
   challengeUpdate: 'When a friend joins your challenge, or it is complete.',
-  badgeUnlocked: 'When a Community Tree you helped grow earns you a badge.',
+  badgeUnlocked: 'When you earn a new badge.',
   monthlyRecapReady: 'When last month’s recap is ready.',
 };
 
@@ -111,9 +106,7 @@ function ReminderTime({
   // update lands a tick later, so two quick presses would otherwise move from the same time.
   const [pending, setPending] = useState<{ from: string; to: string } | null>(null);
   const shown = pending && pending.from === time ? pending.to : time;
-  const haptic = useHaptic();
   const move = (step: 15 | -15) => {
-    haptic('select');
     const next = shiftTime(shown, step);
     setPending({ from: time, to: next });
     onChange(next);

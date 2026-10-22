@@ -2,7 +2,7 @@ import { AccessibilityInfo } from 'react-native';
 
 /**
  * Announces an outcome to screen readers and returns the same text for the visible
- * caption. Use it whenever motion or a haptic signals something, so the meaning is
+ * caption. Use it whenever motion signals something, so the meaning is
  * also available as text (docs/11_ACCESSIBILITY.md, docs/04_ANIMATION_SYSTEM.md §8).
  */
 export function announce(message: string): string {

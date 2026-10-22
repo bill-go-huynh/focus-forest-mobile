@@ -32,30 +32,17 @@ export const leaderboardSchema = z.object({
   optedIn: z.boolean(),
   rows: z.array(leaderboardRowSchema),
   you: leaderboardRowSchema.nullable(),
-  teams: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        rank: z.number().int().positive(),
-        score: count,
-        members: count,
-      }),
-    )
-    .nullable(),
 });
 export type Leaderboard = z.infer<typeof leaderboardSchema>;
 
-export type LeaderboardScope = 'friends' | 'global' | 'event';
+export type LeaderboardScope = 'friends' | 'global';
 export type LeaderboardPeriod = 'weekly' | 'monthly';
 
 export function getLeaderboard(
   client: ApiClient,
-  query: { scope: LeaderboardScope; period: LeaderboardPeriod; eventId?: string },
+  query: { scope: LeaderboardScope; period: LeaderboardPeriod },
 ) {
-  const params =
-    query.scope === 'event'
-      ? `scope=event&eventId=${encodeURIComponent(query.eventId ?? '')}`
-      : `scope=${query.scope}&period=${query.period}`;
-  return client.request(`/leaderboards?${params}`, { schema: leaderboardSchema });
+  return client.request(`/leaderboards?scope=${query.scope}&period=${query.period}`, {
+    schema: leaderboardSchema,
+  });
 }

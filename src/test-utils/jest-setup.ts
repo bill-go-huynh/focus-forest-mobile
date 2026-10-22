@@ -44,34 +44,6 @@ beforeEach(() => {
   ).resetGoogleSignInMock();
 });
 
-// Haptics are native (expo-haptics): tests get spies, cleared before each test.
-jest.mock('expo-haptics', () => ({
-  impactAsync: jest.fn(async () => undefined),
-  notificationAsync: jest.fn(async () => undefined),
-  selectionAsync: jest.fn(async () => undefined),
-  performAndroidHapticsAsync: jest.fn(async () => undefined),
-  ImpactFeedbackStyle: {
-    Light: 'light',
-    Medium: 'medium',
-    Heavy: 'heavy',
-    Soft: 'soft',
-    Rigid: 'rigid',
-  },
-  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
-  AndroidHaptics: { Confirm: 'confirm', Long_Press: 'long-press', Segment_Tick: 'segment-tick' },
-}));
-beforeEach(() => {
-  const haptics = jest.requireMock<Record<string, jest.Mock>>('expo-haptics');
-  for (const name of [
-    'impactAsync',
-    'notificationAsync',
-    'selectionAsync',
-    'performAndroidHapticsAsync',
-  ]) {
-    haptics[name]!.mockReset().mockResolvedValue(undefined);
-  }
-});
-
 // Capturing a view and the native share sheet are native (M3.4 recap card): tests get fakes that
 // answer a temporary image and share it, reset before each test.
 jest.mock('react-native-view-shot', () => ({

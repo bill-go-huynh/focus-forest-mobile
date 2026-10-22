@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
@@ -30,40 +30,32 @@ export function rowLabel(row: LeaderboardRow): string {
 
 /**
  * Leaderboards (docs/05 → Leaderboards; docs/02: fair, opt-in, friends first; docs/01: a plain,
- * readable list with the user's own row highlighted, no podium and no "you dropped"). The event
- * scope (`?scope=event&eventId=`) uses the event's window and shows team ranks.
+ * readable list with the user's own row highlighted, no podium and no "you dropped").
  */
 export function LeaderboardScreen() {
   const theme = useTheme();
-  const params = useLocalSearchParams<{ scope?: string; eventId?: string }>();
-  const eventId = params.scope === 'event' && params.eventId ? params.eventId : null;
-  const [scope, setScope] = useState<LeaderboardScope>(eventId ? 'event' : 'friends');
+  const [scope, setScope] = useState<LeaderboardScope>('friends');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
-  const board = useLeaderboard(scope, period, scope === 'event' ? eventId : null);
+  const board = useLeaderboard(scope, period);
 
   return (
     <Screen title="Leaderboards" safeTop={false}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
         <Chip label="Friends" selected={scope === 'friends'} onPress={() => setScope('friends')} />
         <Chip label="Global" selected={scope === 'global'} onPress={() => setScope('global')} />
-        {eventId ? (
-          <Chip label="Event" selected={scope === 'event'} onPress={() => setScope('event')} />
-        ) : null}
       </View>
-      {scope !== 'event' ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
-          <Chip
-            label="This week"
-            selected={period === 'weekly'}
-            onPress={() => setPeriod('weekly')}
-          />
-          <Chip
-            label="This month"
-            selected={period === 'monthly'}
-            onPress={() => setPeriod('monthly')}
-          />
-        </View>
-      ) : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+        <Chip
+          label="This week"
+          selected={period === 'weekly'}
+          onPress={() => setPeriod('weekly')}
+        />
+        <Chip
+          label="This month"
+          selected={period === 'monthly'}
+          onPress={() => setPeriod('monthly')}
+        />
+      </View>
       <Muted>
         Scores blend days you kept (rest days count), daily goals met, active days, and focus time
         up to a daily limit: never hours alone.
@@ -99,20 +91,6 @@ function BoardView({ board }: { board: Leaderboard }) {
             label="Privacy settings"
             onPress={() => router.push('/profile/privacy')}
           />
-        </View>
-      ) : null}
-
-      {board.teams ? (
-        <View testID="leaderboard-teams" style={{ gap: theme.space[1] }}>
-          <Header>Teams</Header>
-          {board.teams.map((team) => (
-            <Line
-              key={team.id}
-              testID="leaderboard-team"
-              label={`Rank ${team.rank}, ${team.name}, ${team.score}, ${team.members} ${team.members === 1 ? 'person' : 'people'}`}
-              text={`${team.rank} · ${team.name} · ${team.score}`}
-            />
-          ))}
         </View>
       ) : null}
 
@@ -195,16 +173,4 @@ function Body({ children }: { children: ReactNode }) {
 function Muted({ children }: { children: ReactNode }) {
   const theme = useTheme();
   return <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>{children}</Text>;
-}
-
-function Header({ children }: { children: ReactNode }) {
-  const theme = useTheme();
-  return (
-    <Text
-      accessibilityRole="header"
-      style={[theme.type.headline, { color: theme.colors.text.primary }]}
-    >
-      {children}
-    </Text>
-  );
 }

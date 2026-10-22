@@ -21,8 +21,8 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 /**
  * Tree Details for a forest month (docs/03 §12, docs/05; M3.4). An archived month shows its
  * frozen tree at rest and the snapshot taken at archive: stats, top topic as named then, and the
- * highlighted notes as they read then (never the live sessions), then "View recap". Badges and
- * events show only once there are some. A quiet month says so calmly, with no tree.
+ * highlighted notes as they read then (never the live sessions), then "View recap". Badges show
+ * only once there are some. A quiet month says so calmly, with no tree.
  */
 export function MonthDetailsScreen({ month }: { month: MonthRef }) {
   const details = useTreeDetails(month);
@@ -76,7 +76,7 @@ function Details({ details }: { details: TreeDetails }) {
     );
   }
 
-  const { stats, highlightedNotes, badges, events } = details;
+  const { stats, highlightedNotes, badges } = details;
   return (
     <Screen title={monthTitle(details)} safeTop={false}>
       {tree ? <TreeScene tree={tree} /> : null}
@@ -114,8 +114,6 @@ function Details({ details }: { details: TreeDetails }) {
           ))}
         </SectionCard>
       ) : null}
-      {/* Events arrive in a later phase: nothing is shown while there are none. */}
-      {events.length > 0 ? <Text style={body}>{plural(events.length, 'event')}</Text> : null}
       <Button
         variant="primary"
         label="View recap"

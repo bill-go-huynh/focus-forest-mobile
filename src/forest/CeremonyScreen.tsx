@@ -13,7 +13,6 @@ import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene } from '../tree';
 import { monthName, monthTitle, nextMonth } from './forest-format';
 import { useCeremonyAcknowledgement, useRecap } from './queries';
-import { useHaptic } from '../haptics/haptics';
 
 type Step = 'final' | 'planting' | 'seed';
 
@@ -41,12 +40,9 @@ export function CeremonyScreen({ month }: { month: MonthRef }) {
     void acknowledge(month);
   };
 
-  const haptic = useHaptic();
-  // The new seed is the ceremony's end: it was presented, so it is acknowledged, and marked
-  // with the milestone haptic (docs/04 §9) once.
+  // The new seed is the ceremony's end: it was presented, so it is acknowledged.
   useEffect(() => {
     if (step !== 'seed') return;
-    if (!acknowledged.current) haptic('milestone');
     accept();
   });
 

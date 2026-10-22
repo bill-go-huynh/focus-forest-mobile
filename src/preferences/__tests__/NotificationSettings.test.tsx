@@ -55,8 +55,6 @@ describe('NotificationSettings (the structure later phases fill)', () => {
       'Daily goal reminder',
       'Scheduled focus reminder',
       'Streak reminder',
-      'Event starts',
-      'Event ending soon',
       'Friend invites',
       'Focus room invites',
       'Challenge updates',

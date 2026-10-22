@@ -468,23 +468,6 @@ describe('month-end ceremony', () => {
     await until(() => server.seen.ceremony.length === 1);
   });
 
-  it('marks the new seed with the richer haptic; a skip stays still (docs/04 §9)', async () => {
-    const milestone = jest.requireMock<{ notificationAsync: jest.Mock }>(
-      'expo-haptics',
-    ).notificationAsync;
-    await openHomeWithCeremony();
-    fireEvent.press(screen.getByRole('button', { name: 'Plant in your forest' }));
-    await screen.findByText('A new seed for October.');
-    expect(milestone).toHaveBeenCalledTimes(1);
-    screen.unmount();
-
-    milestone.mockClear();
-    await openHomeWithCeremony();
-    fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
-    await screen.findByRole('button', { name: /Start Focus/ });
-    expect(milestone).not.toHaveBeenCalled();
-  });
-
   it('is skippable, and a skip marks it seen once, then Home does not repeat it', async () => {
     await openHomeWithCeremony();
     fireEvent.press(screen.getByRole('button', { name: 'Skip' }));

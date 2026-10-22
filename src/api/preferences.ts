@@ -9,7 +9,6 @@ const reminder = setting.extend({ time: z.string().nullable() });
 export const preferencesSchema = z.object({
   theme: z.enum(['system', 'light', 'dark']),
   sound: z.boolean(),
-  haptics: z.boolean(),
   reducedMotion: z.boolean(),
   /** Product analytics (CR.1/CR.6): on by default, can be turned off in Settings. */
   shareUsageData: z.boolean(),
@@ -17,8 +16,6 @@ export const preferencesSchema = z.object({
     dailyGoalReminder: reminder,
     scheduledFocusReminder: reminder,
     streakReminder: reminder,
-    eventStart: setting,
-    eventEndingSoon: setting,
     friendInvite: setting,
     focusRoomInvite: setting,
     challengeUpdate: setting,
@@ -33,7 +30,6 @@ export type NotificationCategory = keyof Preferences['notifications'];
 export interface PreferenceChanges {
   theme?: Preferences['theme'];
   sound?: boolean;
-  haptics?: boolean;
   reducedMotion?: boolean;
   shareUsageData?: boolean;
   notifications?: Partial<

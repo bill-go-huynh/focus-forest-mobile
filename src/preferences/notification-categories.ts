@@ -1,10 +1,10 @@
 import type { NotificationCategory } from '../api';
 
 /**
- * Which notification categories Settings offers. A5 stores all ten (spec §18), but a
+ * Which notification categories Settings offers. A5 stores all eight (spec §18), but a
  * category is shown only once its feature exists: docs/12 says Phase 1 builds the
  * preference structure and every later phase adds its categories. Delivery is Phase 18
- * (macro Phase 6, M6.1), which shows all ten.
+ * (macro Phase 6, M6.1), which shows all eight.
  * Phase numbers are the legacy plan's (docs/12); the Core Loop (macro Phase 3) spans legacy
  * 3–7, and Notifications (legacy 18) is macro Phase 6.
  */
@@ -14,8 +14,6 @@ export const NOTIFICATION_CATEGORIES = [
   'dailyGoalReminder',
   'scheduledFocusReminder',
   'streakReminder',
-  'eventStart',
-  'eventEndingSoon',
   'friendInvite',
   'focusRoomInvite',
   'challengeUpdate',
@@ -34,8 +32,6 @@ export const NOTIFICATION_CATEGORY_PHASE: Record<NotificationCategory, number> =
   friendInvite: 11, // social
   focusRoomInvite: 12, // Focus Together
   challengeUpdate: 13, // challenges
-  eventStart: 14, // events
-  eventEndingSoon: 14,
   scheduledFocusReminder: 18, // Notifications: goal and focus reminders
 };
 

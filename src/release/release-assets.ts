@@ -91,13 +91,6 @@ export const RELEASE_ASSETS: readonly ReleaseAsset[] = [
     doc: 'docs/10',
     files: ['src/collection/CollectionArt.tsx', 'src/species/FramedAvatar.tsx'],
   },
-  {
-    id: 'community-tree',
-    what: 'The Community Tree species',
-    status: 'provisional',
-    doc: 'docs/10',
-    files: ['src/events/CommunityTreeScreen.tsx'],
-  },
 ];
 
 /** What a public release still waits for. */

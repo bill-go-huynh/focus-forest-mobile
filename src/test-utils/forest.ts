@@ -89,7 +89,6 @@ export function archivedDetails(
     stats: archivedStats(),
     highlightedNotes: [{ sessionId: '0192f1a2-3b4c-7d5e-8f60-718293a4b5c6', note: NOTE_TEXT }],
     badges: [],
-    events: [],
     ...overrides,
   } satisfies TreeDetails;
 }
@@ -107,7 +106,6 @@ export function makeRecap(overrides: Partial<Recap> = {}): Recap {
     ],
     highlightedNotes: [{ sessionId: '0192f1a2-3b4c-7d5e-8f60-718293a4b5c6', note: NOTE_TEXT }],
     badges: [],
-    events: [],
     ceremonySeenAt: null,
     recapSeenAt: null,
     ...overrides,

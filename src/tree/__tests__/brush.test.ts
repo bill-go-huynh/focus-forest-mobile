@@ -143,18 +143,3 @@ describe('depth through value (ART.5, docs/03 §7)', () => {
     }
   });
 });
-
-describe('Shared Blossom, the Community Tree species (ART.8)', () => {
-  it('blooms in pink, with petals drifting, and keeps green leaves (docs/03 §6)', () => {
-    const def = speciesDefinition('shared-blossom');
-    expect(def.bloom).toBe('flowers');
-    expect(def.particle).toBe('petal');
-    const { hue, saturation } = hsl(def.palette.blossom);
-    expect(hue >= 320 || hue <= 10).toBe(true);
-    expect(saturation).toBeGreaterThan(0.4);
-    for (const tint of def.palette.tints) {
-      expect(hsl(tint.main).hue).toBeGreaterThanOrEqual(70);
-      expect(hsl(tint.main).hue).toBeLessThanOrEqual(185);
-    }
-  });
-});

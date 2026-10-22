@@ -58,10 +58,6 @@ describe('Collection Book wording (M4.3)', () => {
     expect(
       hintOf({ ...GOLDEN_SAKURA_ITEM, unlock: achievementHint({ current: null }) }),
     ).toMatchObject({ progress: null });
-    expect(hintOf({ ...GOLDEN_SAKURA_ITEM, unlock: { type: 'event' } })).toMatchObject({
-      text: 'Comes from an event.',
-      progress: null,
-    });
     expect(hintOf({ ...GOLDEN_SAKURA_ITEM, unlock: { type: 'season' } })).toMatchObject({
       text: 'Comes with a season.',
     });

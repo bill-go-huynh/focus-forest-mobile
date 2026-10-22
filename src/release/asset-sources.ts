@@ -97,14 +97,6 @@ export const ASSET_SOURCES: readonly AssetSource[] = [
     license: ORIGINAL,
   },
   {
-    asset: 'community-tree',
-    files: ['src/events/CommunityTreeScreen.tsx'],
-    made: '2026-10-16',
-    by: CLAUDE,
-    method: 'The signature species in direction B on the shared renderer',
-    license: ORIGINAL,
-  },
-  {
     asset: 'theme',
     files: [
       'assets/fonts/Fraunces-Light.ttf',

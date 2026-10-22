@@ -69,30 +69,6 @@ const sakura: SpeciesPalette = {
   effect: '#F3C553',
 };
 
-/**
- * Shared Blossom, the Community Tree (ART.8): spring-green leaves and deep rose blossoms with a
- * warm pink glow, so a shared tree reads as pink at a glance while its foliage stays alive green.
- */
-const sharedBlossom: SpeciesPalette = {
-  bark: '#5A4040',
-  roots: '#4F383B',
-  seed: '#8E6A5E',
-  tints: [
-    { back: '#A6BE94', main: '#98BE7C', front: '#7AA265' },
-    { back: '#A2BF98', main: '#92BA82', front: '#749F68' },
-    { back: '#A9BF90', main: '#9EC076', front: '#7FA361' },
-  ],
-  accent: '#B5D49A',
-  highlight: '#DCEBB0',
-  blossom: '#EE8FAE',
-  blossomCenter: '#F6D36B',
-  fruit: '#B6384A',
-  fruitCap: '#5E7A3A',
-  glow: '#FFD6E2',
-  particle: '#F5B8CB',
-  effect: '#F3C553',
-};
-
 const pine: SpeciesPalette = {
   bark: '#5C4636',
   roots: '#4F3C2F',
@@ -219,7 +195,6 @@ export const SPECIES_PALETTES = {
   fantasy,
   'golden-sakura': goldenSakura,
   'ancient-pine': ancientPine,
-  'shared-blossom': sharedBlossom,
 } as const satisfies Record<string, SpeciesPalette>;
 
 /** Environment cosmetics (docs/03 §7 layers 2 and 17). */

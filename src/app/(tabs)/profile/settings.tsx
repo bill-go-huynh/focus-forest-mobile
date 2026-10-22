@@ -38,10 +38,10 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
-type DisplaySwitch = 'sound' | 'haptics' | 'reducedMotion' | 'shareUsageData';
+type DisplaySwitch = 'sound' | 'reducedMotion' | 'shareUsageData';
 type SwitchKey = DisplaySwitch | NotificationCategory;
 const isDisplaySwitch = (key: SwitchKey): key is DisplaySwitch =>
-  key === 'sound' || key === 'haptics' || key === 'reducedMotion' || key === 'shareUsageData';
+  key === 'sound' || key === 'reducedMotion' || key === 'shareUsageData';
 const isReminder = (key: SwitchKey): key is ReminderCategory => key in SUGGESTED_TIMES;
 type Flipped = Partial<Record<SwitchKey, boolean>>;
 
@@ -60,7 +60,7 @@ const SAVE_NETWORK_MESSAGE = "We couldn't save that change. Check your connectio
 const SAVE_GENERAL_MESSAGE = "We couldn't save that change. Please try again.";
 
 /**
- * Settings, under Profile (docs/05 §4): theme, sound, haptics, reduced motion, the
+ * Settings, under Profile (docs/05 §4): theme, sound, reduced motion, the
  * notification categories with the reminders' times (M6.1), usage data sharing (CR.6), and sign
  * out, a copy of your data, and deleting the account (M7.1). Each change saves on its own (A5: PATCH /me/preferences). Turning a notification on asks
  * for the permission the first time (docs/02: in context, never at launch) and registers this
@@ -191,18 +191,12 @@ export default function SettingsScreen() {
               ))}
             </View>
           </Section>
-          <Section title="Sound and haptics">
+          <Section title="Sound">
             <SwitchRow
               label="Sound"
               description="Sounds for focus sessions, such as the end of a session."
               value={data.sound}
               onValueChange={(sound) => flip('sound', sound)}
-            />
-            <SwitchRow
-              label="Haptics"
-              description="Gentle vibrations for focus sessions."
-              value={data.haptics}
-              onValueChange={(haptics) => flip('haptics', haptics)}
             />
           </Section>
           <Section title="Motion">

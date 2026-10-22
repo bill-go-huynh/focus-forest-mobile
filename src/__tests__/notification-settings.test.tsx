@@ -107,7 +107,7 @@ async function openSettings() {
 }
 
 describe('notification settings (M6.1)', () => {
-  it('offers all ten categories, each saying what it sends', async () => {
+  it('offers all eight categories, each saying what it sends', async () => {
     await openSettings();
     expect(screen.getByRole('header', { name: 'Notifications' })).toBeOnTheScreen();
     const hints = Object.fromEntries(
@@ -115,8 +115,6 @@ describe('notification settings (M6.1)', () => {
         'Daily goal reminder',
         'Scheduled focus reminder',
         'Streak reminder',
-        'Event starts',
-        'Event ending soon',
         'Friend invites',
         'Focus room invites',
         'Challenge updates',
@@ -128,12 +126,10 @@ describe('notification settings (M6.1)', () => {
       'Daily goal reminder': 'At a time you choose, if today’s goal is still open.',
       'Scheduled focus reminder': 'At a time you choose, to start your planned focus.',
       'Streak reminder': 'At a time you choose, on days without focus yet.',
-      'Event starts': 'When an event begins.',
-      'Event ending soon': 'Two days before an event you joined ends.',
       'Friend invites': 'When a friend invites you to a challenge.',
       'Focus room invites': 'When a friend invites you to a focus room.',
       'Challenge updates': 'When a friend joins your challenge, or it is complete.',
-      'Badge unlocked': 'When a Community Tree you helped grow earns you a badge.',
+      'Badge unlocked': 'When you earn a new badge.',
       'Monthly recap ready': 'When last month’s recap is ready.',
     });
   });
@@ -159,24 +155,24 @@ describe('notification settings (M6.1)', () => {
     expect(os().getExpoPushTokenAsync).toHaveBeenCalledWith({ projectId: 'project-1' });
 
     // A second category asks nothing more.
-    fireEvent.press(screen.getByRole('switch', { name: 'Event starts' }));
+    fireEvent.press(screen.getByRole('switch', { name: 'Friend invites' }));
     await waitFor(() => expect(patches()).toHaveLength(2));
     expect(os().requestPermissionsAsync).toHaveBeenCalledTimes(1);
 
     // Turning one off never asks.
-    fireEvent.press(screen.getByRole('switch', { name: 'Event starts' }));
+    fireEvent.press(screen.getByRole('switch', { name: 'Friend invites' }));
     await waitFor(() => expect(patches()).toHaveLength(3));
-    expect(patches()[2]).toEqual({ notifications: { eventStart: { enabled: false } } });
+    expect(patches()[2]).toEqual({ notifications: { friendInvite: { enabled: false } } });
     expect(os().requestPermissionsAsync).toHaveBeenCalledTimes(1);
   });
 
   it('never asks when a category is turned off', async () => {
     stored = makePreferences();
-    stored.notifications.eventStart = { enabled: true };
+    stored.notifications.friendInvite = { enabled: true };
     await openSettings();
-    fireEvent.press(screen.getByRole('switch', { name: 'Event starts' }));
+    fireEvent.press(screen.getByRole('switch', { name: 'Friend invites' }));
     await waitFor(() => expect(patches()).toHaveLength(1));
-    expect(patches()[0]).toEqual({ notifications: { eventStart: { enabled: false } } });
+    expect(patches()[0]).toEqual({ notifications: { friendInvite: { enabled: false } } });
     await settle();
     expect(os().requestPermissionsAsync).not.toHaveBeenCalled();
   });
@@ -208,7 +204,7 @@ describe('notification settings (M6.1)', () => {
       granted: false,
     });
     stored = makePreferences();
-    stored.notifications.eventStart = { enabled: true };
+    stored.notifications.friendInvite = { enabled: true };
     await openSettings();
     expect(
       await screen.findByText(
@@ -238,23 +234,6 @@ describe('notification settings (M6.1)', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Daily goal reminder 15 minutes earlier' }));
     await waitFor(() => expect(patches()).toHaveLength(4));
     expect(patches()[3]).toEqual({ notifications: { dailyGoalReminder: { time: '18:45' } } });
-  });
-
-  it('ticks as a reminder time moves, with Haptics on only (docs/04 §9)', async () => {
-    const selection = jest.requireMock<{ selectionAsync: jest.Mock }>(
-      'expo-haptics',
-    ).selectionAsync;
-    await openSettings();
-    fireEvent.press(screen.getByRole('switch', { name: 'Daily goal reminder' }));
-    fireEvent.press(
-      await screen.findByRole('button', { name: 'Daily goal reminder 15 minutes later' }),
-    );
-    expect(selection).toHaveBeenCalledTimes(1);
-
-    fireEvent.press(screen.getByRole('switch', { name: 'Haptics' }));
-    await waitFor(() => expect(patches().at(-1)).toEqual({ haptics: false }));
-    fireEvent.press(screen.getByRole('button', { name: 'Daily goal reminder 15 minutes earlier' }));
-    expect(selection).toHaveBeenCalledTimes(1);
   });
 
   it('keeps a time already chosen, and wraps around midnight', async () => {

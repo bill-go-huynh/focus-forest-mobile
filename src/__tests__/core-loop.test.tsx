@@ -652,31 +652,6 @@ describe('Session Completion with the server’s growth', () => {
     expect(announced().filter((m) => m === 'Your tree became a Mature Tree.')).toHaveLength(1);
   });
 
-  it('marks a new stage with the richer haptic, once; plain growth with none (docs/04 §9)', async () => {
-    const milestone = jest.requireMock<{ notificationAsync: jest.Mock }>(
-      'expo-haptics',
-    ).notificationAsync;
-    server.state.growth = makeGrowth(
-      { stage: { from: 'growing_tree', to: 'mature_tree' } },
-      { stage: 'mature_tree' },
-    );
-    await openCompletion();
-    await until(() => announced().includes('Your tree became a Mature Tree.'));
-    await untilAsync(async () => (await pendingCelebrations()).length === 0);
-    expect(milestone).toHaveBeenCalledTimes(1);
-    screen.unmount();
-
-    milestone.mockClear();
-    await AsyncStorage.clear();
-    server = coreLoopApi();
-    server.state.growth = makeGrowth();
-    serve();
-    await openCompletion();
-    await shows('Your tree grew.');
-    await untilAsync(async () => (await pendingCelebrations()).length === 0);
-    expect(milestone).not.toHaveBeenCalled();
-  });
-
   it('shows a trait, blossoms, or plain growth as the moment', async () => {
     for (const [growth, caption] of [
       [
@@ -961,17 +936,6 @@ describe('unlocks after focus: the tree first, one badge, the rest in a line (M4
     await untilAsync(async () => (await pendingCelebrations()).length === 0);
     await pause();
     expect(said('New badge: First Session')).toBe(1);
-  });
-
-  it('marks the badge reveal with the richer haptic, once', async () => {
-    const milestone = jest.requireMock<{ notificationAsync: jest.Mock }>(
-      'expo-haptics',
-    ).notificationAsync;
-    server.state.progression = FIRST_UNLOCKS;
-    await openCompletion();
-    await until(() => said('New badge: First Session') === 1);
-    await pause();
-    expect(milestone).toHaveBeenCalledTimes(1);
   });
 
   it('shows the badge only after the tree has reacted (full motion)', async () => {

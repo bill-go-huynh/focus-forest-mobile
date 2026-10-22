@@ -67,7 +67,7 @@ describe('X6 contract: the captured Phase 6 answers and pushes', () => {
   });
 
   it('opens every push where it links, in a category Settings offers, shown when not focusing', () => {
-    expect(contract.pushes).toHaveLength(6);
+    expect(contract.pushes).toHaveLength(4);
     for (const push of contract.pushes) {
       // A known link opens as itself; only Home falls back to Home.
       expect(appRouteForLink(push.data.link)).toBe(push.data.link);

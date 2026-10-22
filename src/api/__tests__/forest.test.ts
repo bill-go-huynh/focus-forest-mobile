@@ -117,8 +117,8 @@ describe('forest contracts (A3.4)', () => {
       ).toBe('growing');
     });
 
-    it('reads the month’s badges with their display fields, and keeps future events as data', () => {
-      const withBadges = archivedDetails({ badges: [FIRST_SESSION], events: [{ id: 'x' }] });
+    it('reads the month’s badges with their display fields', () => {
+      const withBadges = archivedDetails({ badges: [FIRST_SESSION] });
       const parsed = treeDetailsSchema.parse(withBadges);
       expect(parsed.kind === 'archived' && parsed.badges).toEqual([FIRST_SESSION]);
       // A badge without its display fields is not a badge the app can show (M4.1).

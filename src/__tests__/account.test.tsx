@@ -116,11 +116,6 @@ describe('deleting the account (M7.1)', () => {
         'Your sessions, notes, trees, rewards, and friends are erased from Focus Forest right away. This cannot be undone.',
       ),
     ).toBeOnTheScreen();
-    expect(
-      screen.getByText(
-        'Minutes you gave to a Community Tree stay in its total, without your name.',
-      ),
-    ).toBeOnTheScreen();
     const button = screen.getByRole('button', { name: 'Delete my account' });
     expect(button).toBeDisabled();
     // DELETE alone is not enough: the password too.

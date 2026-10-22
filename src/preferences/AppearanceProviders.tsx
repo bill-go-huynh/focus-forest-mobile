@@ -2,14 +2,13 @@ import type { ReactNode } from 'react';
 
 import { AccessibilityProvider } from '../accessibility';
 import { useSession } from '../api';
-import { HapticsProvider } from '../haptics/haptics';
 import { ThemeProvider } from '../theme';
 import { usePreferences } from './queries';
 
 /**
- * Applies the signed-in user's theme, reduced-motion and haptics preferences (A5) to the whole
+ * Applies the signed-in user's theme, and reduced-motion preferences (A5) to the whole
  * app. Signed out, or before the preferences arrive, the A5 defaults apply: follow the system
- * theme, and reduce motion only when the device asks for it. Haptics wait for the setting.
+ * theme, and reduce motion only when the device asks for it.
  */
 export function AppearanceProviders({ children }: { children: ReactNode }) {
   const { status } = useSession();
@@ -18,7 +17,7 @@ export function AppearanceProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider preference={signedIn ? (data?.theme ?? 'system') : 'system'}>
       <AccessibilityProvider appReducedMotion={signedIn && (data?.reducedMotion ?? false)}>
-        <HapticsProvider enabled={signedIn && data?.haptics === true}>{children}</HapticsProvider>
+        {children}
       </AccessibilityProvider>
     </ThemeProvider>
   );

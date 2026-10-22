@@ -17,7 +17,6 @@ import {
   lowestSelectableMinutes,
   parseCustomMinutes,
 } from './duration';
-import { useHaptic } from '../haptics/haptics';
 
 export interface DurationSheetProps {
   visible: boolean;
@@ -80,7 +79,6 @@ function DurationChoice({
   minimumMinutes: number;
 }) {
   const theme = useTheme();
-  const haptic = useHaptic();
   const available = (minutes: number) => isSelectableDuration(minutes, minimumMinutes);
   // Never opens on a duration it would refuse; the flow opening it chooses a usable one.
   const start = available(initialMinutes)
@@ -106,7 +104,6 @@ function DurationChoice({
 
   const openCustom = () => {
     if (preset === null) return;
-    haptic('select');
     setCustomText(String(preset));
     setPreset(null);
   };
@@ -123,8 +120,6 @@ function DurationChoice({
             disabled={!available(minutes)}
             disabledReason="Shorter than a session needs to count."
             onPress={() => {
-              // A light tick when the choice changes (docs/04 §9: pickers only).
-              if (preset !== minutes) haptic('select');
               setPreset(minutes);
               setCustomError(null);
             }}
