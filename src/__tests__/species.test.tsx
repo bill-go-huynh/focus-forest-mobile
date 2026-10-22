@@ -94,6 +94,19 @@ function speciesApi() {
     if (pathname === '/me/profile/stats') return { status: 200, body: makeLifetime() };
     if (pathname === '/me/badges') return { status: 200, body: { items: [], showcase: [] } };
     if (pathname === '/me/trees/2026/9') return { status: 200, body: archivedDetails() };
+    if (pathname === '/me/trees/2026/10') {
+      const current = tree();
+      return {
+        status: 200,
+        body: {
+          kind: 'growing',
+          year: current.year,
+          month: current.month,
+          ...makeCurrentTree(),
+          tree: current,
+        },
+      };
+    }
     if (pathname === '/me/trees/current/species' && method === 'PUT') {
       if (state.selectAnswer) {
         const answer = state.selectAnswer;
@@ -252,6 +265,14 @@ describe('the equipped garden and profile frame', () => {
     await until(() => screen.queryByTestId('scene-decoration-stone-lantern', hidden) !== null);
     expect(screen.getByTestId('scene-background-misty-hills', hidden)).toBeTruthy();
     expect(sceneTree().species).toBe('signature');
+  });
+
+  it('draws the same garden around this month’s tree in its month details as on Home', async () => {
+    server.state.stage = 'mature_tree';
+    server.state.equipment = makeEquipment({ background: MISTY_HILLS, decoration: STONE_LANTERN });
+    renderApp(appRoutes, { initialUrl: '/month/2026/10' });
+    await until(() => screen.queryByTestId('scene-decoration-stone-lantern', hidden) !== null);
+    expect(screen.getByTestId('scene-background-misty-hills', hidden)).toBeTruthy();
   });
 
   it('keeps an archived month in its own neutral garden', async () => {

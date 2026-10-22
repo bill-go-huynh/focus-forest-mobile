@@ -14,13 +14,9 @@ import {
 import { useCelebrationStore } from '../celebrations/CelebrationsProvider';
 import { homeQueryKey } from '../core-loop/query-keys';
 import { mergeForestPages } from './forest-format';
+import { forestQueryKey, recapQueryKey, treeDetailsQueryKey } from './query-keys';
 
-/** The signed-in user's forest and archived months; dropped with the cache on sign-out. */
-export const forestQueryKey = ['me', 'forest'] as const;
-export const treeDetailsQueryKey = ({ year, month }: MonthRef) =>
-  ['me', 'trees', year, month] as const;
-export const recapQueryKey = ({ year, month }: MonthRef) =>
-  ['me', 'trees', year, month, 'recap'] as const;
+export { forestQueryKey, recapQueryKey, treeDetailsQueryKey };
 
 /**
  * The forest timeline (GET /me/forest), paged by the server's opaque cursor: the first page on

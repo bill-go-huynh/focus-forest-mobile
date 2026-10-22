@@ -21,6 +21,7 @@ import {
   monthTitle,
   shortMonth,
 } from './forest-format';
+import { useGardenEnvironment } from '../species/queries';
 import { useForest } from './queries';
 
 /** Bounds for the landscape list: only a few trees are drawn at a time. */
@@ -206,6 +207,8 @@ function LandscapeMonth({
   onPress: () => void;
 }) {
   const theme = useTheme();
+  // "Now" stands in the equipped garden, as on Home; the scene ignores it for archived months.
+  const environment = useGardenEnvironment();
   const caption = [theme.type.caption, { color: theme.colors.text.secondary }];
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: theme.space[3] }}>
@@ -232,6 +235,7 @@ function LandscapeMonth({
             size="thumbnail"
             motion="still"
             active={false}
+            environment={environment}
           />
         )}
         <Text style={caption}>{item.kind === 'growing' ? 'Now' : shortMonth(item)}</Text>

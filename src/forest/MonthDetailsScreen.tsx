@@ -14,6 +14,7 @@ import { formatMinutes, monthTitle } from './forest-format';
 import { RestingMarker } from './ForestScreen';
 import { useTreeDetails } from './queries';
 import { SectionCard } from '../components/SectionCard';
+import { useGardenEnvironment } from '../species/queries';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -51,6 +52,8 @@ function Details({ details }: { details: TreeDetails }) {
     [details],
   );
   const body = [theme.type.body, { color: theme.colors.text.primary }];
+  // This month's tree stands in the equipped garden, as on Home; an archived one never does.
+  const environment = useGardenEnvironment();
 
   if (details.kind === 'resting') {
     return (
@@ -65,7 +68,7 @@ function Details({ details }: { details: TreeDetails }) {
     const { stats } = details;
     return (
       <Screen title={monthTitle(details)} safeTop={false}>
-        {tree ? <TreeScene tree={tree} /> : null}
+        {tree ? <TreeScene tree={tree} environment={environment} /> : null}
         <Text style={body}>{`${formatMinutes(stats.focusedMinutes)} focused`}</Text>
         <Text style={body}>{plural(stats.sessionCount, 'session')}</Text>
         <Text style={body}>{plural(stats.activeDays, 'active day')}</Text>
