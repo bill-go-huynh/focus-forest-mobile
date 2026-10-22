@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.focusongoing'
+version = '0.1.0'
+
+expoModule {
+  // A local module of this app, built from source with it.
+  canBePublished false
+}
+
+android {
+  namespace "expo.modules.focusongoing"
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+}

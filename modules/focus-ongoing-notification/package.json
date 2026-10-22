@@ -1,0 +1,6 @@
+{
+  "name": "focus-ongoing-notification",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Focus Forest: the ongoing notification with a live countdown while a focus session runs (Android)."
+}

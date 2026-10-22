@@ -21,6 +21,7 @@ import { CelebrationsProvider } from '../celebrations/CelebrationsProvider';
 import { CompletionIntents, CompletionIntentsProvider, CompletionNavigator } from '../completion';
 import {
   createAppNotificationDelivery,
+  createAppOngoingFocus,
   createAppTimerNotifications,
   NotificationDeliveryProvider,
   NotificationLinkNavigator,
@@ -65,6 +66,9 @@ export default function RootLayout() {
   );
   const [timers] = useState(createAppTimerStore);
   const [timerNotifications] = useState(() => createAppTimerNotifications(timers));
+  // A live countdown in the notification shade while a session runs (owner, 2026-10-22).
+  const [ongoingFocus] = useState(() => createAppOngoingFocus(timers));
+  useEffect(() => ongoingFocus.start(), [ongoingFocus]);
   const [delivery] = useState(() => createAppNotificationDelivery(api.client, timers));
   const [topics] = useState(createAppTopicStore);
   const [topicCreates] = useState(() =>
@@ -95,6 +99,7 @@ export default function RootLayout() {
   // line, and what waits for the server is tried again (sessions first, then their notes).
   const [onForeground] = useState(() => () => {
     timerNotifications.reconcileLater();
+    ongoingFocus.refresh();
     void delivery.lease.reconcile();
     void sessions.flush().then(() => notes.flush());
   });
