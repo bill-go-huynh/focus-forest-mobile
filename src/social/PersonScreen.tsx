@@ -21,6 +21,7 @@ import { useBlock, useFollow, useVisitedProfile } from './queries';
 import { ReactionBar } from './ReactionBar';
 import { ReportSheet } from './ReportSheet';
 import { personName, relationshipLine, socialRefusal, treeTarget } from './social-format';
+import { SectionCard } from '../components/SectionCard';
 
 const MINUTE = 60_000;
 
@@ -78,6 +79,7 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
   const name = personName(user);
   const line = relationshipLine(user);
   const somethingHidden = Object.values(user.visible).some((visible) => !visible);
+  const showcase = profile.badges?.showcase ?? [];
 
   const leaveProfile = () => {
     if (router.canGoBack()) router.back();
@@ -103,21 +105,24 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
 
   return (
     <Screen title={name} safeTop={false}>
-      {line ? <Muted>{line}</Muted> : null}
-      <Button
-        variant={user.relationship.following ? 'secondary' : 'primary'}
-        label={user.relationship.following ? 'Unfollow' : 'Follow'}
-        disabled={followChange.isPending}
-        onPress={() => followChange.mutate(!user.relationship.following)}
-      />
-      {socialRefusal(followChange.error, 'follow') ? (
-        <InlineStatus
-          tone="attention"
-          message={socialRefusal(followChange.error, 'follow')!}
-          live
+      {/* Who they are and the one action with them (owner, 2026-10-22: one card per part). */}
+      <SectionCard>
+        {line ? <Muted>{line}</Muted> : null}
+        {user.bio ? <Body>{user.bio}</Body> : null}
+        <Button
+          variant={user.relationship.following ? 'secondary' : 'primary'}
+          label={user.relationship.following ? 'Unfollow' : 'Follow'}
+          disabled={followChange.isPending}
+          onPress={() => followChange.mutate(!user.relationship.following)}
         />
-      ) : null}
-      {user.bio ? <Body>{user.bio}</Body> : null}
+        {socialRefusal(followChange.error, 'follow') ? (
+          <InlineStatus
+            tone="attention"
+            message={socialRefusal(followChange.error, 'follow')!}
+            live
+          />
+        ) : null}
+      </SectionCard>
 
       {profile.currentTree ? (
         <View style={{ gap: theme.space[3] }}>
@@ -126,46 +131,55 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
         </View>
       ) : null}
 
-      {profile.statistics ? (
-        <View style={{ gap: theme.space[1] }}>
-          <Body>
-            {`${formatFocused(profile.statistics.focusedMinutes * MINUTE)} focused · ${profile.statistics.sessionCount} sessions`}
-          </Body>
-          <Body>{`Longest streak ${profile.statistics.longestStreak} days`}</Body>
-        </View>
-      ) : null}
-
-      {profile.badges && profile.badges.showcase.length > 0 ? (
-        <View style={{ gap: theme.space[2] }}>
-          <Header>Badges</Header>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
-            {profile.badges.showcase.map((item) => (
-              <Chip
-                key={item.id}
-                label={item.name}
-                selected={false}
-                onPress={() => setBadge(item)}
+      {profile.statistics || showcase.length > 0 || profile.forest ? (
+        <SectionCard
+          title="Focus"
+          footer={
+            profile.forest ? (
+              <Button
+                variant="secondary"
+                label="Visit forest"
+                accessibilityLabel={`Visit forest, ${profile.forest.treeCount} ${profile.forest.treeCount === 1 ? 'tree' : 'trees'}`}
+                onPress={() => router.push(`/together/${userId}/forest`)}
               />
-            ))}
-          </View>
-        </View>
-      ) : null}
-
-      {profile.forest ? (
-        <Button
-          variant="secondary"
-          label="Visit forest"
-          accessibilityLabel={`Visit forest, ${profile.forest.treeCount} ${profile.forest.treeCount === 1 ? 'tree' : 'trees'}`}
-          onPress={() => router.push(`/together/${userId}/forest`)}
-        />
+            ) : undefined
+          }
+        >
+          {profile.statistics ? (
+            <View style={{ gap: theme.space[1] }}>
+              <Body>
+                {`${formatFocused(profile.statistics.focusedMinutes * MINUTE)} focused · ${profile.statistics.sessionCount} sessions`}
+              </Body>
+              <Body>{`Longest streak ${profile.statistics.longestStreak} days`}</Body>
+            </View>
+          ) : null}
+          {showcase.length > 0 ? (
+            <View style={{ gap: theme.space[2] }}>
+              <Header>Badges</Header>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+                {showcase.map((item) => (
+                  <Chip
+                    key={item.id}
+                    label={item.name}
+                    selected={false}
+                    onPress={() => setBadge(item)}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
+        </SectionCard>
       ) : null}
 
       {somethingHidden ? <Muted>{`Some of ${name}'s profile is private.`}</Muted> : null}
 
-      <View style={{ gap: theme.space[2] }}>
-        <Button variant="tertiary" label="Report" onPress={() => setReporting(true)} />
-        <DestructiveButton label="Block" onRequestConfirm={() => setConfirmBlock(true)} />
-      </View>
+      {/* Safety at the end, apart from everything else. */}
+      <SectionCard>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+          <Button variant="tertiary" label="Report" onPress={() => setReporting(true)} />
+          <DestructiveButton label="Block" onRequestConfirm={() => setConfirmBlock(true)} />
+        </View>
+      </SectionCard>
 
       <Sheet
         visible={badge !== null}

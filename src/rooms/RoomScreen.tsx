@@ -30,6 +30,7 @@ import { clearRoomLink, saveRoomLink, type RoomLink } from './room-links';
 import { useRoomLive } from './room-live';
 import { describeJoinError } from './RoomsSection';
 import { InviteFriends } from './RoomInvites';
+import { SectionCard } from '../components/SectionCard';
 
 /** The server's completion window after the start (A5.4 `COMPLETION_LATE_MS`). */
 const LATE_START_MS = 10 * 60_000;
@@ -233,7 +234,15 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
         <Body key={badge.id}>{badge.name}</Body>
       ))}
 
-      <View style={{ gap: theme.space[1] }}>
+      {/* Who is here, then what you do: one card each (owner, 2026-10-22). */}
+      <SectionCard
+        title="People here"
+        footer={
+          room.phase === 'lobby' && room.you ? (
+            <InviteFriends roomId={room.id} present={room.participants.map((p) => p.user.id)} />
+          ) : undefined
+        }
+      >
         {room.participants.map((place) => {
           const name =
             place.user.displayName ?? (place.user.username ? `@${place.user.username}` : 'Someone');
@@ -244,15 +253,12 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
           ];
           return <Body key={place.user.id}>{parts.join(' · ')}</Body>;
         })}
-      </View>
+      </SectionCard>
 
       {room.phase === 'lobby' && room.you ? (
-        <View style={{ gap: theme.space[3] }}>
+        <SectionCard {...(room.you.state === 'waiting' ? { title: 'Your topic' } : {})}>
           {room.you.state === 'waiting' ? (
             <>
-              <Text style={[theme.type.label, { color: theme.colors.text.primary }]}>
-                Your topic
-              </Text>
               {/* Each person focuses on their own topic, which their tree counts (SO-125): one
                   without any makes it here, inline (docs/02), and it is chosen at once. */}
               {topics.recent.data && topics.items.length === 0 ? (
@@ -294,7 +300,6 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
               onPress={() => ready.mutate(false)}
             />
           )}
-          <InviteFriends roomId={room.id} present={room.participants.map((p) => p.user.id)} />
           {room.you.host ? (
             <Button
               variant="secondary"
@@ -312,7 +317,7 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
               }
             />
           ) : null}
-        </View>
+        </SectionCard>
       ) : null}
 
       {room.phase === 'lobby' && !room.you ? (

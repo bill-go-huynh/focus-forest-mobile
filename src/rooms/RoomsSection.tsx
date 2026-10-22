@@ -15,6 +15,7 @@ import { RoomInvitesList } from './RoomInvites';
 import { Card } from '../components/Card';
 
 const DURATIONS = [15, 25, 50, 90] as const;
+const ROOMS_PREVIEW = 5;
 const SIZES = [2, 4, 6, 10] as const;
 const NAME_MAX = 50;
 
@@ -51,6 +52,9 @@ export function RoomsSection() {
   const open = (room: Room) => router.push(`/together/room/${room.id}`);
   const mine = current.data?.room ?? null;
   const others = (lobbies.data?.items ?? []).filter((room) => room.id !== mine?.id);
+  // Open rooms can be many: the first few, the rest on request (owner, 2026-10-22).
+  const [allRooms, setAllRooms] = useState(false);
+  const shownRooms = allRooms ? others : others.slice(0, ROOMS_PREVIEW);
 
   return (
     <Card>
@@ -70,7 +74,7 @@ export function RoomsSection() {
             onPress={() => open(mine)}
           />
         ) : null}
-        {others.map((room) => (
+        {shownRooms.map((room) => (
           <ListRow
             key={room.id}
             title={room.name}
@@ -79,6 +83,13 @@ export function RoomsSection() {
             onPress={() => join.mutate({ roomId: room.id }, { onSuccess: open })}
           />
         ))}
+        {others.length > ROOMS_PREVIEW && !allRooms ? (
+          <Button
+            variant="tertiary"
+            label={`Show all ${others.length} open rooms`}
+            onPress={() => setAllRooms(true)}
+          />
+        ) : null}
         {join.isError ? <FormMessage message={describeJoinError(join.error)} /> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
           <Button variant="secondary" label="Create a room" onPress={() => setSheet('create')} />
