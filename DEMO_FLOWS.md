@@ -118,3 +118,7 @@ Ký hiệu: **📱** làm trên điện thoại · **💻** làm trên admin (la
 | Không có lời mời phòng | 💻 **Open a fresh waiting room** |
 | Không thấy lễ trồng cây | Lễ chỉ có một lần mỗi tài khoản: tạo demo world mới với Gmail khác |
 | "Add a finished session" báo phải chờ | Phiên không được chồng nhau: chờ vài phút hoặc giảm số phút |
+
+---
+
+Xong hết các flow trên máy local thì làm tiếp [DEPLOY_AFTER_DEMO.md](DEPLOY_AFTER_DEMO.md).
