@@ -273,7 +273,7 @@ describe('X3 Insights → History, from captured answers', () => {
   });
 
   it('shows the history of the month with discarded sessions visible and not counted', async () => {
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByTestId('history-filters');
     await shows(/Not counted/);
   });

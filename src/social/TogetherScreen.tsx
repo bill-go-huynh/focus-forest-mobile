@@ -31,16 +31,24 @@ export type PeopleList = 'following' | 'followers';
 const PEOPLE_PREVIEW = 5;
 const REACTIONS_PREVIEW = 3;
 
+type TogetherTab = 'focus' | 'people' | 'reactions';
+
+const TABS: { id: TogetherTab; label: string }[] = [
+  { id: 'focus', label: 'Focus' },
+  { id: 'people', label: 'People' },
+  { id: 'reactions', label: 'Reactions' },
+];
+
 /**
- * The Together tab (docs/05 §1): the community hub, one card per part (owner, 2026-10-22): your
- * people (the first few, everyone a tap away), focus rooms, challenges, events, leaderboards,
- * and the reactions you received, with any note from the moderators first. Never a feed, never
- * a comparison (docs/02 Social).
+ * The Together tab (docs/05 §1): the community hub in three tabs (owner, 2026-10-23), so one
+ * screen never stacks every part. Focus first: rooms with their invitations, challenges and
+ * leaderboards; then your people; then the reactions you received. Any note from the moderators
+ * and the username prompt stay above the tabs. Never a feed, never a comparison (docs/02 Social).
  */
 export function TogetherScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [list, setList] = useState<PeopleList>('following');
+  const [tab, setTab] = useState<TogetherTab>('focus');
   const profile = useProfile();
 
   return (
@@ -58,30 +66,25 @@ export function TogetherScreen() {
           </View>
         </Card>
       ) : null}
-      <SectionCard
-        title="Your people"
-        footer={
-          <Button
-            variant="tertiary"
-            label="Find people"
-            onPress={() => router.push('/together/search')}
-          />
-        }
-      >
-        <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
+      <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: theme.space[2] }}>
+        {TABS.map((item) => (
           <Chip
-            label="Following"
-            selected={list === 'following'}
-            onPress={() => setList('following')}
+            key={item.id}
+            label={item.label}
+            selected={tab === item.id}
+            onPress={() => setTab(item.id)}
           />
-          <Chip
-            label="Followers"
-            selected={list === 'followers'}
-            onPress={() => setList('followers')}
-          />
-        </View>
-        {list === 'following' ? <Following preview /> : <Followers preview />}
-      </SectionCard>
+        ))}
+      </View>
+      {tab === 'focus' ? <FocusTab /> : tab === 'people' ? <PeopleTab /> : <Received />}
+    </Screen>
+  );
+}
+
+function FocusTab() {
+  const router = useRouter();
+  return (
+    <>
       <RoomsSection />
       <ChallengesSection />
       <SectionCard>
@@ -91,8 +94,39 @@ export function TogetherScreen() {
           onPress={() => router.push('/together/leaderboards')}
         />
       </SectionCard>
-      <Received />
-    </Screen>
+    </>
+  );
+}
+
+function PeopleTab() {
+  const theme = useTheme();
+  const router = useRouter();
+  const [list, setList] = useState<PeopleList>('following');
+  return (
+    <SectionCard
+      title="Your people"
+      footer={
+        <Button
+          variant="tertiary"
+          label="Find people"
+          onPress={() => router.push('/together/search')}
+        />
+      }
+    >
+      <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
+        <Chip
+          label="Following"
+          selected={list === 'following'}
+          onPress={() => setList('following')}
+        />
+        <Chip
+          label="Followers"
+          selected={list === 'followers'}
+          onPress={() => setList('followers')}
+        />
+      </View>
+      {list === 'following' ? <Following preview /> : <Followers preview />}
+    </SectionCard>
   );
 }
 

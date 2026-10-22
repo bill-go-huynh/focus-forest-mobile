@@ -6,7 +6,13 @@ import { Button } from '../components/Button';
 import { InlineStatus } from '../components/InlineStatus';
 import { SwitchRow } from '../components/SwitchRow';
 import { useTheme } from '../theme';
-import { REMINDER_CATEGORIES, shiftTime, type ReminderCategory } from './reminder-times';
+import { Input } from '../components/Input';
+import {
+  parseReminderTime,
+  REMINDER_CATEGORIES,
+  shiftTime,
+  type ReminderCategory,
+} from './reminder-times';
 import { SectionCard } from '../components/SectionCard';
 
 const LABELS: Record<NotificationCategory, string> = {
@@ -106,36 +112,86 @@ function ReminderTime({
   // update lands a tick later, so two quick presses would otherwise move from the same time.
   const [pending, setPending] = useState<{ from: string; to: string } | null>(null);
   const shown = pending && pending.from === time ? pending.to : time;
-  const move = (step: 15 | -15) => {
-    const next = shiftTime(shown, step);
+  // Any minute can be typed too (owner, 2026-10-23); Earlier and Later move by a quarter hour.
+  const [typing, setTyping] = useState<string | null>(null);
+  const [typingError, setTypingError] = useState<string | null>(null);
+  const choose = (next: string) => {
     setPending({ from: time, to: next });
     onChange(next);
   };
+  const move = (step: 15 | -15) => choose(shiftTime(shown, step));
+  const saveTyped = () => {
+    const parsed = parseReminderTime(typing ?? '');
+    if (!parsed.ok) {
+      setTypingError(parsed.message);
+      return;
+    }
+    choose(parsed.time);
+    setTyping(null);
+    setTypingError(null);
+  };
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: theme.space[2],
-        paddingLeft: theme.space[4],
-      }}
-    >
-      <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
-        {`Reminder at ${shown}`}
-      </Text>
-      <Button
-        variant="tertiary"
-        label="Earlier"
-        accessibilityLabel={`${label} 15 minutes earlier`}
-        onPress={() => move(-15)}
-      />
-      <Button
-        variant="tertiary"
-        label="Later"
-        accessibilityLabel={`${label} 15 minutes later`}
-        onPress={() => move(15)}
-      />
+    <View style={{ gap: theme.space[2], paddingLeft: theme.space[4] }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: theme.space[2],
+        }}
+      >
+        <Text style={[theme.type.body, { color: theme.colors.text.secondary }]}>
+          {`Reminder at ${shown}`}
+        </Text>
+        <Button
+          variant="tertiary"
+          label="Earlier"
+          accessibilityLabel={`${label} 15 minutes earlier`}
+          onPress={() => move(-15)}
+        />
+        <Button
+          variant="tertiary"
+          label="Later"
+          accessibilityLabel={`${label} 15 minutes later`}
+          onPress={() => move(15)}
+        />
+        {typing === null ? (
+          <Button
+            variant="tertiary"
+            label="Set time"
+            accessibilityLabel={`${label}: Set time`}
+            onPress={() => setTyping(shown)}
+          />
+        ) : null}
+      </View>
+      {typing !== null ? (
+        <View style={{ gap: theme.space[2] }}>
+          <Input
+            label={`${label} time`}
+            value={typing}
+            onChangeText={(text) => {
+              setTyping(text);
+              setTypingError(null);
+            }}
+            error={typingError ?? undefined}
+            helper="24-hour time, such as 7:05 or 19:30."
+            keyboardType="numbers-and-punctuation"
+            returnKeyType="done"
+            onSubmitEditing={saveTyped}
+          />
+          <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
+            <Button variant="secondary" label="Save time" onPress={saveTyped} />
+            <Button
+              variant="tertiary"
+              label="Cancel"
+              onPress={() => {
+                setTyping(null);
+                setTypingError(null);
+              }}
+            />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

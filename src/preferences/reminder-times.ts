@@ -31,3 +31,22 @@ export function shiftTime(time: string, step: 15 | -15): string {
   const next = ((snapped % DAY) + DAY) % DAY;
   return `${String(Math.floor(next / 60)).padStart(2, '0')}:${String(next % 60).padStart(2, '0')}`;
 }
+
+/**
+ * A typed reminder time (owner, 2026-10-23: any minute, not only quarters): "7:05", "07:05" or
+ * "19:30", as the server's local "HH:MM"; anything else gets a plain message and is not sent.
+ */
+export function parseReminderTime(
+  text: string,
+): { ok: true; time: string } | { ok: false; message: string } {
+  const match = /^(\d{1,2})[:.h](\d{2})$/.exec(text.trim());
+  const hours = match ? Number(match[1]) : NaN;
+  const minutes = match ? Number(match[2]) : NaN;
+  if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+    return {
+      ok: true,
+      time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+    };
+  }
+  return { ok: false, message: 'Enter a time such as 7:05 or 19:30.' };
+}

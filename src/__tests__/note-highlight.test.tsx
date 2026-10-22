@@ -245,7 +245,7 @@ describe('highlighting a session note for the monthly recap', () => {
     const net = fakeFetch(server.handler);
     requests = net.requests;
     globalThis.fetch = net.fetch;
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     const rows = await screen.findAllByA11yHint('Opens this session.');
     fireEvent.press(rows[0]!);
     fireEvent.press(await screen.findByRole('button', { name: HIGHLIGHT }));

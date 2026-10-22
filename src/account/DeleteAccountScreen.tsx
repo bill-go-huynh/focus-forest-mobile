@@ -90,7 +90,9 @@ export function DeleteAccountScreen() {
         </Text>
         <Text style={body}>You can download a copy of your data first, from Settings.</Text>
         {withGoogle ? (
-          <Text style={body}>Google asks you to confirm it is your account.</Text>
+          <Text style={body}>
+            {`You sign in with Google, so there is no password to check. After you confirm, Google's account picker opens: choose ${user?.email ?? 'the account you sign in with'} to delete it. You stay signed in until then.`}
+          </Text>
         ) : (
           <Input
             label="Password"
@@ -111,7 +113,7 @@ export function DeleteAccountScreen() {
         {error ? <FormMessage message={error} /> : null}
         {/* Typing DELETE and the password is this action's confirmation step. */}
         <DestructiveButton
-          label="Delete my account"
+          label={withGoogle ? 'Confirm with Google and delete' : 'Delete my account'}
           disabled={!ready}
           disabledReason={
             withGoogle ? 'Type DELETE first.' : 'Enter your password and type DELETE first.'

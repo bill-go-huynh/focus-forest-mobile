@@ -231,9 +231,11 @@ const calls = (path: string) =>
     .filter((r) => new URL(r.url).pathname === path && r.method !== 'GET')
     .map((r) => [r.method, `${new URL(r.url).pathname}${new URL(r.url).search}`, r.body]);
 
-async function openTogether() {
+/** Together opens on its Focus tab (owner, 2026-10-23); people and reactions are a tab away. */
+async function openTogether(tab: 'People' | 'Reactions' | null = 'People') {
   const router = renderApp(appRoutes, { initialUrl: '/together' });
   await screen.findByRole('header', { name: 'Together' });
+  if (tab) fireEvent.press(await screen.findByRole('button', { name: tab }));
   return router;
 }
 
@@ -244,7 +246,7 @@ async function openPerson() {
 }
 
 describe('the Together tab (docs/05 §1: Following in Phase 11)', () => {
-  it('sits between Forest and Insights, and opens on the people the user follows', async () => {
+  it('sits between Forest and Insights, with the people the user follows a tab away', async () => {
     await openTogether();
     expect(screen.getByRole('tab', { name: 'Together' })).toBeSelected();
     await shows('Linh');
@@ -311,7 +313,7 @@ describe('the Together tab (docs/05 §1: Following in Phase 11)', () => {
         from: makeSummary(),
       },
     ];
-    await openTogether();
+    await openTogether('Reactions');
     await shows('Kai sent ✨');
     expect(screen.getByText('On your forest')).toBeOnTheScreen();
     expect(screen.getByText('Linh sent 🔥')).toBeOnTheScreen();
@@ -354,7 +356,7 @@ describe('the Together tab (docs/05 §1: Following in Phase 11)', () => {
       createdAt: `2026-10-08T1${i}:00:00.000Z`,
       from: makeSummary({ id: KAI_ID, username: `kai${i}`, displayName: `Kai ${i}` }),
     }));
-    await openTogether();
+    await openTogether('Reactions');
     await shows('Kai 0 sent ❤️');
     expect(screen.getByText('Kai 2 sent ❤️')).toBeOnTheScreen();
     expect(screen.queryByText('Kai 3 sent ❤️')).toBeNull();

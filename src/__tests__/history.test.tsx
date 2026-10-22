@@ -238,7 +238,7 @@ const rowNames = () =>
 const rowFor = (topic: string) => screen.getByRole('button', { name: new RegExp(`^${topic}, `) });
 
 async function openHistory() {
-  renderApp(appRoutes, { initialUrl: '/insights' });
+  renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
   await screen.findByRole('button', { name: /^Writing, / });
 }
 
@@ -246,7 +246,7 @@ describe('Focus history in Insights', () => {
   it('shows a loading skeleton while the first page is on its way', async () => {
     let release: () => void = () => undefined;
     server.state.hold = new Promise<void>((resolve) => (release = resolve));
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
 
     expect(await screen.findByLabelText('Loading your focus history')).toBeOnTheScreen();
     await act(async () => release());
@@ -283,7 +283,7 @@ describe('Focus history in Insights', () => {
   it('shows the Insights empty state when there are no sessions yet', async () => {
     server = historyApi([]);
     serve();
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
 
     expect(
       await screen.findByText('Your focus story begins with your first session.'),
@@ -292,7 +292,7 @@ describe('Focus history in Insights', () => {
 
   it('offers a retry when nothing is known yet, and loads on retry', async () => {
     server.state.down = true;
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
 
     expect(
       await screen.findByText("We couldn't load your focus history right now.", undefined, {
@@ -306,13 +306,13 @@ describe('Focus history in Insights', () => {
   });
 
   it('keeps the history saved on this device visible when a later launch is offline', async () => {
-    const first = renderApp(appRoutes, { initialUrl: '/insights' });
+    const first = renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Writing, / });
     await untilStored(historySnapshotKey(USER));
     first.unmount();
 
     server.state.down = true;
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
 
     expect(await screen.findByRole('button', { name: /^Writing, / })).toBeOnTheScreen();
     expect(
@@ -338,7 +338,7 @@ describe('pages', () => {
   it('asks for the next page only on request, appends it in order, and stops at the end', async () => {
     server = historyApi(many);
     serve();
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Topic Z0, / });
     expect(rowNames()).toHaveLength(30);
     expect(historyGets()).toHaveLength(1);
@@ -358,7 +358,7 @@ describe('pages', () => {
     server = historyApi(many);
     server.state.repeatAcrossPages = true;
     serve();
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Topic Z0, / });
 
     fireEvent.press(screen.getByRole('button', { name: 'Load more sessions' }));
@@ -371,7 +371,7 @@ describe('pages', () => {
   it('keeps the loaded pages when the next one fails, and retries it', async () => {
     server = historyApi(many);
     serve();
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Topic Z0, / });
     server.state.nextPageDown = true;
 
@@ -406,7 +406,7 @@ describe('a session that syncs', () => {
   it('refreshes the history once the server has it, without making up a row before', async () => {
     await AsyncStorage.setItem(activeTimerKey(USER), JSON.stringify(endedEarly()));
     server.state.sessionsDown = true;
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Writing, / });
     await untilStored(sessionOutboxKey(USER), (raw) => raw.includes('aaaaaaaaaaaa'));
     expect(rowNames()).toHaveLength(3);
@@ -423,7 +423,7 @@ describe('a session that syncs', () => {
   it('keeps the session synced when the history cannot be refreshed', async () => {
     await AsyncStorage.setItem(activeTimerKey(USER), JSON.stringify(endedEarly()));
     server.state.sessionsDown = true;
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Writing, / });
     await untilStored(sessionOutboxKey(USER), (raw) => raw.includes('aaaaaaaaaaaa'));
     const before = historyGets().length;
@@ -465,13 +465,13 @@ describe('opening a session from history', () => {
   });
 
   it('opens a saved session offline, and queues a note edit on the device', async () => {
-    const first = renderApp(appRoutes, { initialUrl: '/insights' });
+    const first = renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
     await screen.findByRole('button', { name: /^Writing, / });
     await untilStored(historySnapshotKey(USER));
     first.unmount();
     server.state.down = true;
     server.state.sessionsDown = true;
-    renderApp(appRoutes, { initialUrl: '/insights' });
+    renderApp(appRoutes, { initialUrl: '/insights?tab=history' });
 
     fireEvent.press(await screen.findByRole('button', { name: /^Music, / }));
 

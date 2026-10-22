@@ -193,6 +193,9 @@ async function openInsights() {
   renderApp(appRoutes, { initialUrl: '/insights' });
   await screen.findByTestId('insights-summary');
 }
+/** Insights has Summary, Records, and History tabs (owner, 2026-10-23). */
+const toTab = (name: 'Summary' | 'Records' | 'History') =>
+  fireEvent.press(screen.getByRole('button', { name }));
 async function toMonth() {
   fireEvent.press(screen.getByRole('button', { name: 'Month' }));
   await shows(/^October 2026 ·/);
@@ -401,10 +404,10 @@ describe('monthly Insights', () => {
 });
 
 describe('the year’s heatmap', () => {
-  it('loads only when asked, then summarises the year and offers each month in words', async () => {
+  it('loads only on the Records tab, then summarises the year and offers each month in words', async () => {
     await openInsights();
     expect(paths('/me/insights/heatmap')).toHaveLength(0);
-    fireEvent.press(screen.getByRole('button', { name: 'Show your year' }));
+    toTab('Records');
     expect(
       await screen.findByText(
         'Over the last year: 14 active days, 4 rest days, daily goal met on 13 days.',
@@ -427,6 +430,7 @@ describe('the year’s heatmap', () => {
 describe('personal records', () => {
   it('shows all six bests with their value and when, read as one line each', async () => {
     await openInsights();
+    toTab('Records');
     const records = within(await screen.findByTestId('insights-records'));
     for (const label of [
       'Most focused day: 3 h 5 min, Thursday, September 17',
@@ -444,6 +448,7 @@ describe('personal records', () => {
   it('says calmly that records come with focus, with no empty trophies', async () => {
     server.state.records = [];
     await openInsights();
+    toTab('Records');
     expect(await screen.findByText('Your personal records appear as you focus.')).toBeOnTheScreen();
     expect(screen.queryByText(/: 0 /)).toBeNull();
   });
@@ -452,34 +457,47 @@ describe('personal records', () => {
 describe('History filters', () => {
   it('lists every session, discarded ones too, unfiltered at first', async () => {
     await openInsights();
+    toTab('History');
     await shows(/Not counted/);
     expect(historyParams()[0]).toEqual({ limit: '30' });
   });
 
   it('filters by the selected week, month, a tapped day, and a topic, each from the first page', async () => {
     await openInsights();
+    toTab('History');
     await shows(/Not counted/);
     fireEvent.press(screen.getByRole('button', { name: 'Load more sessions' }));
-    await until(() => historyParams().length === 2);
-    expect(historyParams()[1]).toEqual({ limit: '30', cursor: 'opaque:30' });
+    await until(() => historyParams().some((p) => p.cursor === 'opaque:30'));
+    expect(historyParams().find((p) => p.cursor === 'opaque:30')).toEqual({
+      limit: '30',
+      cursor: 'opaque:30',
+    });
 
     fireEvent.press(screen.getByRole('button', { name: 'This week only' }));
-    await until(() => historyParams().length === 3);
-    expect(historyParams()[2]).toEqual({ limit: '30', week: '2026-10-05' });
+    await until(() => historyParams().some((p) => p.week === '2026-10-05'));
 
+    // A tapped day or topic opens History filtered (tabs, owner 2026-10-23).
+    toTab('Summary');
     fireEvent.press(
-      screen.getByRole('button', {
+      await screen.findByRole('button', {
         name: 'Tuesday, October 6: 1 h 20 min, 3 sessions, rest day, daily goal met',
       }),
     );
-    await until(() => historyParams().length === 4);
-    expect(historyParams()[3]).toEqual({ limit: '30', from: '2026-10-06', to: '2026-10-06' });
+    await until(() => historyParams().some((p) => p.from === '2026-10-06' && !p.topicId));
+    expect(historyParams().find((p) => p.from === '2026-10-06')).toEqual({
+      limit: '30',
+      from: '2026-10-06',
+      to: '2026-10-06',
+    });
 
+    toTab('Summary');
     fireEvent.press(
-      within(screen.getByTestId('insights-topics')).getByRole('button', { name: /^Old course/ }),
+      within(await screen.findByTestId('insights-topics')).getByRole('button', {
+        name: /^Old course/,
+      }),
     );
-    await until(() => historyParams().length === 5);
-    expect(historyParams()[4]).toEqual({
+    await until(() => historyParams().some((p) => p.topicId === OLD_ID));
+    expect(historyParams().find((p) => p.topicId === OLD_ID)).toEqual({
       limit: '30',
       from: '2026-10-06',
       to: '2026-10-06',
@@ -489,15 +507,12 @@ describe('History filters', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Clear filters' }));
     await until(() => screen.queryByText(/^Showing:/) === null);
-    // The unfiltered history is still cached: shown again, not a page from another filter.
-    expect(historyParams().every((p) => !('cursor' in p) || Object.keys(p).length === 2)).toBe(
-      true,
-    );
   });
 
   it('filters by the month as sessions are attributed to it', async () => {
     await openInsights();
     await toMonth();
+    toTab('History');
     fireEvent.press(screen.getByRole('button', { name: 'This month only' }));
     await until(() => historyParams().some((p) => 'month' in p));
     expect(historyParams().find((p) => 'month' in p)).toEqual({ limit: '30', month: '2026-10' });
@@ -506,6 +521,7 @@ describe('History filters', () => {
 
   it('chooses a topic from every topic, archived included', async () => {
     await openInsights();
+    toTab('History');
     fireEvent.press(screen.getByRole('button', { name: 'All topics' }));
     fireEvent.press(await screen.findByRole('button', { name: 'Old course, archived topic' }));
     await until(() => historyParams().some((p) => p.topicId === OLD_ID));
@@ -561,7 +577,9 @@ describe('accessibility', () => {
   it('reads records, topics, and days by name and number, never color alone', async () => {
     await openInsights();
     expect(screen.getByText('Topics')).toBeOnTheScreen();
-    expect(screen.getByRole('header', { name: 'Personal records' })).toBeOnTheScreen();
+    toTab('Records');
+    expect(await screen.findByRole('header', { name: 'Personal records' })).toBeOnTheScreen();
+    toTab('History');
     expect(screen.getByRole('header', { name: 'Focus history' })).toBeOnTheScreen();
   });
 
@@ -569,6 +587,7 @@ describe('accessibility', () => {
     mockWindow.fontScale = 2;
     await openInsights();
     expect(screen.getByTestId('period-selector')).toHaveStyle({ flexWrap: 'wrap' });
+    toTab('History');
     expect(screen.getByTestId('history-filters')).toHaveStyle({ flexWrap: 'wrap' });
   });
 

@@ -1,3 +1,4 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -21,6 +22,8 @@ import { Sheet } from '../components/Sheet';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { TopicMark } from '../components/TopicMark';
 import { HistoryContent } from '../history/HistoryScreen';
+import { useSessionHistory } from '../history/queries';
+import { EmptyState } from '../components/EmptyState';
 import { useTheme, type Theme } from '../theme';
 import { useTopics } from '../topics/queries';
 import {
@@ -78,8 +81,18 @@ function scopeText(scope: Scope): string {
   return `sessions of ${monthTitle(scope.year, scope.month)}`;
 }
 
+type InsightsTab = 'summary' | 'records' | 'history';
+
+const INSIGHTS_TABS: { id: InsightsTab; label: string }[] = [
+  { id: 'summary', label: 'Summary' },
+  { id: 'records', label: 'Records' },
+  { id: 'history', label: 'History' },
+];
+
 /**
- * Insights (docs/05 → Insights, docs/02; M3.5): reflection without anxiety. A Week/Month
+ * Insights (docs/05 → Insights, docs/02; M3.5): reflection without anxiety, in three tabs
+ * (owner, 2026-10-23): Summary (the week or month), Records (personal records and the year),
+ * History (the focus history; a tapped day or topic opens it filtered). A Week/Month
  * selector, one narrative summary, the period's days (focus, rest, and the daily goal together),
  * then grouped supporting lines, topics, personal records, the year on request, and the focus
  * history with its filters. Every number is the server's for that exact period.
@@ -90,7 +103,10 @@ export function InsightsScreen() {
   const { isLargeText } = useFontScale();
   const [period, setPeriod] = useState<Period>({ kind: 'week', weekStart: null });
   const [filters, setFilters] = useState<Filters>({ scope: null, topic: null });
-  const [showYear, setShowYear] = useState(false);
+  const { tab: linkedTab } = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<InsightsTab>(
+    INSIGHTS_TABS.find((item) => item.id === linkedTab)?.id ?? 'summary',
+  );
   const [currentWeek, setCurrentWeek] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState<MonthRef | null>(null);
 
@@ -120,7 +136,8 @@ export function InsightsScreen() {
 
   const goWeek = (from: string) =>
     setPeriod({ kind: 'week', weekStart: from === currentWeek ? null : from });
-  const goMonth = (ref: MonthRef) =>
+  const goMonth = (ref: MonthRef) => {
+    setTab('summary');
     setPeriod({
       kind: 'month',
       month:
@@ -128,6 +145,7 @@ export function InsightsScreen() {
           ? null
           : ref,
     });
+  };
 
   const move = (step: -1 | 1) => {
     if (!data) return;
@@ -138,80 +156,117 @@ export function InsightsScreen() {
     }
   };
   const unit = period.kind === 'week' ? 'week' : 'month';
+  // Before the first session there is nothing in any tab: one calm invitation instead.
+  const router = useRouter();
+  const everything = useSessionHistory(null);
+  if (everything.items !== null && everything.items.length === 0 && !everything.fromDevice) {
+    return (
+      <Screen title="Insights">
+        <EmptyState
+          illustration="lantern"
+          message="Your focus story begins with your first session."
+          action={{ label: 'Go to your tree', onPress: () => router.navigate('/') }}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen title="Insights">
-      <View
-        testID="period-selector"
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: theme.space[2],
-          alignItems: 'center',
-        }}
-      >
-        <Chip
-          label="Week"
-          selected={period.kind === 'week'}
-          onPress={() => setPeriod({ kind: 'week', weekStart: null })}
-        />
-        <Chip
-          label="Month"
-          selected={period.kind === 'month'}
-          onPress={() => setPeriod({ kind: 'month', month: null })}
-        />
-        <Button
-          variant="tertiary"
-          label={`Previous ${unit}`}
-          onPress={() => move(-1)}
-          disabled={!data}
-          disabledReason="Loading this period."
-        />
-        <Button
-          variant="tertiary"
-          label={`Next ${unit}`}
-          onPress={() => move(1)}
-          disabled={!data || data.period.current}
-          disabledReason={
-            data?.period.current ? `This is the current ${unit}.` : 'Loading this period.'
-          }
-        />
+      <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: theme.space[2] }}>
+        {INSIGHTS_TABS.map((item) => (
+          <Chip
+            key={item.id}
+            label={item.label}
+            selected={tab === item.id}
+            onPress={() => setTab(item.id)}
+          />
+        ))}
       </View>
 
-      {data ? (
-        <PeriodInsights
-          data={data}
-          stale={active.isRefetchError}
-          onDay={(date) => setFilters({ ...filters, scope: { kind: 'day', date } })}
-          onTopic={(topic) =>
-            setFilters({ ...filters, topic: { id: topic.topicId, name: topic.name } })
-          }
-        />
-      ) : active.isError ? (
-        <ErrorState
-          message="We couldn't load your insights right now."
-          onRetry={() => void active.refetch()}
-        />
-      ) : (
-        <SkeletonGroup label="Loading your insights">
-          <Skeleton variant="text" lines={3} />
-        </SkeletonGroup>
-      )}
+      {tab === 'summary' ? (
+        <>
+          <View
+            testID="period-selector"
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: theme.space[2],
+              alignItems: 'center',
+            }}
+          >
+            <Chip
+              label="Week"
+              selected={period.kind === 'week'}
+              onPress={() => setPeriod({ kind: 'week', weekStart: null })}
+            />
+            <Chip
+              label="Month"
+              selected={period.kind === 'month'}
+              onPress={() => setPeriod({ kind: 'month', month: null })}
+            />
+            <Button
+              variant="tertiary"
+              label={`Previous ${unit}`}
+              onPress={() => move(-1)}
+              disabled={!data}
+              disabledReason="Loading this period."
+            />
+            <Button
+              variant="tertiary"
+              label={`Next ${unit}`}
+              onPress={() => move(1)}
+              disabled={!data || data.period.current}
+              disabledReason={
+                data?.period.current ? `This is the current ${unit}.` : 'Loading this period.'
+              }
+            />
+          </View>
 
-      <Records query={records} />
+          {data ? (
+            <PeriodInsights
+              data={data}
+              stale={active.isRefetchError}
+              onDay={(date) => {
+                setFilters({ ...filters, scope: { kind: 'day', date } });
+                setTab('history');
+              }}
+              onTopic={(topic) => {
+                setFilters({ ...filters, topic: { id: topic.topicId, name: topic.name } });
+                setTab('history');
+              }}
+            />
+          ) : active.isError ? (
+            <ErrorState
+              message="We couldn't load your insights right now."
+              onRetry={() => void active.refetch()}
+            />
+          ) : (
+            <SkeletonGroup label="Loading your insights">
+              <Skeleton variant="text" lines={3} />
+            </SkeletonGroup>
+          )}
+        </>
+      ) : null}
 
-      {showYear ? (
-        <YearHeatmap onMonth={goMonth} />
-      ) : (
-        <SectionCard title="Your year">
-          <Button variant="secondary" label="Show your year" onPress={() => setShowYear(true)} />
+      {tab === 'records' ? (
+        <>
+          <Records query={records} />
+          <YearHeatmap onMonth={goMonth} />
+        </>
+      ) : null}
+
+      {tab === 'history' ? (
+        <SectionCard title="Focus history">
+          <HistoryFilterBar
+            data={data}
+            filters={filters}
+            onChange={setFilters}
+            wrap={isLargeText}
+          />
+          <HistoryContent filters={toHistoryFilters(filters)} />
         </SectionCard>
-      )}
-
-      <SectionCard title="Focus history">
-        <HistoryFilterBar data={data} filters={filters} onChange={setFilters} wrap={isLargeText} />
-        <HistoryContent filters={toHistoryFilters(filters)} />
-      </SectionCard>
+      ) : null}
     </Screen>
   );
 }
