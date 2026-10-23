@@ -32,3 +32,21 @@ export function createAppOngoingFocus(timers: ActiveTimerStore): OngoingFocusNot
     report: (issue) => console.warn(`[notifications] ongoing focus: ${issue.code}`),
   });
 }
+
+/**
+ * Posts the countdown again whenever the app goes to the background. A session's first start
+ * can come before Android 13's notification permission is answered, which the native side skips
+ * silently; by the time the person leaves the app it is answered, so the countdown is there in
+ * the shade. Returns the unsubscribe.
+ */
+export function refreshWhenLeaving(
+  appState: {
+    addEventListener(type: 'change', listener: (state: string) => void): { remove(): void };
+  },
+  ongoing: { refresh(): void },
+): () => void {
+  const subscription = appState.addEventListener('change', (state) => {
+    if (state !== 'active') ongoing.refresh();
+  });
+  return () => subscription.remove();
+}

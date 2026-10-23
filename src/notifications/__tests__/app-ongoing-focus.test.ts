@@ -2,7 +2,7 @@ import { requireOptionalNativeModule } from 'expo';
 
 import { memoryStorage } from '../../test-utils/storage';
 import { ActiveTimerStore } from '../../timer/active-timer-store';
-import { createAppOngoingFocus, ONGOING_FOCUS_URL } from '../app-ongoing-focus';
+import { createAppOngoingFocus, ONGOING_FOCUS_URL, refreshWhenLeaving } from '../app-ongoing-focus';
 
 jest.mock('expo', () => ({
   ...jest.requireActual<object>('expo'),
@@ -74,5 +74,28 @@ describe('the app’s ongoing focus notification', () => {
     });
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('leaving the app posts the countdown again', () => {
+  it('refreshes on background and inactive, never on active, and stops when asked', () => {
+    let listener: ((state: string) => void) | null = null;
+    const remove = jest.fn();
+    const appState = {
+      addEventListener: (_: 'change', l: (state: string) => void) => {
+        listener = l;
+        return { remove };
+      },
+    };
+    const ongoing = { refresh: jest.fn() };
+    const stop = refreshWhenLeaving(appState, ongoing);
+    listener!('active');
+    expect(ongoing.refresh).not.toHaveBeenCalled();
+    // The permission asked at the session's start is answered by then (Android 13).
+    listener!('background');
+    listener!('inactive');
+    expect(ongoing.refresh).toHaveBeenCalledTimes(2);
+    stop();
+    expect(remove).toHaveBeenCalled();
   });
 });

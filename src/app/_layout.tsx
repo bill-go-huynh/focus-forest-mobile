@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
@@ -22,6 +22,7 @@ import { CompletionIntents, CompletionIntentsProvider, CompletionNavigator } fro
 import {
   createAppNotificationDelivery,
   createAppOngoingFocus,
+  refreshWhenLeaving,
   createAppTimerNotifications,
   NotificationDeliveryProvider,
   NotificationLinkNavigator,
@@ -69,6 +70,7 @@ export default function RootLayout() {
   // A live countdown in the notification shade while a session runs (owner, 2026-10-22).
   const [ongoingFocus] = useState(() => createAppOngoingFocus(timers));
   useEffect(() => ongoingFocus.start(), [ongoingFocus]);
+  useEffect(() => refreshWhenLeaving(AppState, ongoingFocus), [ongoingFocus]);
   const [delivery] = useState(() => createAppNotificationDelivery(api.client, timers));
   const [topics] = useState(createAppTopicStore);
   const [topicCreates] = useState(() =>
