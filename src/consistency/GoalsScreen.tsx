@@ -15,8 +15,8 @@ import { Screen } from '../components/Screen';
 import { Skeleton, SkeletonGroup } from '../components/Skeleton';
 import { dailyGoalLine, weeklyGoalLine } from '../core-loop/presentation';
 import { useHome } from '../core-loop/queries';
-import { BadgeUnlock } from '../progression/BadgeUnlock';
 import { unlockMoment, type UnlockMoment } from '../progression/unlocks';
+import { UnlockModal } from '../progression/UnlockModal';
 import { useTheme } from '../theme';
 import { DailyGoalPicker } from './DailyGoalPicker';
 import {
@@ -548,7 +548,7 @@ function RecoveryOffer({ streak }: { streak: Streak }) {
         </Card>
       ) : null}
       <StatusLine status={status} />
-      {unlock ? <BadgeUnlock moment={unlock} reveal /> : null}
+      <UnlockModal moment={unlock} />
       <Confirmation
         visible={asking && offer !== null}
         presentation="modal"

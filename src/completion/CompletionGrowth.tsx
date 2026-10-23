@@ -10,6 +10,7 @@ import { MomentCaption } from '../core-loop/MomentCaption';
 import { BadgeUnlock } from '../progression/BadgeUnlock';
 import { useGardenEnvironment } from '../species/queries';
 import { unlockMoment } from '../progression/unlocks';
+import { UnlockModal } from '../progression/UnlockModal';
 import { dailyGoalLine, growthMoment, streakLine } from '../core-loop/presentation';
 import { useHome } from '../core-loop/queries';
 import { useCelebrationPresenter } from '../core-loop/use-celebration';
@@ -75,7 +76,14 @@ export function CompletionGrowth({
     : celebrationsRead && !pending && described
       ? { moment: described, reveal: false }
       : null;
-  const unlocked = unlock ? <BadgeUnlock moment={unlock.moment} reveal={unlock.reveal} /> : null;
+  // Revealed now: a modal the person closes (owner, 2026-10-23). Shown before: described here.
+  const unlocked = unlock ? (
+    unlock.reveal ? (
+      <UnlockModal moment={unlock.moment} />
+    ) : (
+      <BadgeUnlock moment={unlock.moment} reveal={false} />
+    )
+  ) : null;
 
   if (!session) return null;
   if (session.growth?.monthClosed) {

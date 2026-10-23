@@ -254,7 +254,7 @@ describe('a Google account on this device', () => {
     await screen.findByRole('header', { name: 'Delete account' });
     expect(screen.queryByLabelText('Password')).toBeNull();
     fireEvent.changeText(screen.getByLabelText('Type DELETE to confirm'), 'DELETE');
-    fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm with Google and delete' }));
 
     // Signed out, the welcome opens again (owner, 2026-10-22).
     expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
@@ -271,12 +271,12 @@ describe('a Google account on this device', () => {
     openApp('/profile/delete-account');
     await screen.findByRole('header', { name: 'Delete account' });
     fireEvent.changeText(screen.getByLabelText('Type DELETE to confirm'), 'DELETE');
-    fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm with Google and delete' }));
     await screen.findByText(
       'That Google account is not the one you sign in with. Nothing was deleted.',
     );
     deleteAnswer = () => ({ status: 204 });
-    fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm with Google and delete' }));
     expect(await screen.findByRole('header', { name: WELCOME_TITLE })).toBeOnTheScreen();
     expect(googleChoosersShown()).toBe(2);
   });

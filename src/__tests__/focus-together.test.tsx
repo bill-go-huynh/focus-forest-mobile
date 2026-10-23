@@ -544,7 +544,9 @@ describe('focusing together (a shared session is a focus session first)', () => 
     });
     await openRoom();
     await shows('You focused together.');
-    expect(screen.getByText('Focus Together')).toBeOnTheScreen();
+    // The badge it earned opens in a modal the person closes (owner, 2026-10-23).
+    expect(await screen.findByTestId('badge-unlock')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Done' })).toBeOnTheScreen();
     expect(posts(`/rooms/${ROOM_ID}/complete`)).toEqual([
       ['POST', { sessionId: '0190d000-0000-7000-8000-00000000e001' }],
     ]);

@@ -200,17 +200,21 @@ describe('InlineStatus (neutral inline feedback: pending sync, saved data, atten
       }
     });
 
-    it('puts the action under the text at 200%, so neither is squeezed', () => {
-      const action = { label: 'Review', onPress: jest.fn() };
-      const view = renderWithProviders(
+    it('puts an action under the text at any size, so neither is squeezed (2026-10-23)', () => {
+      const action = { label: 'Open phone settings', onPress: jest.fn() };
+      renderWithProviders(
         <InlineStatus tone="attention" message="Needs a look." action={action} testID="status" />,
+      );
+      expect(styleOf(screen.getByTestId('status')).flexDirection).toBe('column');
+    });
+
+    it('keeps a status without an action on one row, and stacks it at 200%', () => {
+      const view = renderWithProviders(
+        <InlineStatus tone="info" message="Saved on this device." testID="status" />,
       );
       expect(styleOf(screen.getByTestId('status')).flexDirection).toBe('row');
-
       mockWindow.fontScale = 2;
-      view.rerender(
-        <InlineStatus tone="attention" message="Needs a look." action={action} testID="status" />,
-      );
+      view.rerender(<InlineStatus tone="info" message="Saved on this device." testID="status" />);
       expect(styleOf(screen.getByTestId('status')).flexDirection).toBe('column');
     });
   });

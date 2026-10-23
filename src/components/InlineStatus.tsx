@@ -93,9 +93,10 @@ export function InlineStatus({
     <View
       testID={testID}
       style={{
-        // At 200% the action moves under the text, so neither is squeezed.
-        flexDirection: isLargeText ? 'column' : 'row',
-        alignItems: isLargeText ? 'flex-start' : 'center',
+        // An action sits under the text (owner, 2026-10-23: a long message beside a button
+        // was squeezed in narrow cards), as at 200% text, so neither is squeezed.
+        flexDirection: isLargeText || action ? 'column' : 'row',
+        alignItems: isLargeText || action ? 'flex-start' : 'center',
         gap: space[3],
         paddingVertical: space[3],
         paddingHorizontal: space[4],

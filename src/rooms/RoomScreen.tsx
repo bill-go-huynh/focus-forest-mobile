@@ -26,6 +26,8 @@ import {
   useRoomReady,
   useStartRoom,
 } from './queries';
+import { unlockMoment } from '../progression/unlocks';
+import { UnlockModal } from '../progression/UnlockModal';
 import { clearRoomLink, saveRoomLink, type RoomLink } from './room-links';
 import { useRoomLive } from './room-live';
 import { describeJoinError } from './RoomsSection';
@@ -230,9 +232,16 @@ function RoomView({ room, readAt }: { room: Room; readAt: number }) {
       <Muted>{`${room.durationMinutes} min${room.topic ? ` · ${room.topic}` : ''}`}</Muted>
       {room.code ? <Muted>{`Code ${room.code}`}</Muted> : null}
       <View testID="room-status">{status ? <Body>{status}</Body> : null}</View>
-      {badges?.map((badge) => (
-        <Body key={badge.id}>{badge.name}</Body>
-      ))}
+      {/* What the shared session earned: a modal the person closes (owner, 2026-10-23). */}
+      <UnlockModal
+        moment={
+          badges && badges.length > 0
+            ? unlockMoment([
+                { newlyEarnedBadges: badges, newlyUnlockedSpecies: [], newlyUnlockedCosmetics: [] },
+              ])
+            : null
+        }
+      />
 
       {/* Who is here, then what you do: one card each (owner, 2026-10-22). */}
       <SectionCard

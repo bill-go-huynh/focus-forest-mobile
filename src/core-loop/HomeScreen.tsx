@@ -15,7 +15,7 @@ import { SeasonalOverlay } from '../tree/SeasonalOverlay';
 import { useTheme } from '../theme';
 import { toTreeVisualState, TreeScene, type TreeSceneHandle } from '../tree';
 import type { HomeResponse } from '../api';
-import { BadgeUnlock } from '../progression/BadgeUnlock';
+import { UnlockModal } from '../progression/UnlockModal';
 import { useGardenEnvironment, useSpecies } from '../species/queries';
 import { choiceOpen } from '../species/species-format';
 import { SPECIES_SCREEN_TITLE } from '../species/SpeciesScreen';
@@ -110,9 +110,8 @@ export function HomeScreen() {
             {fullyGrownLine(homeTree.progress)}
           </Text>
         ) : null}
-        {presented?.unlock && presented.revealed ? (
-          <BadgeUnlock moment={presented.unlock} reveal />
-        ) : null}
+        {/* What it unlocked: a modal the person closes, after the tree's moment (2026-10-23). */}
+        <UnlockModal moment={presented?.unlock && presented.revealed ? presented.unlock : null} />
       </View>
 
       {fromDevice && query.isError ? (
