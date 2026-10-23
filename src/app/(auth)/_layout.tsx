@@ -9,10 +9,11 @@ export default function AuthLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="welcome" />
-      <Stack.Screen name="sign-in" />
-      <Stack.Screen name="sign-up" />
+      {/* A back arrow on every form, to the welcome or the form before (owner, 2026-10-23). */}
+      <Stack.Screen name="sign-in" options={{ headerShown: true, title: '' }} />
+      <Stack.Screen name="sign-up" options={{ headerShown: true, title: '' }} />
       {/* W.3 Forgot password, from sign in. */}
-      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="forgot-password" options={{ headerShown: true, title: '' }} />
     </Stack>
   );
 }

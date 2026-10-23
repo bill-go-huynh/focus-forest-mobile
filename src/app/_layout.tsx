@@ -206,7 +206,7 @@ function RootNavigator() {
             {/* Session Completion, a full-screen takeover too; Done returns Home. */}
             <Stack.Screen name="completion/[sessionId]" />
             {/* The current month's Tree Details, opened from the Home tree (docs/05). */}
-            <Stack.Screen name="tree" />
+            <Stack.Screen name="tree" options={{ headerShown: true, title: '' }} />
             {/* Species choice (M4.2): this month's tree, from Home or Tree Details. */}
             <Stack.Screen name="species" options={{ headerShown: true, title: '' }} />
             {/* Onboarding, once after sign-up (M3.3): it leaves by its own buttons. */}
