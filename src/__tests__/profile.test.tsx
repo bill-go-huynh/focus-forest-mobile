@@ -289,6 +289,20 @@ describe('Edit profile (A4: PATCH /me/profile)', () => {
     expect(await screen.findByText('Tea and code.')).toBeOnTheScreen();
   });
 
+  it('leaves no Edit screen behind when opened from another tab (owner bug, 2026-10-23)', async () => {
+    // Together's "Choose a username" opens Edit profile from outside the Profile tab.
+    const router = renderApp(appRoutes, { initialUrl: '/together' });
+    fireEvent.press(await screen.findByRole('button', { name: 'Choose a username' }));
+    fireEvent.changeText(await screen.findByLabelText('Bio'), 'Tea and code.');
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(patches()).toHaveLength(1));
+    await waitFor(() => expect(router.getPathname()).not.toBe('/profile/edit'));
+    // The Profile tab opens on Profile itself, with Settings a tap away.
+    fireEvent.press(screen.getByRole('tab', { name: 'Profile' }));
+    await waitFor(() => expect(router.getPathname()).toBe('/profile'));
+    expect(await screen.findByRole('button', { name: /^Settings/ })).toBeOnTheScreen();
+  });
+
   it('never sends the join date, the time zone, or the avatar', async () => {
     await openEdit();
     fireEvent.changeText(screen.getByLabelText('Name'), 'Mai');

@@ -81,10 +81,9 @@ function Profile({ userId, profile }: { userId: string; profile: VisitedProfile 
   const somethingHidden = Object.values(user.visible).some((visible) => !visible);
   const showcase = profile.badges?.showcase ?? [];
 
-  const leaveProfile = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/together');
-  };
+  // Back to Together within its own tab; `back()` follows the app's history and could leave
+  // this blocked profile on top of the Together tab (2026-10-23).
+  const leaveProfile = () => router.dismissTo('/together');
 
   const doBlock = () => {
     setConfirmBlock(false);

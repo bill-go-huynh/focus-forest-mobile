@@ -72,16 +72,21 @@ function EditProfileForm({ profile }: { profile: Profile }) {
   });
   const bio = useWatch({ control, name: 'bio' });
 
+  // Back to Profile itself, within the Profile tab: `back()` follows the app's history, so when
+  // Edit was opened from another tab (Together's "Choose a username") it went to that tab and
+  // left Edit on top of Profile (owner bug, 2026-10-23).
+  const leave = () => router.dismissTo('/profile');
+
   const submit = handleSubmit(async (values) => {
     if (save.isPending) return;
     const changes = profileChanges(profile, values);
     if (Object.keys(changes).length === 0) {
-      router.back();
+      leave();
       return;
     }
     try {
       await save.mutateAsync(changes);
-      router.back();
+      leave();
     } catch {
       // Shown below from save.error; the edits stay in the form.
     }
